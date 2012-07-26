@@ -1,22 +1,42 @@
 
-/**
- * The Notifier is the core of fluorine at low-level.
- * Every cross-components computation should use notification rather than directly call each other.
- * Every notification will be handled asynchronized, even though this is implementation depended.
- *
- * It's also a Context, so user can use fluent interface to call it, and compose the action.
- *
- */
+//
+// The Notifier is the core of fluorine at low-level.
+// Every cross-components computation should use notification rather than directly call each other.
+// Every notification will be handled asynchronized, even though this is implementation depended.
+//
+// It's also a Context, so user can use fluent interface to call it, and compose the action.
+//
+// ----
+//
+// ## Notifier
+
+// The namespace objects.
 
 fluorine = {} || fluorine;
-
 fluorine.Notifier = {};
 
+//
+// Initialize the notifier.
+// If there're registered handlers in previous notifier,
+// they will be wiped out
+//
+// init:: Notifier n 
 fluorine.Notifier.init = function()
 {
     fluorine.Notifier.trie = {};
+    return fluorine.Notifier;
 }
 
+//
+// Register a handler on a note.
+//
+// The last argument, "context", can be any object, 
+// and the callback will be called with it as context.  
+// 
+// The note is namespaced, so if a note "abc.de" triggered, 
+// handlers bound on "abc.de.gh" will also be triggered.
+//
+// on:: Notifier n -> ( NoteName, (note -> a), Context ) -> Notifier n'
 fluorine.Notifier.on = function(str_names, cb, context)
 {
     if( "" == str_names )
@@ -30,8 +50,18 @@ fluorine.Notifier.on = function(str_names, cb, context)
             cb.call(context, note); 
         }
     );
+
+    return fluorine.Notifier;
 }
 
+//
+// Trigger a note. The format of a note is
+//  
+//      {name: "namespaced.note.name", <key>: <value>}
+//
+// Only the "name" filed is required.
+//
+// trigger:: Notifier n -> Note -> Notifier n
 fluorine.Notifier.trigger = function(note)
 {
     // note is a single string.
@@ -52,12 +82,24 @@ fluorine.Notifier.trigger = function(note)
         // OK, it's bad to use global variable. But how can I do this without it ?
         //__st__ = setTimeout(function(){ cb.call(null,note); clearTimeout(__st__); },0);
     }
+
+    return fluorine.Notifier;
 }
 
+//
+// Remove a handler from Notifier.
+// The name of note is still namespaced. 
+// So if the parent got removed, children under the name will also be removed.
+//
+// off:: Notifier n -> NoteName -> Notifier n
 fluorine.Notifier.off = function(str_names)
 {
     fluorine.EventTrie.remove(fluorine.Notifier.trie, str_names);
 }
+
+// ## Inner structure of fluorine.Notifier
+//
+// DO NOT USE. IT'S ONLY FOR IMPLEMENTS.
 
 fluorine.EventTrie = {};
 
