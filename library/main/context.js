@@ -462,3 +462,142 @@ fluorine.IO.o.prototype.run = function()
     return this.__proc
 }
 
+//
+// ## UI
+//
+// UI provide a wrapped, monadic jQuery.
+// All DOM unrelated codes had been banned in this restricted jQuery.
+//
+
+// Return a prototype to bulding rest part of the action.
+// The only one argument is `fluorine.Process`.
+// If there is no process argument, this action will spanw new one.
+//
+// Example:
+//
+//     UI('body').$().css('backgroundColor', 'red').done().run()
+//
+fluorine.UI = function(selector, proc)
+{
+    return new fluorine.UI.o(selector, proc)
+}
+
+// DO NOT USE: It's for instancing the action.
+fluorine.UI.o = function(slc, proc)
+{
+    this.__$ = jQuery;
+    this.__a = {}           // '__a' will be a wrapped DOMs.
+    this.__done = false
+    this.__proc = proc || fluorine.Process()
+    this.__slc = slc
+
+    // Restrict the jQuery can only manipulate DOMs.
+    fluorine.UI.o.__mapAll();
+
+    return this
+}
+
+//
+// Use the restricted jQuery to manipulate some DOMs.
+//
+// $:: UI s
+fluorine.UI.o.prototype.$ = function()
+{
+    var THIS = this;
+
+    this.__proc.next
+    (    function()
+         {   
+             THIS.__a = THIS.__$(THIS.__slc)
+
+             THIS.__proc.run();
+             return THIS.__a;
+         }
+    )
+    return this
+}
+
+//
+// Functions listed here are the wrapped version of original jQuery functions.
+// That means only when this action got run, those functions will be executed.
+//
+
+// __delegate:: UI s -> NameFunction, args -> ()
+fluorine.UI.o.__delegate = function(args)
+{
+    var THIS = this;
+
+    THIS.__proc.next
+    (   function()
+        {   name = args.shift()
+            THIS.__a[name].apply(THIS.__a, args)
+            THIS.__proc.run();
+            return THIS.__a;
+        }
+    )
+}
+
+
+// Mapping all function in jQuery to UI monad.
+fluorine.UI.o.__mapAll = function()
+{
+    // TODO: Map ok, but some function will provide pure value rather than wrapped DOMs.
+    var names = [ 'addClass', 'after', 'append'
+                , 'appendTo', 'attr' , 'before'
+                , 'css'
+                , 'clone', 'detach', 'empty'
+                , 'height', 'html', 'innerHeight'
+                , 'innerWidth', 'insertAfter', 'insertBefore'
+                , 'offset', 'outerHeight', 'outerWidth'
+                , 'prepend', 'prependTo', 'remove'
+                , 'removeAfter', 'removeClass', 'removeProp'
+                , 'replaceAll', 'replaceWith', 'scrollLeft'
+                , 'scrollTop', 'text', 'toggleClass'
+                , 'unwrap', 'val', 'wrap'
+                , 'wrap', 'wrapAll', 'wrapInner'
+                ]
+
+   _.each( names, function(name)
+   {    fluorine.UI.o.prototype[name] = 
+        function()
+        {   var args = _.map(arguments, function(a){return a})
+            args.unshift(name)
+            fluorine.UI.o.__delegate.call(this, args) 
+            return this;
+        }
+   })
+}
+
+// Prevent run before definition done.
+//
+// done:: UI s -> UI s
+fluorine.UI.o.prototype.done = function(){
+
+    this.__done = true;
+
+    return this;
+}
+
+// Run this action. If this action is not done, throw an Error.
+//
+// User should aware that the value is still hidden in the process,
+// and can't be instanced in the outside world.
+// 
+// The only way to use the value is create another action to take the process,
+// and use inside it. But this will create a temporary variable, 
+// which contains the process and will be pased to the next action.
+//
+// run:: UI (Process a) -> Process a
+fluorine.UI.o.prototype.run = function()
+{
+
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The action is not done.");
+    }
+
+    // This will run the whole process, 
+    // and it's only useful when this function is at the end of whole process.
+    this.__proc.run();
+    return this.__proc
+}
