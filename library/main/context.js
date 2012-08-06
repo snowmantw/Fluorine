@@ -573,45 +573,6 @@ fluorine.UI.o.__mapMonadic = function()
    })
 }
 
-//
-// Mapping unwrapping functions which own type signature as "m DOM -> (DOM -> a) -> a".
-// 
-//
-fluorine.UI.o.prototype.__mapUnwrap = function(){
-
-    var names = [ 'attr', 'hasClass', 'html' 
-                , 'prop', 'val'
-                , 'css', 'height', 'innerHeight'
-                , 'innerWidth', 'offset', 'outerHeight'
-                , 'outerWidth', 'position', 'scrollLeft'
-                , 'scrollTop', 'width'
-                , 'data', 'hasData'
-                ]
-
-   _.each
-   ( names
-   , function(name)
-     {    fluorine.UI.o.prototype[name] = 
-            function()
-            {   if( ! this.__done )
-                {
-                    throw new Error("ERROR: The action is not done.");
-                }
-
-                // This will run the whole process, 
-                // and it's only useful when this function is at the end of whole process.
-
-                var args = arguments
-                var __$dom_result = this.__$(this.__proc.run())
-                __$dom_result[name].apply(__$dom_result, args)
-
-                return this.__proc
-            }
-     }
-   , this
-   )
-}
-
 // Prevent run before definition done.
 //
 // done:: UI s -> UI s
