@@ -492,7 +492,7 @@ fluorine.UI.o = function(slc, proc)
     this.__slc = slc
 
     // Restrict the jQuery can only manipulate DOMs.
-    fluorine.UI.o.__mapAll();
+    fluorine.UI.o.__mapMonadic();
 
     return this
 }
@@ -539,9 +539,14 @@ fluorine.UI.o.__delegate = function(args)
 
 
 // Mapping all function in jQuery to UI monad.
-fluorine.UI.o.__mapAll = function()
+fluorine.UI.o.__mapMonadic = function()
 {
-    // TODO: Map ok, but some function will provide pure value rather than wrapped DOMs.
+    // Some other functions that require provide pure values rather than 
+    // wrapped DOMs will be mapped by '__mapMonadic', because they're a part of unwraper functions.
+    //
+    // If a function provides both version, the version of pure value requiring will be usable 
+    // only when user chainning it as run. 
+    // 
     var names = [ 'addClass', 'after', 'append'
                 , 'appendTo', 'attr' , 'before'
                 , 'css'
@@ -566,6 +571,45 @@ fluorine.UI.o.__mapAll = function()
             return this;
         }
    })
+}
+
+//
+// Mapping unwrapping functions which own type signature as "m DOM -> (DOM -> a) -> a".
+// 
+//
+fluorine.UI.o.prototype.__mapUnwrap = function(){
+
+    var names = [ 'attr', 'hasClass', 'html' 
+                , 'prop', 'val'
+                , 'css', 'height', 'innerHeight'
+                , 'innerWidth', 'offset', 'outerHeight'
+                , 'outerWidth', 'position', 'scrollLeft'
+                , 'scrollTop', 'width'
+                , 'data', 'hasData'
+                ]
+
+   _.each
+   ( names
+   , function(name)
+     {    fluorine.UI.o.prototype[name] = 
+            function()
+            {   if( ! this.__done )
+                {
+                    throw new Error("ERROR: The action is not done.");
+                }
+
+                // This will run the whole process, 
+                // and it's only useful when this function is at the end of whole process.
+
+                var args = arguments
+                var __$dom_result = this.__$(this.__proc.run())
+                __$dom_result[name].apply(__$dom_result, args)
+
+                return this.__proc
+            }
+     }
+   , this
+   )
 }
 
 // Prevent run before definition done.
@@ -601,3 +645,4 @@ fluorine.UI.o.prototype.run = function()
     this.__proc.run();
     return this.__proc
 }
+
