@@ -47,18 +47,27 @@ fluorine.Process.o.prototype.preconcat = function(proc)
 }
 
 // Execute the next function.
-// This function can accept anything 
-// which will be forward to the next function.
+// The function will receive the result of current run,
+// and set it as the result of this process.
 //
-// run:: Process ( a->b ) -> Process b' 
-fluorine.Process.o.prototype.run = function()
+// The next function will receive the result as it's (only one) argument.
+//
+// Note any other temporary results should be storaged in other places.
+//
+// This result is the final result of whole monad, 
+// and will be replaced by any value passed in, 
+// even the undefined ( call with no arguments ).
+//
+// run:: Process ( a->b ) -> b -> Process b 
+fluorine.Process.o.prototype.run = function(result)
 {
+    this.__result = result;
     if( 0 == this.__queue.length )
     {
         return ;
     }
 
-    this.__result = this.__queue.shift().apply({}, arguments);
+    this.__queue.shift().call({}, result);
 }
 
 // Extract the last result of called functions.
