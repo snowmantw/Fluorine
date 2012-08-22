@@ -54,20 +54,37 @@ fluorine.Process.o.prototype.preconcat = function(proc)
 //
 // Note any other temporary results should be storaged in other places.
 //
+// Note for the convience of the lack of tuple,
+// this function allow user variable arguments as a tuple.
+// But if there is only one argument, the result still in the single argument mode.
+//
 // This result is the final result of whole monad, 
 // and will be replaced by any value passed in, 
 // even the undefined ( call with no arguments ).
 //
-// run:: Process ( a->b ) -> b -> Process b 
+// run:: Process ( a->b ) -> b | Tuple -> Process b | Tuple
 fluorine.Process.o.prototype.run = function(result)
 {
-    this.__result = result;
+    // Tuple | 0 or 1
+    if( 2 <= arguments.length )
+    {
+        this.__result = []
+        for( var i in arguments)
+        {
+            this.__result.push(arguments)
+        }
+    }
+    else
+    {
+        this.__result = result
+    }
+
     if( 0 == this.__queue.length )
     {
         return ;
     }
 
-    this.__queue.shift().call({}, result);
+    this.__queue.shift().apply({}, arguments);
 }
 
 // Extract the last result of called functions.

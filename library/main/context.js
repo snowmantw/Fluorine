@@ -260,33 +260,16 @@ fluorine.IO.o.prototype.get = function( url , name_res, query){
     //
     this.__proc.next
     (   _.bind
-        (   function()
-            {   // Use these callback to construct our request,
-                // and send it out.
-                var success = _.bind
-                (   function(data, textStatus, jqXHR)
-                    {   // resume execute.
-                        this.__proc.run(data)
-                    }
-                ,   this
-                )
-
-                var error = _.bind
-                (   function(jqXHR, textStatus, errorThrown)
-                    {   var msg = "ERROR: IO error in request: "+entry_res
-                        console.error(msg, errorThrown)
-                        throw new Error(msg);
-                    }
-                ,   this
-                )
-
+        (   function(data)
+            {   
                 // The callback will trigger the "endpoint" of previous process.
                 // Note: We will rewrite this with other IO protocols and decouple with jQuery.ajax .
+                // The success callback will resume the execution after it get called.
                 jQuery.ajax({
                       url: url,
-                      data: query,
-                      success: success,
-                      error: error
+                      data: query,   
+                      success: fluorine.IO.__genAjaxSuccess(this.__proc),
+                      error: fluorine.IO.__genAjaxError(name_res)
                 })
             }
         ,   this
@@ -302,6 +285,46 @@ fluorine.IO.o.prototype.get = function( url , name_res, query){
     return this
 }
 
+//
+// Get binary data from server.
+//
+// There're no Create, Update and Delete method for binary data 
+// ( they needn't a special method to handle it ).
+//
+// getBinary:: IO r -> ( ResourceEntry, NameResource, Query ) -> IO r'
+fluorine.IO.o.prototype.getBinary = function( url, name_res, query)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   var request = fluorine.IO.__binaryAjax(this.__proc, url, name_res, 'arraybuffer')
+                request.send(query)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
+// Get binary data from server, as Blob type.
+//
+// getBinaryBlob:: IO r -> ( ResourceEntry, NameResource, Query ) -> IO r'
+fluorine.IO.o.prototype.getBinaryBlob = function( url, name_res, query)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   var request = fluorine.IO.__binaryAjax(this.__proc, url, name_res, 'blob')
+                request.send(query)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
 // Update the data in server, from the value in this IO action. 
 // It will use PUT method. 
 // 
@@ -313,35 +336,16 @@ fluorine.IO.o.prototype.update = function( url, name_res ){
 
     this.__proc.next
     (   _.bind
-        (   function()
-            {   // Use these callbacks to construct our request,
-                // and send it out.
-                var success = _.bind
-                (   function(data, textStatus, jqXHR)
-                    {   // resume execute.
-                        this.__proc.run(data)
-
-                        return data
-                    }
-                ,   this
-                )
-
-                var error = _.bind
-                (   function(jqXHR, textStatus, errorThrown)
-                    {   var msg = "ERROR: IO error while updatedata: "+name_res
-                        console.error(msg, errorThrown)
-                        throw new Error(msg) 
-                    }
-                ,   this
-                )
-
+        (   function(data)
+            {   
                 // The callback will trigger the "endpoint" of previous process.
+                // The success callback will resume the execution after it get called.
                 jQuery.ajax({
                       type: 'PUT',
                       url: url,
-                      data: THIS.__a,   
-                      success: success,
-                      error: error
+                      data: data ,
+                      success: fluorine.IO.__genAjaxSuccess(this.__proc),
+                      error: fluorine.IO.__genAjaxError(name_res)
                 })
             }
         ,   this
@@ -354,25 +358,6 @@ fluorine.IO.o.prototype.update = function( url, name_res ){
     // Or if we can use Javascript 1.7+, maybe we can eliminate this nightmare by `yield` and 
     // other coroutine functions. But IE and some browsers do not support it.
     //
-    return this
-}
-
-//
-// Parse the data after receive data.
-//
-// The main purpose of this function is to demostrate how to construct and use a default action.
-//
-// parse:: IO r -> ( r -> r' ) -> IO r'
-fluorine.IO.o.prototype.parse = function( parser )
-{
-    this.__proc.next
-    (    _.bind
-         (  function(prev)
-            {   this.__proc.run(parser(prev))  }
-         ,  this
-         )
-    )
-
     return this
 }
 
@@ -475,6 +460,32 @@ fluorine.IO.o.prototype.toEnvironment = function(name)
     return this
 }
 
+//
+// Convert the RESULT of IO monad to UI monad.
+// This is NOT what the Haskell does, but it can work.
+//
+// User must given the UI DOM ( DOM buffer is also OK; MUST be a single DOM ), 
+// which the result of IO can append to.
+//
+// Note: This default method will directly append the data to the UI DOM.
+// User can use `compute` function to make a datum, fitting the requirement of UI monad.
+//
+// toEnvironment:: IO (Process a)-> DOM -> UI (Process a)
+fluorine.IO.o.prototype.toUI = function(ui_dom)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   ui_dom.appendChild(data) 
+                this.__proc.run(ui_dom)
+            }
+        ,   this
+        )
+    )
+
+    return this
+}
+
 // Prevent run before definition done.
 //
 // done:: IO r -> IO r
@@ -509,6 +520,65 @@ fluorine.IO.o.prototype.run = function()
     return this.__proc
 }
 
+// ----
+
+// The default, hidden functions in IO context.
+
+//
+// Default Ajax request function handling binary formats.
+//
+// __binaryAjax:: ( Process a, ResourceEntry, NameResource, DataType ) -> Request
+fluorine.IO.__binaryAjax= function( proc, url, name_res, type)
+{   var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = type;
+    request.addEventListener
+    (  'load'
+    ,  function() 
+       {   fluorine.IO.
+            __genAjaxSuccess(proc)(request.response, request.statusText, request) 
+       }
+    )
+    request.addEventListener
+    (   'error'
+    ,  function(event) 
+       {   fluorine.IO.
+            __genAjaxError(name_res)(request, request.statusText, event) 
+       }
+    )
+    return request
+}
+
+//
+// It will resume the process while the asynchronous step got done.
+//
+// __genAjaxSuccess:: Process a -> ( IO (Process a, TextStatus, XHR) -> IO () )
+fluorine.IO.__genAjaxSuccess = function(__proc)
+{
+    // Use these callback to construct our request,
+    // and send it out.
+    var success =
+    function(data, textStatus, jqXHR)
+    {   // resume execute.
+        __proc.run(data)
+    }
+    return success
+}
+
+//
+// Will throw error while ajax request got failed.
+//
+// __genAjaxError:: String -> IO ( XHR, TextStatus, Error ) -> IO ()
+fluorine.IO.__genAjaxError = function(name_res)
+{
+    var error = 
+    function(jqXHR, textStatus, errorThrown)
+    {   var msg = "ERROR: IO error in request: "+name_res
+        console.error(msg, errorThrown)
+        throw new Error(msg);
+    }
+    return error
+}
 
 // ----
 // ## UI
@@ -556,6 +626,50 @@ fluorine.UI.o.prototype.$ = function()
                 // Maps all jQuery related UI functions.
                 fluorine.UI.o.__mapMonadic();
 
+                this.__proc.run(dom_prev)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
+// Bind another monadic action. This function will pass the UI DOM to the action.
+//
+// bind:: UI a -> ( a -> UI a' ) -> UI a'
+fluorine.UI.o.prototype.bind = function( act )
+{
+    this.__proc.next
+    (   _.bind
+        (   function(dom_prev)
+            {   // When the execution reach this frame, 
+                // merge the original process with new process in the generated monad.
+                var monad_inner = act(dom_prev) 
+                var proc_inner  = monad_inner.__proc
+
+                proc_inner.next
+                (   _.bind
+                    (
+                        function(prev) 
+                        {   // context switching and executing the rest parts of base monad.
+                            this.__proc.run(prev)   
+                        }
+                    ,   this    // the base monad
+                    )
+                )
+
+                // Add all steps from inner to base monad.
+                // This will dynamic change the process while it's running.
+                this.__proc.preconcat(proc_inner)
+
+                // The callbacks of inner monad will still access to the old proc,
+                // not the merged one. It's terrible to change another monad's inner state,
+                // but I can't find other better ways to do solve this problem.
+                //
+                monad_inner.__proc = this.__proc
+
+                // Will run the merged process and set the result.
                 this.__proc.run(dom_prev)
             }
         ,   this
@@ -656,7 +770,88 @@ fluorine.UI.o.prototype.run = function()
     // This will run the whole process, 
     // and select the DOMs only when user run this monad.
     //
-    this.__proc.run(this.__select(this.__slc))
+    this.__proc.run(this.__$(this.__slc))
     return this.__proc
 }
 
+// ----
+
+// ## Signal
+//
+// Signal should be the most top monad in the stack.
+// 
+// Every monad process is a reaction chain of the notification.
+//
+// In this implementation, some concepts of signal/event ( in the Yampa DESL ) 
+// will be accepted. But it's still impossible to implements all feature in the real AFRP,
+// especially we can't really have a "main-loop" to do what the Yampa does.
+//
+// Thus our "signal" functions are basically discrease.
+// 
+// Monadic codes are already in the Yampa DESL. In the basic `switch` function,
+// which owns the type signature `switch:: SF in (out, Event t) -> (t -> SF in out) -> SF in out`,
+// the `Event t` and `t -> SF in out` are just the monad bind : `m a -> ( a -> m b ) -> m b`.
+//
+
+//
+// Begin to construct the whole process based on signals/events.
+//
+// Signal:: MessageName -> Signal   
+fluorine.Signal = function()
+{
+
+}
+
+/*
+    
+   Signal("message.google.test")...done()  -- 建立一條 path, bind 很多 operations
+   route(message, [path]) --> (message, [path])  -- 選出 ( route ) 所有 match 的 path
+   switch -- is NOT a SF, but a generator of SF. Whole program is constructed by it.
+   switch (route, paths, handler of event to update the collection of paths, the next SF after this (time) switch)
+
+   ----
+
+   dbSwitch, some notable points
+
+   1. the final updating function, will do register and unregister notification from the backend notifier.
+   2. the collection, should contains all notification and the callback ( event handelr ).
+   3. the final updating function, should generate the next running function ( as a part of recursion ).
+   4. and the switch, will run the 'current' version, and get the next running function, and run it 
+      ( recursion if the next one is the same with this one ).  
+
+   5. of course, the main switch loop still need be applied in the special `reactInit` function
+      so the main switch will not be runned directly, and maybe we can concat many switch to make larger program.
+
+      reactInit :: IO a -> (ReactHandle a b -> Bool -> b -> IO Bool) -> SF a b -> IO (ReactHandle a b)
+
+*/
+
+// ** Memo **
+//
+// Signal start with MessageName.
+// Should have `switch` functions to manage inner SF circuits, and plays a major role.
+// One signal chain correspond to one SF function ??
+// SF function: `SF in out`, means a circuit expose in and out. Inner components may be complicated.
+// 
+// It seems that the whole program is constructed by a single switch, 
+// and applied on route, paths and killOrSpawn (adjuster).
+//
+// `route` need input, paths and will generate a pair of dispatched path and the applied input.  
+//
+// So, a program in FRP is a complicated but also simple SF. We can still porting this on the Signal context.
+// Of course, we can't implement the `delay` part as description. 
+// 
+// And the final argument of the SF, should be another SF which receive the generated SF collection ( paths ).
+// If the final SF is the same with "current" SF, for instance feeding the `game` SF as the final argument of 
+// the SF, it becomes a main loop.
+//
+// The Yampa, only provide some primitive functions that can directly access signals.
+// This prevent bad signal functions make system go crazy, like data depends on future.
+//
+// The major difference between  Event and Signal, is that the signal value will be computed continously,
+// and the computing function shouldn't care about the time. But the function compute on an Event, 
+// will and should care about what event it handle. 
+//
+// Circuits in Yampa programs, can only use defined signal functions. User can't directly handle the signals.
+// But there will be some named signals in the program. All user can do is feeding them into SFs as they want.
+//

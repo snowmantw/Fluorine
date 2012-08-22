@@ -25,7 +25,7 @@ describe("IO", function(){
                 .compute(function(){ console.log('first in IO');return 0; })
                 .as('arm')
                 .get('/testAjax')
-                .parse(parser)
+                .compute(parser)
                 .as('boost')
                 .compute
                  (  function()
@@ -61,6 +61,71 @@ describe("IO", function(){
 
 
         })  // it
+
+        it("should be able to request binary data from server.", function(){
+            var isGIF = false
+            var m1 = 
+            IO().getBinary("/media/TestGIF.gif")
+                .compute
+                 (   function(data)
+                     {  var arr = new Uint8Array(data),
+                            i, len, length = arr.length, frames = 0;
+
+                        // make sure it's a gif (GIF8)
+                        if (arr[0] == 0x47 || arr[1] == 0x49 || 
+                            arr[2] == 0x46 || arr[3] == 0x38)
+                        {
+                            isGIF = true
+                        }
+                    
+                     }
+                 )
+                 .done()
+            .run()
+
+            waits(500)
+
+            runs(function(){
+               expect(isGIF).toEqual(true)
+            })
+        })  // it
+
+        it("should be able to bind to UI monad.", function(){
+
+            var act  = function(ui_dom)
+            {   return IO()
+                    .getBinaryBlob('/media/TestGIF.gif')
+                    .compute
+                    (   function(blob)
+                        {   if (!window.URL) { window.URL = {} }
+                            if (!window.URL.createObjectURL && window.webkitURL.createObjectURL) 
+                            {
+                                 window.URL.createObjectURL = window.webkitURL.createObjectURL
+                            }
+                    
+                            var url = URL.createObjectURL(blob)
+                            var dom_img = document.createElement('img')
+                            $(dom_img).attr('src', url)
+                            return dom_img
+                        }
+                    )
+                    .toUI( ui_dom.get(0) )
+                    .done()
+            }
+
+            var ui = fluorine.UI('body')
+                .$()
+                .bind(act)
+                .done()
+
+             ui.run()
+
+             waits(500)
+             runs(function(){
+                expect($('img').length).toEqual(1)
+             })
+
+        }) // it
         
         it("should be able to bind another monadic action.",function()
         {
@@ -105,7 +170,7 @@ describe("IO", function(){
                 .compute(function(){ return 0; })
                 .as('arm')
                 .get('/testAjax')
-                .parse(parser)
+                .compute(parser)
                 .compute
                  (  function(a)
                     {   console.log('parsed --> ', a)
@@ -183,7 +248,7 @@ describe("Environment",function(){
                      )
                     .get("/testAjax", "remote")
                     .get("/testAjax", "remote2")
-                    .parse(parser)
+                    .compute(parser)
                     .compute
                      (  function(num_remote)
                         {   // The inner IO monad will change the environment
@@ -241,7 +306,7 @@ describe("Environment",function(){
                 (   function()
                     {    return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (  function(num_remote)
                                 {   
@@ -258,7 +323,7 @@ describe("Environment",function(){
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (   function(num_remote)
                                 {
@@ -275,7 +340,7 @@ describe("Environment",function(){
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (   function(num_remote)
                                 {
