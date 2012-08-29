@@ -776,9 +776,9 @@ fluorine.UI.o.prototype.run = function()
 
 // ----
 
-// ## Signal
+// ## Event
 //
-// Signal should be the most top monad in the stack.
+// Event should be the most top monad in the stack.
 // 
 // Every monad process is a reaction chain of the notification.
 //
@@ -788,7 +788,7 @@ fluorine.UI.o.prototype.run = function()
 //
 // Thus our "signal" functions are basically discrease.
 // 
-// Monadic codes are already in the Yampa DESL. In the basic `switch` function,
+// Note: Monadic codes are already in the Yampa DESL. In the basic `switch` function,
 // which owns the type signature `switch:: SF in (out, Event t) -> (t -> SF in out) -> SF in out`,
 // the `Event t` and `t -> SF in out` are just the monad bind : `m a -> ( a -> m b ) -> m b`.
 //
@@ -796,15 +796,15 @@ fluorine.UI.o.prototype.run = function()
 //
 // Begin to construct the whole process based on signals/events.
 //
-// Signal:: MessageName -> Signal   
-fluorine.Signal = function()
+// Event:: MessageName -> Event 
+fluorine.Event = function()
 {
 
 }
 
 /*
     
-   Signal("message.google.test")...done()  -- 建立一條 path, bind 很多 operations
+   Event("message.google.test").bind( e_msg -> e ).out().done()  -- 建立一條 path, bind 很多 operations. 前面運算一定會自動被 out send message
    route(message, [path]) --> (message, [path])  -- 選出 ( route ) 所有 match 的 path
    switch -- is NOT a SF, but a generator of SF. Whole program is constructed by it.
    switch (route, paths, handler of event to update the collection of paths, the next SF after this (time) switch)
