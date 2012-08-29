@@ -13,9 +13,9 @@ describe("IO", function(){
 
     describe("#as", function(){
 
-        var parser = {}
-        parser.parse = function(str_num)
+        var parser = function(str_num)
         {
+            console.log('parsed --> ', Number(str_num))
             return Number(str_num);
         }
 
@@ -25,7 +25,7 @@ describe("IO", function(){
                 .compute(function(){ console.log('first in IO');return 0; })
                 .as('arm')
                 .get('/testAjax')
-                .parse(parser)
+                .compute(parser)
                 .as('boost')
                 .compute
                  (  function()
@@ -49,9 +49,147 @@ describe("IO", function(){
              waits(500)
 
              runs(function(){
-                expect(m.__a).toEqual(400);
+
+                // Extract the value in the process.
+                // It's valid only when all steps got executed.
+                //
+                // If the monad has any asynchronous steps,
+                // the proc will hold nothing unless user can extract it 
+                // after all asynchronous steps got executed.
+                expect(m.__proc.extract()).toEqual(400);
              });
 
+
+        })  // it
+
+        it("should be able to request binary data from server.", function(){
+            var isGIF = false
+            var m1 = 
+            IO().getBinary("/media/TestGIF.gif")
+                .compute
+                 (   function(data)
+                     {  var arr = new Uint8Array(data),
+                            i, len, length = arr.length, frames = 0;
+
+                        // make sure it's a gif (GIF8)
+                        if (arr[0] == 0x47 || arr[1] == 0x49 || 
+                            arr[2] == 0x46 || arr[3] == 0x38)
+                        {
+                            isGIF = true
+                        }
+                    
+                     }
+                 )
+                 .done()
+            .run()
+
+            waits(500)
+
+            runs(function(){
+               expect(isGIF).toEqual(true)
+            })
+        })  // it
+
+        it("should be able to bind to UI monad.", function(){
+
+            var act  = function(ui_dom)
+            {   return IO()
+                    .getBinaryBlob('/media/TestGIF.gif')
+                    .compute
+                    (   function(blob)
+                        {   if (!window.URL) { window.URL = {} }
+                            if (!window.URL.createObjectURL && window.webkitURL.createObjectURL) 
+                            {
+                                 window.URL.createObjectURL = window.webkitURL.createObjectURL
+                            }
+                    
+                            var url = URL.createObjectURL(blob)
+                            var dom_img = document.createElement('img')
+                            $(dom_img).attr('src', url)
+                            return dom_img
+                        }
+                    )
+                    .toUI( ui_dom.get(0) )
+                    .done()
+            }
+
+            var ui = fluorine.UI('body')
+                .$()
+                .bind(act)
+                .done()
+
+             ui.run()
+
+             waits(500)
+             runs(function(){
+                expect($('img').length).toEqual(1)
+             })
+
+        }) // it
+        
+        it("should be able to bind another monadic action.",function()
+        {
+            // split previous test to two monad
+            // Note: This action will be applied under the environment of binding monad.
+            var m2Act = function(a)
+            {   var THIS = this // the environment of previous monad.
+
+                return IO()
+                .compute
+                 (  function() // from previous, testAjax
+                    {   
+                        return a
+                    }
+                 )
+                .as('boost')
+                .compute
+                 (  function()
+                    {
+                        console.log('arm -->', THIS.arm)
+                        return THIS.arm 
+                    }  // id, from previous monad
+                 )
+                .as('arm')
+                .compute
+                 (  function()
+                    {   // 300
+                        return this.arm + this.boost + 200;
+                    }
+                 )
+                .as('chaar')
+                .compute
+                 (  function()
+                    {   // 0 + 100 + 300 
+                        return this.arm + this.boost + this.chaar
+                    }
+                 )
+                 .done()
+            }
+
+            var m1 = IO()
+                .compute(function(){ return 0; })
+                .as('arm')
+                .get('/testAjax')
+                .compute(parser)
+                .compute
+                 (  function(a)
+                    {   console.log('parsed --> ', a)
+                        return a
+                    }
+                 )
+                .bind(m2Act)
+                .done()
+
+
+             runs(function(){
+                 m1.run()
+             }) // runs
+
+             waits(500)
+
+             runs(function(){
+                expect(m1.__proc.extract()).toEqual(400);
+             });
 
         })  // it
     })
@@ -76,7 +214,7 @@ describe("Environment",function(){
                return {chaar: this.bar + 3} ;
             }
 
-            expect(environment.local(t1).done().run().__result.chaar).toEqual(5)
+            expect(environment.local(t1).done().run().extract()['chaar']).toEqual(5)
         })
     })
 
@@ -84,10 +222,7 @@ describe("Environment",function(){
 
         it("should allow computations that mixin IO in it", function(){
 
-            runs(function(){
-
-            var parser = {}
-            parser.parse = function(str_num)
+            var parser = function(str_num)
             {
                 return Number(str_num);
             }
@@ -113,7 +248,7 @@ describe("Environment",function(){
                      )
                     .get("/testAjax", "remote")
                     .get("/testAjax", "remote2")
-                    .parse(parser)
+                    .compute(parser)
                     .compute
                      (  function(num_remote)
                         {   // The inner IO monad will change the environment
@@ -144,22 +279,21 @@ describe("Environment",function(){
 
                 )
             .done()
-            .run();
 
-            })   // run
+            var m = environment.run()
             waits(500)
 
             runs( function(){
-                //expect(environment.__env_current["bar"]).toEqual(299);
-                expect(environment.__env_current["delta"]).toEqual(true);
+                m = m
+                expect(m.extract()["delta"]).toEqual(true);
             })
 
         })  // it
 
         it("should allow use multiple mixed Environment and IO computations.", function(){
 
-                var parser = {}
-                parser.parse = function(str_num)
+                var result = null
+                var parser = function(str_num)
                 {
                     return Number(str_num);
                 }
@@ -172,7 +306,7 @@ describe("Environment",function(){
                 (   function()
                     {    return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (  function(num_remote)
                                 {   
@@ -189,7 +323,7 @@ describe("Environment",function(){
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (   function(num_remote)
                                 {
@@ -206,7 +340,7 @@ describe("Environment",function(){
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .parse(parser)
+                            .compute(parser)
                             .compute
                             (   function(num_remote)
                                 {
@@ -236,7 +370,7 @@ describe("Environment",function(){
             waits(500)
 
             runs(function(){
-                expect(env_mixed.__env_current["fin"]).toEqual(400);
+                expect(env_mixed.__proc.extract()["fin"]).toEqual(400);
             })
                 
         }); // it

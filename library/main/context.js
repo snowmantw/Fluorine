@@ -8,24 +8,23 @@
 //
 // ## Environment
 
-// Return a prototype to bulding rest part of the action.
-// The second argument is `fluorine.Process`.
-// If there is no process argument, this action will spanw new one.
+// Return a prototype to bulding rest part of the monad.
 //
-fluorine.Environment = function(env_init, proc){
-    return new fluorine.Environment.o(env_init, proc);    
+fluorine.Environment = function(env_init){
+    return new fluorine.Environment.o(env_init)    
 }
 
-// DO NOT USE: It's for instancing the action.
-fluorine.Environment.o = function(env_init, proc){
+// DO NOT USE: It's for instancing the monad.
+fluorine.Environment.o = function(env_init){
 
     this.__done = false;
     this.__env_current = env_init || {};
-    this.__proc = proc || fluorine.Process()
 
-    // An object holds all registries of settings,
-    // or those come from computation.
-    this.__a = {};
+    // Note that the real result ( can be accessed by others )
+    // should be placed in the process, not those directly value in the monad.
+    //
+    // Because our monads are `Monad (Process a)`, not `Monad a`
+    this.__proc = fluorine.Process()
 
     return this;
 }
@@ -43,6 +42,8 @@ fluorine.Environment.o = function(env_init, proc){
 //
 // Note: Yes, this is not a real local scope. It may be implemented in near future.
 //
+// Note: The fn will receive nothing. All function in this monad should pass nothing to its next.
+//
 // local:: Environment r -> ( r -> r' ) -> Environment r'
 fluorine.Environment.o.prototype.local = function(fn){
 
@@ -52,11 +53,11 @@ fluorine.Environment.o.prototype.local = function(fn){
     this.__proc.next
     (    _.bind
          (  function()
-            {    this.__env_current = fn.call( this.__env_current );
-                 this.__proc.run();
+            {    // Execute the function under the environment.
+                 this.__env_current = fn.call( this.__env_current )
 
-                 // Will return as __proc.result.
-                 return this.__env_current; 
+                 // Pass it as result.
+                 this.__proc.run(this.__env_current)
             }
          ,  this
          )
@@ -82,8 +83,6 @@ fluorine.Environment.o.prototype.local = function(fn){
 //     -> Environment r1 (m r2)
 fluorine.Environment.o.prototype.bind = function(act){
 
-    var THIS = this;
-
     // The action will take environment in this as it's "this" 
     // ( what the environment monad should does ).
     //
@@ -92,41 +91,44 @@ fluorine.Environment.o.prototype.bind = function(act){
     // Note: this will not run the monad, 
     // but construct it.
     this.__proc.next
-    (   function()
-        {   var monad_inner = act.call(THIS.__env_current);
-            var proc_inner  = monad_inner.__proc;
+    (   _.bind
+        (   function()
+            {   // Generate the inner monad with it's processing queue,
+                // which contains all functions will be executed.
+                var monad_inner = act.call(this.__env_current)
+                var proc_inner  = monad_inner.__proc
 
-            // The last step of monad constructed by the act,
-            // should return a new base monad with no step as result.
-            //
-            // That monad will contain the converted result of 
-            // previous monadic action.
-            proc_inner.next
-            (   function()
-                {   
-                    // The previous `toEnvironment()` will leave 
-                    // an Environment monad as the result.
-                    THIS.__env_current = monad_inner.__a.__env_current;
-                    THIS.__a = THIS.__env_current;
-                    THIS.__proc.run();
-                    return THIS.__env_current; 
-                }
-            )
+                // Setup the final step of inner monad's processing queue.
+                // It will get the result of inner monad, and context switch to base monad again.
+                //
+                // Note the result of inner monad should be the new environment of 
+                // the next function in the base monad's processing queue.
+                proc_inner.next
+                (   _.bind
+                    (   // The previous step of inner monad should pass data required by the base monad. 
+                        function(env) 
+                        {   // context switching and executing the rest parts of base monad.
+                            this.__env_current = env
+                            this.__proc.run(env)   
+                        }
+                    ,   this    // the base monad
+                    )
+                )
 
-            // Add all steps from inner to base monad.
-            // This will dynamic change the process while it's running.
-            THIS.__proc.preconcat(proc_inner);
+                // Add all steps from inner to base monad.
+                // This will dynamic change the process while it's running.
+                this.__proc.preconcat(proc_inner)
 
-            // The callbacks of inner monad will still access to the old proc,
-            // not the merged one. It's terrible to change another monad's inner state,
-            // but I can't find other better ways to do solve this problem.
-            //
-            monad_inner.__proc = THIS.__proc;
-            THIS.__proc.run();
-            return THIS.__env_current;
-        }
+                // The callbacks of inner monad will still access to the old proc,
+                // not the merged one. It's terrible to change another monad's inner state,
+                // but I can't find other better ways to do solve this problem.
+                //
+                monad_inner.__proc = this.__proc    // The base moand's inner process ( merged )
+                this.__proc.run(this.__env_current)
+            }
+        ,   this
+        )
     );
-
 
     return this;
 }
@@ -142,7 +144,7 @@ fluorine.Environment.o.prototype.done = function(){
 }
 
 
-// Run this action. If this action is not done, throw an Error.
+// Run this monad . If this monad is not done, throw an Error.
 //
 // User should aware that the value is still hidden in the process,
 // and can't be instanced in the outside world.
@@ -150,19 +152,21 @@ fluorine.Environment.o.prototype.done = function(){
 // The only way to use the value is create another action to take the process,
 // and use inside it. But this will create a temporary variable, 
 // which contains the process and will be pased to the next action.
-// 
 //
 // run:: Environment (Process a) -> Process a
 fluorine.Environment.o.prototype.run = function(){
 
     if( ! this.__done )
     {
-        throw new Error("ERROR: The action is not done.");
+        throw new Error("ERROR: The action is not done.")
     }
 
     // This will run the whole process, 
-    // and it's only useful when this function is at the end of whole process.
-    this.__proc.run();
+    // if every functions in the process will call its next. 
+    //
+    // Even though the functions in our queue need no arguments,
+    // passing it let us follow the specification. 
+    this.__proc.run(this.__env_current)
     return this.__proc
 }
 
@@ -172,34 +176,36 @@ fluorine.Environment.o.prototype.run = function(){
 // ## IO
 
 // Return a prototype to bulding rest part of the action.
-// The only one argument is `fluorine.Process`.
-// If there is no process argument, this action will spanw new one.
 //
-fluorine.IO = function(proc){
-    return new fluorine.IO.o(proc);    
+// Each functions in this monad will receive result from the previous function,
+// no matter whether the previous one is aschronous or not. 
+//
+// Our `IO` monad mixed the environment monad,
+// so the result of previous function can be assigned 
+// as a named variable in the next function's environment.
+//
+fluorine.IO = function(){
+    return new fluorine.IO.o() 
 }
 
 // DO NOT USE: It's for instancing the action.
-fluorine.IO.o = function(proc){
+fluorine.IO.o = function(){
 
-    // an object holds all receive resources.
-    this.__a = null;
-    this.__env = {};
+    this.__done = false
+    this.__env = {}
+    this.__proc = fluorine.Process()
 
-    this.__done = false;
-    this.__proc = proc || fluorine.Process()
-
-    return this;
+    return this
 }
 
-// Close this action. 
+// Close this monad. 
 //
 // done:: IO r 
 fluorine.IO.o.prototype.done = function(){
 
-    this.__done = true;
+    this.__done = true
 
-    return this;
+    return this
 }
 
 //
@@ -220,16 +226,18 @@ fluorine.IO.o.prototype.done = function(){
 //
 // as:: IO r -> Name -> IO r
 fluorine.IO.o.prototype.as = function(name){
-    var THIS = this;
-    this.__proc.next
-    (   function()
-        {   THIS.__env[name] = THIS.__a;
-            THIS.__proc.run();
-            return THIS.__a;
-        }
-    );
 
-    return this;
+    this.__proc.next
+    (   _.bind
+        (   function(prev)
+            {   this.__env[name] = prev
+                this.__proc.run(prev)
+            }
+        ,   this
+        )
+    )
+
+    return this
 }
 
 //
@@ -238,55 +246,35 @@ fluorine.IO.o.prototype.as = function(name){
 //
 // Note: The current version only support remote URL.
 //
-// Will send the note `{ name: "resource.receive."+name_res, <name_res>: data}` 
-// after receive data.
+// Note: There are some similar functions can be used. 
 //
 // get:: IO r -> ( ResourceEntry, NameResource, Query ) -> IO r'
 fluorine.IO.o.prototype.get = function( url , name_res, query){
 
-    // This function involves async execution,
+    // This function involves asynchronous execution,
     // and will stop the main thread after the request be sent.
     //
-    // The rest part of this action will only be execute after the request 
+    // The rest part of this action will only be executed after the request 
     // have been responsed. This is implemented by register the rest part with
     // a resource note, so it will be invoked when the request return.
     //
-
-    var THIS = this;    // Closure. The `this` must be concerned when handling event.
     this.__proc.next
-    (
-        function()
-        {   
-            // Use these callback to construct our request,
-            // and send it out.
-            var success = function(data, textStatus, jqXHR){
-                var note = {name: "resource.receive."+name_res};
-                note[name_res] = data
-                fluorine.Notifier.trigger( note );
-                THIS.__a = data;
-
-                // resume execute.
-                THIS.__proc.run();
-
-                return data;
+    (   _.bind
+        (   function(data)
+            {   
+                // The callback will trigger the "endpoint" of previous process.
+                // Note: We will rewrite this with other IO protocols and decouple with jQuery.ajax .
+                // The success callback will resume the execution after it get called.
+                jQuery.ajax({
+                      url: url,
+                      data: query,   
+                      success: fluorine.IO.__genAjaxSuccess(this.__proc),
+                      error: fluorine.IO.__genAjaxError(name_res)
+                })
             }
-
-            var error = function(jqXHR, textStatus, errorThrown){
-                var msg = "ERROR: IO error in request: "+entry_res;
-                console.error(msg, errorThrown);
-                throw new Error(msg); 
-            }
-
-            // The callback will trigger the "endpoint" of previous process.
-            // Note: We will rewrite this with other IO protocols and decouple with jQuery.ajax .
-            jQuery.ajax({
-                  url: url,
-                  data: query,
-                  success: success,
-                  error: error
-            });
-        }
-    );  // this.__proc.next  #
+        ,   this
+        )
+    )  // this.__proc.next  #
 
     // This whole thing ( async process in Javascript which lacks conditional wait )
     // can only be finished in weird way.
@@ -294,9 +282,49 @@ fluorine.IO.o.prototype.get = function( url , name_res, query){
     // Or if we can use Javascript 1.7+, maybe we can eliminate this nightmare by `yield` and 
     // other coroutine functions. But IE and some other browsers do not support it.
     //
-    return this;
+    return this
 }
 
+//
+// Get binary data from server.
+//
+// There're no Create, Update and Delete method for binary data 
+// ( they needn't a special method to handle it ).
+//
+// getBinary:: IO r -> ( ResourceEntry, NameResource, Query ) -> IO r'
+fluorine.IO.o.prototype.getBinary = function( url, name_res, query)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   var request = fluorine.IO.__binaryAjax(this.__proc, url, name_res, 'arraybuffer')
+                request.send(query)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
+// Get binary data from server, as Blob type.
+//
+// getBinaryBlob:: IO r -> ( ResourceEntry, NameResource, Query ) -> IO r'
+fluorine.IO.o.prototype.getBinaryBlob = function( url, name_res, query)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   var request = fluorine.IO.__binaryAjax(this.__proc, url, name_res, 'blob')
+                request.send(query)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
 // Update the data in server, from the value in this IO action. 
 // It will use PUT method. 
 // 
@@ -306,41 +334,23 @@ fluorine.IO.o.prototype.get = function( url , name_res, query){
 // update:: IO r -> ( URL, NameResource ) -> IO r'
 fluorine.IO.o.prototype.update = function( url, name_res ){
 
-    var THIS = this;    // Closure. The `this` must be concerned when handling event.
     this.__proc.next
-    (
-        function()
-        {
-            // Use these callbacks to construct our request,
-            // and send it out.
-            var success = function(data, textStatus, jqXHR){
-                var note = {name: "resource.update_done."+name_res};
-                note[name_res] = data
-                fluorine.Notifier.trigger( note );
-                THIS.__a = data;
-
-                // resume execute.
-                THIS.__proc.run();
-
-                return data;
+    (   _.bind
+        (   function(data)
+            {   
+                // The callback will trigger the "endpoint" of previous process.
+                // The success callback will resume the execution after it get called.
+                jQuery.ajax({
+                      type: 'PUT',
+                      url: url,
+                      data: data ,
+                      success: fluorine.IO.__genAjaxSuccess(this.__proc),
+                      error: fluorine.IO.__genAjaxError(name_res)
+                })
             }
-
-            var error = function(jqXHR, textStatus, errorThrown){
-                var msg = "ERROR: IO error while updatedata: "+name_res;
-                console.error(msg, errorThrown);
-                throw new Error(msg); 
-            }
-
-            // The callback will trigger the "endpoint" of previous process.
-            jQuery.ajax({
-                  type: 'PUT',
-                  url: url,
-                  data: THIS.__a,   
-                  success: success,
-                  error: error
-            });
-        }
-    );  // this.__proc.next  #
+        ,   this
+        )
+    )  // this.__proc.next  #
 
     // This whole thing ( async process in Javascript which lacks conditional wait )
     // can only be finished in weird way.
@@ -348,31 +358,7 @@ fluorine.IO.o.prototype.update = function( url, name_res ){
     // Or if we can use Javascript 1.7+, maybe we can eliminate this nightmare by `yield` and 
     // other coroutine functions. But IE and some browsers do not support it.
     //
-    return this;
-}
-
-// Parse the data after receive if necessary.
-//
-// The main purpose of this function is to demostrate how to construct and use a default action.
-// Unlike the real binding function, default action will not receive another action, 
-// and we can see them as `.bind(.action)` to fit the concept of monad.
-//
-// The first argument `parser` must support `parse()` member function.
-//
-// parse:: IO r -> Parser -> IO r'
-fluorine.IO.o.prototype.parse = function( parser )
-{
-    var THIS = this;
-    this.__proc.next
-    (    function()
-         {
-             THIS.__a = parser.parse(THIS.__a);
-             THIS.__proc.run();
-             return THIS.__a;
-         }
-    )
-
-    return this;
+    return this
 }
 
 // Compute something accroding to data from IO.
@@ -385,18 +371,64 @@ fluorine.IO.o.prototype.parse = function( parser )
 // compute:: IO r -> ( a -> b ) -> IO r'
 fluorine.IO.o.prototype.compute = function( fn ){
 
-    var THIS = this;
-
     this.__proc.next
-    (    function()
-         {   
-             THIS.__a = fn.call(THIS.__env,THIS.__a);
-             THIS.__proc.run();
-             return THIS.__a;
-         }
+    (    _.bind
+         (  function(prev)
+            {    var result = fn.call(this.__env, prev)
+                 this.__proc.run(result)
+            }
+         ,  this
+         )
     )
 
-    return this;
+    return this
+}
+
+// Action version of `compute` .
+// Receive monadic action and compute it.
+//
+// Note: Our `IO` is mixed with some environment's features.
+// So the **monadic action** will be applied under the environment.
+//
+// bind:: IO a -> ( a -> IO a' ) -> IO a'
+fluorine.IO.o.prototype.bind = function( act )
+{
+    this.__proc.next
+    (   _.bind
+        (   function(prev)
+            {   // When the execution reach this frame, 
+                // merge the original process with new process in the generated monad.
+                var monad_inner = act.call(this.__env, prev) 
+                var proc_inner  = monad_inner.__proc
+
+                proc_inner.next
+                (   _.bind
+                    (
+                        function(prev) 
+                        {   // context switching and executing the rest parts of base monad.
+                            this.__proc.run(prev)   
+                        }
+                    ,   this    // the base monad
+                    )
+                )
+
+                // Add all steps from inner to base monad.
+                // This will dynamic change the process while it's running.
+                this.__proc.preconcat(proc_inner)
+
+                // The callbacks of inner monad will still access to the old proc,
+                // not the merged one. It's terrible to change another monad's inner state,
+                // but I can't find other better ways to do solve this problem.
+                //
+                monad_inner.__proc = this.__proc
+
+                // Will run the merged process and set the result.
+                this.__proc.run(prev)
+            }
+        ,   this
+        )
+    )
+    return this
 }
 
 // Convert the RESULT of IO monad to Environment monad.
@@ -407,31 +439,310 @@ fluorine.IO.o.prototype.compute = function( fn ){
 // toEnvironment:: IO (Process a)-> Name  -> Environment (Process a)
 fluorine.IO.o.prototype.toEnvironment = function(name)
 {
-    var THIS = this;
     this.__proc.next
-    (   function()
-        {
-            var env = {};
-            env[name] = THIS.__a;
-            THIS.__a = fluorine.Environment(env);
-            // We don't need to access the binding Environment;
-            // we can just make a new Environment monad with it's own proc.
-            //
-            // The wrapper monad will take this single step monad,
-            // and modify the step to take the value of it.
-            //
-            THIS.__proc.run();
-            return THIS.__a; 
-        }
+    (   _.bind
+        (   function(prev)
+            {   var env = {}
+                env[name] = prev
+
+                // We don't need to access the binding Environment;
+                // we can just make a new Environment monad with it's own proc.
+                //
+                // The wrapper monad will take this single step monad,
+                // and modify the step to take the value of it.
+                //
+                this.__proc.run(env)
+            }
+        ,   this
+        )
     )
 
-    return this;
+    return this
+}
+
+//
+// Convert the RESULT of IO monad to UI monad.
+// This is NOT what the Haskell does, but it can work.
+//
+// User must given the UI DOM ( DOM buffer is also OK; MUST be a single DOM ), 
+// which the result of IO can append to.
+//
+// Note: This default method will directly append the data to the UI DOM.
+// User can use `compute` function to make a datum, fitting the requirement of UI monad.
+//
+// toEnvironment:: IO (Process a)-> DOM -> UI (Process a)
+fluorine.IO.o.prototype.toUI = function(ui_dom)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(data)
+            {   ui_dom.appendChild(data) 
+                this.__proc.run(ui_dom)
+            }
+        ,   this
+        )
+    )
+
+    return this
 }
 
 // Prevent run before definition done.
 //
 // done:: IO r -> IO r
 fluorine.IO.o.prototype.done = function(){
+
+    this.__done = true;
+
+    return this;
+}
+
+// Run this monad . If this monad is not done, throw an Error.
+//
+// User should aware that the value is still hidden in the process,
+// and can't be instanced in the outside world.
+// 
+// The only way to use the value is create another action to take the process,
+// and use inside it. But this will create a temporary variable, 
+// which contains the process and will be pased to the next action.
+//
+// run:: IO (Process a) -> Process a
+fluorine.IO.o.prototype.run = function()
+{
+
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.");
+    }
+
+    // This will run the whole process, 
+    // and it's only useful when this function is at the end of whole process.
+    this.__proc.run();
+    return this.__proc
+}
+
+// ----
+
+// The default, hidden functions in IO context.
+
+//
+// Default Ajax request function handling binary formats.
+//
+// __binaryAjax:: ( Process a, ResourceEntry, NameResource, DataType ) -> Request
+fluorine.IO.__binaryAjax= function( proc, url, name_res, type)
+{   var request = new XMLHttpRequest();
+    request.open('GET', url, true);
+    request.responseType = type;
+    request.addEventListener
+    (  'load'
+    ,  function() 
+       {   fluorine.IO.
+            __genAjaxSuccess(proc)(request.response, request.statusText, request) 
+       }
+    )
+    request.addEventListener
+    (   'error'
+    ,  function(event) 
+       {   fluorine.IO.
+            __genAjaxError(name_res)(request, request.statusText, event) 
+       }
+    )
+    return request
+}
+
+//
+// It will resume the process while the asynchronous step got done.
+//
+// __genAjaxSuccess:: Process a -> ( IO (Process a, TextStatus, XHR) -> IO () )
+fluorine.IO.__genAjaxSuccess = function(__proc)
+{
+    // Use these callback to construct our request,
+    // and send it out.
+    var success =
+    function(data, textStatus, jqXHR)
+    {   // resume execute.
+        __proc.run(data)
+    }
+    return success
+}
+
+//
+// Will throw error while ajax request got failed.
+//
+// __genAjaxError:: String -> IO ( XHR, TextStatus, Error ) -> IO ()
+fluorine.IO.__genAjaxError = function(name_res)
+{
+    var error = 
+    function(jqXHR, textStatus, errorThrown)
+    {   var msg = "ERROR: IO error in request: "+name_res
+        console.error(msg, errorThrown)
+        throw new Error(msg);
+    }
+    return error
+}
+
+// ----
+// ## UI
+//
+// UI provide a wrapped, monadic jQuery.
+// All DOM unrelated codes had been banned in this restricted jQuery.
+//
+
+// Return a prototype to bulding rest part of the action.
+// The only one argument is `fluorine.Process`.
+// If there is no process argument, this action will spanw new one.
+//
+// Example:
+//
+//     UI('body').$().css('backgroundColor', 'red').done().run()
+//
+fluorine.UI = function(selector)
+{
+    return new fluorine.UI.o(selector)
+}
+
+// DO NOT USE: It's for instancing the action.
+fluorine.UI.o = function(slc)
+{
+    this.__$ = null   // Default selecting function ? 
+    this.__done = false
+    this.__proc = fluorine.Process()
+    this.__slc = slc
+
+    return this
+}
+
+//
+// Use the restricted jQuery to manipulate some DOMs.
+//
+// $:: UI s
+fluorine.UI.o.prototype.$ = function()
+{
+    this.__$ = jQuery   // Use jQuery as selecting functions.
+
+    this.__proc.next
+    (   _.bind
+        (   function(dom_prev)
+            {
+                // Maps all jQuery related UI functions.
+                fluorine.UI.o.__mapMonadic();
+
+                this.__proc.run(dom_prev)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
+// Bind another monadic action. This function will pass the UI DOM to the action.
+//
+// bind:: UI a -> ( a -> UI a' ) -> UI a'
+fluorine.UI.o.prototype.bind = function( act )
+{
+    this.__proc.next
+    (   _.bind
+        (   function(dom_prev)
+            {   // When the execution reach this frame, 
+                // merge the original process with new process in the generated monad.
+                var monad_inner = act(dom_prev) 
+                var proc_inner  = monad_inner.__proc
+
+                proc_inner.next
+                (   _.bind
+                    (
+                        function(prev) 
+                        {   // context switching and executing the rest parts of base monad.
+                            this.__proc.run(prev)   
+                        }
+                    ,   this    // the base monad
+                    )
+                )
+
+                // Add all steps from inner to base monad.
+                // This will dynamic change the process while it's running.
+                this.__proc.preconcat(proc_inner)
+
+                // The callbacks of inner monad will still access to the old proc,
+                // not the merged one. It's terrible to change another monad's inner state,
+                // but I can't find other better ways to do solve this problem.
+                //
+                monad_inner.__proc = this.__proc
+
+                // Will run the merged process and set the result.
+                this.__proc.run(dom_prev)
+            }
+        ,   this
+        )
+    )
+    return this
+}
+
+//
+// Functions listed here are the wrapped version of original jQuery functions.
+// That means only when this action got run, those functions will be executed.
+//
+
+// __delegate:: UI s -> NameFunction, args -> ()
+fluorine.UI.o.__delegate = function(args)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(dom_prev)
+            {   name = args.shift()
+
+                // jQuery functions will use selected DOM as 'this' .
+                // This kind of functions should be library-independend; 
+                // using jQuery as default is just for convenience.
+                //
+                var dom_result = jQuery(dom)[name].apply(dom_prev, args)
+                this.__proc.run(dom_result)
+            }
+        ,   this
+        )
+    )
+}
+
+
+// Mapping all function in jQuery to UI monad.
+fluorine.UI.o.__mapMonadic = function()
+{
+    // Some other functions that require provide pure values rather than 
+    // wrapped DOMs will be mapped by '__mapMonadic', because they're a part of unwraper functions.
+    //
+    // If a function provides both version, the version of pure value requiring will be usable 
+    // only when user chainning it as run. 
+    // 
+    var names = [ 'addClass', 'after', 'append'
+                , 'appendTo', 'attr' , 'before'
+                , 'css'
+                , 'clone', 'detach', 'empty'
+                , 'height', 'html', 'innerHeight'
+                , 'innerWidth', 'insertAfter', 'insertBefore'
+                , 'offset', 'outerHeight', 'outerWidth'
+                , 'prepend', 'prependTo', 'remove'
+                , 'removeAfter', 'removeClass', 'removeProp'
+                , 'replaceAll', 'replaceWith', 'scrollLeft'
+                , 'scrollTop', 'text', 'toggleClass'
+                , 'unwrap', 'val', 'wrap'
+                , 'wrap', 'wrapAll', 'wrapInner'
+                ]
+
+   _.each( names, function(name)
+   {    fluorine.UI.o.prototype[name] = 
+        function()
+        {   var args = _.map(arguments, function(a){return a})
+            args.unshift(name)
+            fluorine.UI.o.__delegate.call(this, args) 
+            return this;
+        }
+   })
+}
+
+// Prevent run before definition done.
+//
+// done:: UI s -> UI s
+fluorine.UI.o.prototype.done = function(){
 
     this.__done = true;
 
@@ -447,18 +758,100 @@ fluorine.IO.o.prototype.done = function(){
 // and use inside it. But this will create a temporary variable, 
 // which contains the process and will be pased to the next action.
 //
-// run:: IO (Process a) -> Process a
-fluorine.IO.o.prototype.run = function()
+// run:: UI (Process a) -> Process a
+fluorine.UI.o.prototype.run = function()
 {
 
     if( ! this.__done )
     {
-        throw new Error("ERROR: The action is not done.");
+        throw new Error("ERROR: The monad is not done.");
     }
 
     // This will run the whole process, 
-    // and it's only useful when this function is at the end of whole process.
-    this.__proc.run();
+    // and select the DOMs only when user run this monad.
+    //
+    this.__proc.run(this.__$(this.__slc))
     return this.__proc
 }
 
+// ----
+
+// ## Event
+//
+// Event should be the most top monad in the stack.
+// 
+// Every monad process is a reaction chain of the notification.
+//
+// In this implementation, some concepts of signal/event ( in the Yampa DESL ) 
+// will be accepted. But it's still impossible to implements all feature in the real AFRP,
+// especially we can't really have a "main-loop" to do what the Yampa does.
+//
+// Thus our "signal" functions are basically discrease.
+// 
+// Note: Monadic codes are already in the Yampa DESL. In the basic `switch` function,
+// which owns the type signature `switch:: SF in (out, Event t) -> (t -> SF in out) -> SF in out`,
+// the `Event t` and `t -> SF in out` are just the monad bind : `m a -> ( a -> m b ) -> m b`.
+//
+
+//
+// Begin to construct the whole process based on signals/events.
+//
+// Event:: MessageName -> Event 
+fluorine.Event = function()
+{
+
+}
+
+/*
+    
+   Event("message.google.test").bind( e_msg -> e ).out().done()  -- 建立一條 path, bind 很多 operations. 前面運算一定會自動被 out send message
+   route(message, [path]) --> (message, [path])  -- 選出 ( route ) 所有 match 的 path
+   switch -- is NOT a SF, but a generator of SF. Whole program is constructed by it.
+   switch (route, paths, handler of event to update the collection of paths, the next SF after this (time) switch)
+
+   ----
+
+   dbSwitch, some notable points
+
+   1. the final updating function, will do register and unregister notification from the backend notifier.
+   2. the collection, should contains all notification and the callback ( event handelr ).
+   3. the final updating function, should generate the next running function ( as a part of recursion ).
+   4. and the switch, will run the 'current' version, and get the next running function, and run it 
+      ( recursion if the next one is the same with this one ).  
+
+   5. of course, the main switch loop still need be applied in the special `reactInit` function
+      so the main switch will not be runned directly, and maybe we can concat many switch to make larger program.
+
+      reactInit :: IO a -> (ReactHandle a b -> Bool -> b -> IO Bool) -> SF a b -> IO (ReactHandle a b)
+
+*/
+
+// ** Memo **
+//
+// Signal start with MessageName.
+// Should have `switch` functions to manage inner SF circuits, and plays a major role.
+// One signal chain correspond to one SF function ??
+// SF function: `SF in out`, means a circuit expose in and out. Inner components may be complicated.
+// 
+// It seems that the whole program is constructed by a single switch, 
+// and applied on route, paths and killOrSpawn (adjuster).
+//
+// `route` need input, paths and will generate a pair of dispatched path and the applied input.  
+//
+// So, a program in FRP is a complicated but also simple SF. We can still porting this on the Signal context.
+// Of course, we can't implement the `delay` part as description. 
+// 
+// And the final argument of the SF, should be another SF which receive the generated SF collection ( paths ).
+// If the final SF is the same with "current" SF, for instance feeding the `game` SF as the final argument of 
+// the SF, it becomes a main loop.
+//
+// The Yampa, only provide some primitive functions that can directly access signals.
+// This prevent bad signal functions make system go crazy, like data depends on future.
+//
+// The major difference between  Event and Signal, is that the signal value will be computed continously,
+// and the computing function shouldn't care about the time. But the function compute on an Event, 
+// will and should care about what event it handle. 
+//
+// Circuits in Yampa programs, can only use defined signal functions. User can't directly handle the signals.
+// But there will be some named signals in the program. All user can do is feeding them into SFs as they want.
+//
