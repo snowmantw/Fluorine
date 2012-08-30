@@ -678,11 +678,40 @@ fluorine.UI.o.prototype.bind = function( act )
     return this
 }
 
+// 
+// Because Javascript event model allow directly bind event on DOMs,
+// instead of bind on global, we must make this function to forward those events.
+//
+// The forwarded event will bring original evnt data as data.
+// It will own type as: Event EventObject 
+//
+// forward:: UI DOM -> EventName -> EventName -> UI DOM
+fluorine.UI.o.prototype.forward = function(ename)
+{
+    return _.bind(   function(fname)
+        {   this.__proc.next
+            (   _.bind( function(dom)
+                {   jQuery(dom).bind(ename, function(event){ 
+                        var n = event; n.name = fname;
+                        fluorine.Notifier.trigger(n) 
+                    })
+        
+                    this.__proc.run()
+                }
+                , this
+                )   // bind
+            )   // next
+
+            return this  // curry
+        }   // #1.
+        ,  this    
+        )   //bind
+}
+
 //
 // Functions listed here are the wrapped version of original jQuery functions.
 // That means only when this action got run, those functions will be executed.
 //
-
 // __delegate:: UI s -> NameFunction, args -> ()
 fluorine.UI.o.__delegate = function(args)
 {
