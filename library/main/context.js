@@ -37,15 +37,15 @@ fluorine.Environment.o = function(env_init){
 // Example:
 //
 //      fluorine.Environment({a: 1, b: function(){console.log(2.5)}, c: "foo"})
-//              .local(function(){ this.a += 10; this.b(); console.log(this.c); return {'a':a}; })
+//              ._(function(){ this.a += 10; this.b(); console.log(this.c); return {'a':a}; })
 //      // The new environment r' will be `{'a':10+1}`
 //
 // Note: Yes, this is not a real local scope. It may be implemented in near future.
 //
 // Note: The fn will receive nothing. All function in this monad should pass nothing to its next.
 //
-// local:: Environment r -> ( r -> r' ) -> Environment r'
-fluorine.Environment.o.prototype.local = function(fn){
+// _:: Environment r -> ( r -> r' ) -> Environment r'
+fluorine.Environment.o.prototype._ = function(fn){
 
     // This function will let the fn execute with new environment,
     // and return with a new environment.
@@ -138,9 +138,20 @@ fluorine.Environment.o.prototype.bind = function(act){
 // done:: Environment r 
 fluorine.Environment.o.prototype.done = function(){
 
-    this.__done = true;
+    this.__done = true
 
-    return this;
+    // The last step of this process should be restore it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+          {
+             this.__proc.refresh()
+          }
+        , this 
+        )
+    )
+
+    return this
 }
 
 
@@ -205,12 +216,23 @@ fluorine.IO.o.prototype.done = function(){
 
     this.__done = true
 
+    // The last step of this process should be restore it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+          {
+             this.__proc.refresh()
+          }
+        , this 
+        )
+    )
+
     return this
 }
 
 //
 // Naming the result value of this IO.
-// User can use this named value in functions required by `compute` and `bind`
+// User can use this named value in functions required by `_` and `bind`
 //
 // This concept is "stealed" from the Environment monad.
 // It's for conveniences.
@@ -221,7 +243,7 @@ fluorine.IO.o.prototype.done = function(){
 //          .as("foo")
 //          .get("/testBar")
 //          .as("bar")
-//          .compute( function(){ return this.foo + this.bar }  )
+//          ._( function(){ return this.foo + this.bar }  )
 //          .done()
 //
 // as:: IO r -> Name -> IO r
@@ -361,16 +383,16 @@ fluorine.IO.o.prototype.update = function( url, name_res ){
     return this
 }
 
-// Compute something accroding to data from IO.
+// **Purely** compute something accroding to data from IO.
 //
 // The computation `fn` will get previous result as its first argument.
 //
 // Note: This is almost the `>>=` operator in Haskell,
 // but we modify the type signature for convenience.
 //
-// compute:: IO r -> ( a -> b ) -> IO r'
-fluorine.IO.o.prototype.compute = function( fn ){
-
+// _:: IO r -> ( a -> b ) -> IO r'
+fluorine.IO.o.prototype._ = function( fn )
+{
     this.__proc.next
     (    _.bind
          (  function(prev)
@@ -384,7 +406,7 @@ fluorine.IO.o.prototype.compute = function( fn ){
     return this
 }
 
-// Action version of `compute` .
+// Action version of `_` .
 // Receive monadic action and compute it.
 //
 // Note: Our `IO` is mixed with some environment's features.
@@ -468,7 +490,7 @@ fluorine.IO.o.prototype.toEnvironment = function(name)
 // which the result of IO can append to.
 //
 // Note: This default method will directly append the data to the UI DOM.
-// User can use `compute` function to make a datum, fitting the requirement of UI monad.
+// User can use `_` function to make a datum, fitting the requirement of UI monad.
 //
 // toEnvironment:: IO (Process a)-> DOM -> UI (Process a)
 fluorine.IO.o.prototype.toUI = function(ui_dom)
@@ -492,6 +514,17 @@ fluorine.IO.o.prototype.toUI = function(ui_dom)
 fluorine.IO.o.prototype.done = function(){
 
     this.__done = true;
+
+    // The last step of this process should be restore it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+          {
+             this.__proc.refresh()
+          }
+        , this 
+        )
+    )
 
     return this;
 }
@@ -685,7 +718,7 @@ fluorine.UI.o.prototype.bind = function( act )
 // The forwarded event will bring original evnt data as data.
 // It will own type as: Event EventObject 
 //
-// forward:: UI DOM -> EventName -> EventName -> UI DOM
+// forward:: UI DOM -> EventName -> MessageName -> UI DOM
 fluorine.UI.o.prototype.forward = function(ename)
 {
     return _.bind(   function(fname)
@@ -755,6 +788,7 @@ fluorine.UI.o.__mapMonadic = function()
                 , 'scrollTop', 'text', 'toggleClass'
                 , 'unwrap', 'val', 'wrap'
                 , 'wrap', 'wrapAll', 'wrapInner'
+                , 'filter', 'not', 'eq', 'has'
                 ]
 
    _.each( names, function(name)
@@ -774,6 +808,17 @@ fluorine.UI.o.__mapMonadic = function()
 fluorine.UI.o.prototype.done = function(){
 
     this.__done = true;
+
+    // The last step of this process should be restore it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+          {
+             this.__proc.refresh()
+          }
+        , this 
+        )
+    )
 
     return this;
 }
@@ -821,14 +866,164 @@ fluorine.UI.o.prototype.run = function()
 // which owns the type signature `switch:: SF in (out, Event t) -> (t -> SF in out) -> SF in out`,
 // the `Event t` and `t -> SF in out` are just the monad bind : `m a -> ( a -> m b ) -> m b`.
 //
+// Note: We embedded an "real" Environment context in this context.
+// Any "passed in" notification will be the context of the computation.
+// EX: 
+//      {'name': "ename", 'foo':3} passed in; 
+//      the computation in this context can receive those vars as function arguments.
+//
 
 //
 // Begin to construct the whole process based on signals/events.
 //
 // Event:: MessageName -> Event 
-fluorine.Event = function()
+fluorine.Event = function(iname)
 {
+    return new fluorine.Event.o(iname)
+}
 
+fluorine.Event.o = function(iname)
+{
+    this.__done = false
+    this.__iname = iname
+
+    // Note that the real result ( can be accessed by others )
+    // should be placed in the process, not those directly value in the monad.
+    //
+    // Because our monads are `Monad (Process a)`, not `Monad a`
+    this.__proc = fluorine.Process()
+
+    // When running,
+    // convert note as next function's arguments.
+    this.__proc.next
+    (   _.bind
+        (   function(note)
+            {
+                this.__proc.run.apply(this.__proc,_.values(note))
+            }
+        ,   this
+        )
+    )
+
+    return this
+}
+
+// **Purely** compute something accroding to data withing the event.
+//
+// The computation `fn` will get previous result as its first argument.
+//
+// Note: If the pure function return a object like {foo: 1, bar: "abc"},
+// the next context function will receive them as named arguments.
+// EX:
+//      ...
+//      ._(function(){ return {foo: 1, bar: "abc" }  })
+//      ._(function(foo, bar){ return foo+bar})
+//      ...
+//
+// Note: This is almost the `>>=` operator in Haskell,
+// but we modify the type signature for convenience.
+//
+// _:: Event a -> ( a -> b ) -> Event b
+fluorine.Event.o.prototype._ = function( fn )
+{
+    this.__proc.next
+    (    _.bind
+         (  function()
+            {    // Note the pure fn will compute under empty environment,
+                 // and can only receive arguments as data.
+                 var result = fn.apply({}, arguments)
+                 
+                 // If result is NOT a object, the _.values will convert it as empty array.
+                 // And if the result is an empty array, the _.values still return an empty array.
+                 if( _.isObject(result) )
+                 {
+                     result = _.values(result)
+                 }
+                 
+                 if( ! _.isArray(result) )
+                 {
+                     result = [result]
+                 }
+
+                 this.__proc.run.apply(this.__proc, result)
+            }
+         ,  this
+         )
+    )
+
+    return this
+}
+
+// ( EventData b ) => Event a -> MessageName -> (a -> b) -> Event b
+fluorine.Event.o.prototype.out = function(name)
+{
+    return _.bind
+    (   function(convert)
+        {   this.__proc.next
+            (   _.bind
+                (   function()  // convert the tuple, passed by argument, to a note.
+                    {   
+                        var note_body = convert.apply({}, arguments)
+                        note_body.name = name
+                        this.__proc.run(note_body)
+                    }
+                ,   this 
+                )
+            )
+            return this
+        }   // #1.
+    ,   this
+    )
+}
+
+// Close this monad. 
+//
+// done:: Event r 
+fluorine.Event.o.prototype.done = function(){
+
+    this.__done = true
+
+    // The last step of this process should be restore it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+          {
+             this.__proc.refresh()
+          }
+        , this 
+        )
+    )
+
+    return this
+}
+
+fluorine.Event.o.prototype.run = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.");
+    }
+
+    // At final stage, send the message out. 
+    this.__proc.next
+    (   function(note)
+        {
+            fluorine.Notifier.trigger(note)
+        }
+    )
+
+    // "Run" this process when the event comes.
+    fluorine.Notifier.on
+    (   this.__iname
+    ,   _.bind
+        (   function(note)
+            {   
+                this.__proc.run(note)
+            }
+        ,   this
+        )
+    )
+    return this.__proc
 }
 
 /*

@@ -18,8 +18,9 @@ fluorine.Process = function()
 // DO NOT USE. IT'S ONLY FOR INSTANCE.
 fluorine.Process.o = function()
 {
-    this.__result = null;
-    this.__queue = [];
+    this.__result = null
+    this.__queue = []
+    this.__recycle_queue = []
 }
 
 // Set the next step.
@@ -81,10 +82,23 @@ fluorine.Process.o.prototype.run = function(result)
 
     if( 0 == this.__queue.length )
     {
+        this.__queue = this.__recycle_queue
+
         return ;
     }
 
-    this.__queue.shift().apply({}, arguments);
+    var __fn = this.__queue.shift()
+    __fn.apply({}, arguments)
+    this.__recycle_queue.unshift(__fn)
+}
+
+// Refresh the process. Make it runnable again.
+//
+// refresh:: Process fs
+fluorine.Process.o.prototype.refresh = function()
+{
+    this.__queue = this.__recycle_queue
+    this.__recycle_queue = []
 }
 
 // Extract the last result of called functions.

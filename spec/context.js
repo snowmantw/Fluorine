@@ -22,19 +22,19 @@ describe("IO", function(){
         it("should name results of previous computation as user needed", function(){
 
             var m = IO()
-                .compute(function(){ console.log('first in IO');return 0; })
+                ._(function(){ console.log('first in IO');return 0; })
                 .as('arm')
                 .get('/testAjax')
-                .compute(parser)
+                ._(parser)
                 .as('boost')
-                .compute
+                ._
                  (  function()
                     {   // 300
                         return this.arm + this.boost + 200;
                     }
                  )
                 .as('chaar')
-                .compute
+                ._
                  (  function()
                     {   // 0 + 100 + 300 
                         return this.arm + this.boost + this.chaar
@@ -66,7 +66,7 @@ describe("IO", function(){
             var isGIF = false
             var m1 = 
             IO().getBinary("/media/TestGIF.gif")
-                .compute
+                ._
                  (   function(data)
                      {  var arr = new Uint8Array(data),
                             i, len, length = arr.length, frames = 0;
@@ -95,7 +95,7 @@ describe("IO", function(){
             var act  = function(ui_dom)
             {   return IO()
                     .getBinaryBlob('/media/TestGIF.gif')
-                    .compute
+                    ._
                     (   function(blob)
                         {   if (!window.URL) { window.URL = {} }
                             if (!window.URL.createObjectURL && window.webkitURL.createObjectURL) 
@@ -135,14 +135,14 @@ describe("IO", function(){
             {   var THIS = this // the environment of previous monad.
 
                 return IO()
-                .compute
+                ._
                  (  function() // from previous, testAjax
                     {   
                         return a
                     }
                  )
                 .as('boost')
-                .compute
+                ._
                  (  function()
                     {
                         console.log('arm -->', THIS.arm)
@@ -150,14 +150,14 @@ describe("IO", function(){
                     }  // id, from previous monad
                  )
                 .as('arm')
-                .compute
+                ._
                  (  function()
                     {   // 300
                         return this.arm + this.boost + 200;
                     }
                  )
                 .as('chaar')
-                .compute
+                ._
                  (  function()
                     {   // 0 + 100 + 300 
                         return this.arm + this.boost + this.chaar
@@ -167,11 +167,11 @@ describe("IO", function(){
             }
 
             var m1 = IO()
-                .compute(function(){ return 0; })
+                ._(function(){ return 0; })
                 .as('arm')
                 .get('/testAjax')
-                .compute(parser)
-                .compute
+                ._(parser)
+                ._
                  (  function(a)
                     {   console.log('parsed --> ', a)
                         return a
@@ -214,7 +214,7 @@ describe("Environment",function(){
                return {chaar: this.bar + 3} ;
             }
 
-            expect(environment.local(t1).done().run().extract()['chaar']).toEqual(5)
+            expect(environment._(t1).done().run().extract()['chaar']).toEqual(5)
         })
     })
 
@@ -233,14 +233,14 @@ describe("Environment",function(){
                 var bar = this.bar; // The "this" will be the environment.
                 var act = 
                 IO()    
-                    .compute
+                    ._
                      (  function()
                         {
                             //console.log('bar:', bar);   // Not standard usage.
                             console.log('first compute');
                         }
                      )
-                    .compute
+                    ._
                      (  function()
                         {
                             console.log('second compute');
@@ -248,8 +248,8 @@ describe("Environment",function(){
                      )
                     .get("/testAjax", "remote")
                     .get("/testAjax", "remote2")
-                    .compute(parser)
-                    .compute
+                    ._(parser)
+                    ._
                      (  function(num_remote)
                         {   // The inner IO monad will change the environment
                             // and embedded the result to base environment. 
@@ -265,12 +265,12 @@ describe("Environment",function(){
             }
 
             environment
-                .local
+                ._
                  (  function()
                     {   return {"bar":99} }
                  )
                 .bind( t1 )
-                .local
+                ._
                 ( function()
                   { 
                       console.log(this.chaar);
@@ -300,14 +300,14 @@ describe("Environment",function(){
 
                 var env_mixed = 
                 Environment({"arm": 0, "boost": 100})
-                .local( function(){ console.log(this.arm); return this} )
-                .local( function(){ console.log(this.boost); return this} )
+                ._( function(){ console.log(this.arm); return this} )
+                ._( function(){ console.log(this.boost); return this} )
                 .bind
                 (   function()
                     {    return IO()
                             .get("/testAjax")
-                            .compute(parser)
-                            .compute
+                            ._(parser)
+                            ._
                             (  function(num_remote)
                                 {   
                                     // chaar = 200;
@@ -318,13 +318,13 @@ describe("Environment",function(){
                         .done()
                      }
                 )
-                .local( function(){ console.log(this.chaar); return this } )
+                ._( function(){ console.log(this.chaar); return this } )
                 .bind
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .compute(parser)
-                            .compute
+                            ._(parser)
+                            ._
                             (   function(num_remote)
                                 {
                                     // dijk = 300
@@ -335,13 +335,13 @@ describe("Environment",function(){
                         .done()
                     }
                 )
-                .local( function(){ console.log(this.dijk); return this} )
+                ._( function(){ console.log(this.dijk); return this} )
                 .bind
                 (   function()
                     {   return IO()
                             .get("/testAjax")
-                            .compute(parser)
-                            .compute
+                            ._(parser)
+                            ._
                             (   function(num_remote)
                                 {
                                     // erl = 400
@@ -352,8 +352,8 @@ describe("Environment",function(){
                         .done()
                     }
                 )
-                .local( function(){ console.log(this.erl); return this;} )
-                .local
+                ._( function(){ console.log(this.erl); return this;} )
+                ._
                 (   function()
                     {   
                         console.log(this);
