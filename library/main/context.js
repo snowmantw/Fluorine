@@ -96,6 +96,7 @@ fluorine.Environment.o.prototype.bind = function(act){
             {   // Generate the inner monad with it's processing queue,
                 // which contains all functions will be executed.
                 var monad_inner = act.call(this.__env_current)
+                monad_inner.unclose()
                 var proc_inner  = monad_inner.__proc
 
                 // Setup the final step of inner monad's processing queue.
@@ -154,6 +155,23 @@ fluorine.Environment.o.prototype.done = function(){
     return this
 }
 
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: Environment s -> Environment s
+fluorine.Environment.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way. 
+    // But I don't want to provide a public interface of process queue.
+    this.__proc.__queue.pop()
+
+    return this
+}
 
 // Run this monad . If this monad is not done, throw an Error.
 //
@@ -226,6 +244,23 @@ fluorine.IO.o.prototype.done = function(){
         , this 
         )
     )
+
+    return this
+}
+
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: IO s -> IO s
+fluorine.IO.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way.
+    this.__proc.__queue.pop()
 
     return this
 }
@@ -421,6 +456,7 @@ fluorine.IO.o.prototype.bind = function( act )
             {   // When the execution reach this frame, 
                 // merge the original process with new process in the generated monad.
                 var monad_inner = act.call(this.__env, prev) 
+                monad_inner.unclose()
                 var proc_inner  = monad_inner.__proc
 
                 proc_inner.next
@@ -518,7 +554,7 @@ fluorine.IO.o.prototype.done = function(){
     // The last step of this process should be restore it.
     this.__proc.next
     (   _.bind
-        ( function()
+        ( function(result)
           {
              this.__proc.refresh()
           }
@@ -679,6 +715,7 @@ fluorine.UI.o.prototype.bind = function( act )
             {   // When the execution reach this frame, 
                 // merge the original process with new process in the generated monad.
                 var monad_inner = act(dom_prev) 
+                monad_inner.unclose()
                 var proc_inner  = monad_inner.__proc
 
                 proc_inner.next
@@ -821,6 +858,23 @@ fluorine.UI.o.prototype.done = function(){
     )
 
     return this;
+}
+
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: UI s -> UI s
+fluorine.UI.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way.
+    this.__proc.__queue.pop()
+
+    return this
 }
 
 // Run this action. If this action is not done, throw an Error.
@@ -993,6 +1047,23 @@ fluorine.Event.o.prototype.done = function(){
         , this 
         )
     )
+
+    return this
+}
+
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: Event s -> Event s
+fluorine.Event.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way.
+    this.__proc.__queue.pop()
 
     return this
 }
