@@ -1094,6 +1094,9 @@ fluorine.Event.o.prototype.done = function(){
                      // And we still need to set a final step to close the monad.
                      // It's also for the unclose action, which will remove the final step in process.
                      this.__proc.next(function(){})
+
+                     // We must execute the next step; it is just added by ourself.
+                     this.__proc.run(note)
                 }
                 fluorine.Notifier.trigger(note)
 
@@ -1118,6 +1121,9 @@ fluorine.Event.o.prototype.done = function(){
                         , this 
                         )
                     )
+
+                     // We must execute the next step; it is just added by ourself.
+                    this.__proc.run(note)
                 }
             }
         ,   this
@@ -1157,6 +1163,7 @@ fluorine.Event.o.prototype.run = function()
     ,   _.bind
         (   function(note)
             {   
+                console.log('handle note: ', this.__iname)
                 this.__proc.run(note)
             }
         ,   this
