@@ -26,6 +26,9 @@ fluorine.Environment.o = function(env_init){
     // Because our monads are `Monad (Process a)`, not `Monad a`
     this.__proc = fluorine.Process()
 
+    // For refreshing this monad after run it.
+    this.__init_arguments = arguments
+
     return this;
 }
 
@@ -139,14 +142,24 @@ fluorine.Environment.o.prototype.bind = function(act){
 // done:: Environment r 
 fluorine.Environment.o.prototype.done = function(){
 
+    if( this.__done ) { return }
     this.__done = true
 
-    // The last step of this process should be restore it.
+    // The last step of this process should be restoring it.
     this.__proc.next
     (   _.bind
         ( function()
           {
              this.__proc.refresh()
+             var proc_new = this.__proc
+             this.constructor.apply(this, this.__init_arguments)
+
+             // Previous statement will also reset the process,
+             // and we still need the old one to keep the result.
+             this.__proc = proc_new
+
+             // The 'done' flag will also be reset
+             this.__done = true
           }
         , this 
         )
@@ -224,43 +237,8 @@ fluorine.IO.o = function(){
     this.__env = {}
     this.__proc = fluorine.Process()
 
-    return this
-}
-
-// Close this monad. 
-//
-// done:: IO r 
-fluorine.IO.o.prototype.done = function(){
-
-    this.__done = true
-
-    // The last step of this process should be restore it.
-    this.__proc.next
-    (   _.bind
-        ( function()
-          {
-             this.__proc.refresh()
-          }
-        , this 
-        )
-    )
-
-    return this
-}
-
-// "Undo" the last step ( done() ) of this monad.
-// The monad MUST be closed.
-//
-// unclose:: IO s -> IO s
-fluorine.IO.o.prototype.unclose = function()
-{
-    if( ! this.__done )
-    {
-        throw new Error("ERROR: The monad is not done.")
-    }
-
-    // FIXME: Dirty way.
-    this.__proc.__queue.pop()
+    // For refreshing this monad after run it.
+    this.__init_arguments = arguments
 
     return this
 }
@@ -549,14 +527,24 @@ fluorine.IO.o.prototype.toUI = function(ui_dom)
 // done:: IO r -> IO r
 fluorine.IO.o.prototype.done = function(){
 
+    if( this.__done ) { return }
     this.__done = true;
 
-    // The last step of this process should be restore it.
+    // The last step of this process should be restoring it.
     this.__proc.next
     (   _.bind
         ( function(result)
           {
              this.__proc.refresh()
+             var proc_new = this.__proc
+             this.constructor.apply(this, this.__init_arguments)
+
+             // Previous statement will also reset the process,
+             // and we still need the old one to keep the result.
+             this.__proc = proc_new
+
+             // The 'done' flag will also be reset
+             this.__done = true
           }
         , this 
         )
@@ -564,6 +552,24 @@ fluorine.IO.o.prototype.done = function(){
 
     return this;
 }
+
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: IO s -> IO s
+fluorine.IO.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way.
+    this.__proc.__queue.pop()
+
+    return this
+}
+
 
 // Run this monad . If this monad is not done, throw an Error.
 //
@@ -677,25 +683,29 @@ fluorine.UI.o = function(slc)
     this.__proc = fluorine.Process()
     this.__slc = slc
 
+    // For refreshing this monad after run it.
+    this.__init_arguments = arguments
+
     return this
 }
 
 //
 // Use the restricted jQuery to manipulate some DOMs.
+// And select elements.
 //
-// $:: UI s
+// $:: UI selector -> UI [ DOM ]
 fluorine.UI.o.prototype.$ = function()
 {
     this.__$ = jQuery   // Use jQuery as selecting functions.
 
+    // Maps all jQuery related UI functions, only in this monad.
+    fluorine.UI.o.__mapMonadic(this)
+
     this.__proc.next
     (   _.bind
-        (   function(dom_prev)
+        (   function(slc)
             {
-                // Maps all jQuery related UI functions.
-                fluorine.UI.o.__mapMonadic();
-
-                this.__proc.run(dom_prev)
+                this.__proc.run(this.__$(slc))
             }
         ,   this
         )
@@ -780,21 +790,26 @@ fluorine.UI.o.prototype.forward = function(ename)
 
 //
 // Functions listed here are the wrapped version of original jQuery functions.
-// That means only when this action got run, those functions will be executed.
 //
-// __delegate:: UI s -> NameFunction, args -> ()
+// __delegate:: UI s -> NameFunction, args (with 'name' property) -> ()
 fluorine.UI.o.__delegate = function(args)
 {
     this.__proc.next
     (   _.bind
         (   function(dom_prev)
-            {   name = args.shift()
+            {   // The original way is unshift the name in before this runtime step,
+                // and shift the name out here.
+                //
+                // But if we modify such definition-time variable,
+                // we can't recovery it after refresh the process of this monad.
+                name = args.name    
+
 
                 // jQuery functions will use selected DOM as 'this' .
                 // This kind of functions should be library-independend; 
                 // using jQuery as default is just for convenience.
                 //
-                var dom_result = jQuery(dom)[name].apply(dom_prev, args)
+                var dom_result = jQuery(dom_prev)[name].apply(dom_prev, args)
                 this.__proc.run(dom_result)
             }
         ,   this
@@ -804,7 +819,7 @@ fluorine.UI.o.__delegate = function(args)
 
 
 // Mapping all function in jQuery to UI monad.
-fluorine.UI.o.__mapMonadic = function()
+fluorine.UI.o.__mapMonadic = function(uimonad)
 {
     // Some other functions that require provide pure values rather than 
     // wrapped DOMs will be mapped by '__mapMonadic', because they're a part of unwraper functions.
@@ -829,10 +844,10 @@ fluorine.UI.o.__mapMonadic = function()
                 ]
 
    _.each( names, function(name)
-   {    fluorine.UI.o.prototype[name] = 
+   {    uimonad[name] = 
         function()
         {   var args = _.map(arguments, function(a){return a})
-            args.unshift(name)
+            args.name = name 
             fluorine.UI.o.__delegate.call(this, args) 
             return this;
         }
@@ -844,14 +859,28 @@ fluorine.UI.o.__mapMonadic = function()
 // done:: UI s -> UI s
 fluorine.UI.o.prototype.done = function(){
 
+    if( this.__done ) { return }
     this.__done = true;
 
-    // The last step of this process should be restore it.
+    // The last step of this process should be restoring it.
     this.__proc.next
     (   _.bind
         ( function()
           {
              this.__proc.refresh()
+             var proc_new = this.__proc
+             var $old = this.__$
+             this.constructor.apply(this, this.__init_arguments)
+
+             // __$ will become null, and the steps in restored process can't use it.
+             this.__$ = $old
+
+             // Set the selector. Previous statement will also reset the process,
+             // and we still need the old one to keep the result.
+             this.__proc = proc_new
+
+             // The 'done' flag will also be reset
+             this.__done = true
           }
         , this 
         )
@@ -898,7 +927,7 @@ fluorine.UI.o.prototype.run = function()
     // This will run the whole process, 
     // and select the DOMs only when user run this monad.
     //
-    this.__proc.run(this.__$(this.__slc))
+    this.__proc.run(this.__slc)
     return this.__proc
 }
 
@@ -946,6 +975,9 @@ fluorine.Event.o = function(iname)
     //
     // Because our monads are `Monad (Process a)`, not `Monad a`
     this.__proc = fluorine.Process()
+
+    // For refreshing this monad after run it.
+    this.__init_arguments = arguments
 
     // When running,
     // convert note as next function's arguments.
@@ -1035,16 +1067,60 @@ fluorine.Event.o.prototype.out = function(name)
 // done:: Event r 
 fluorine.Event.o.prototype.done = function(){
 
+    if( this.__done ) { return }
     this.__done = true
 
-    // The last step of this process should be restore it.
+
+    // 1. At final stage, send the message out. 
     this.__proc.next
     (   _.bind
-        ( function()
-          {
-             this.__proc.refresh()
-          }
-        , this 
+        (   function(note)
+            {
+                // Special case: if the final note had been bound with this monad itself,
+                // we must restore the process before trigger the note.
+                if( note.name == this.__iname)
+                {
+                     this.__proc.refresh()
+                     var proc_new = this.__proc
+                     this.constructor.apply(this, this.__init_arguments)
+
+                     // Previous statement will also reset the process,
+                     // and we still need the old one to keep the result.
+                     this.__proc = proc_new
+            
+                     // The 'done' flag will also be reset
+                     this.__done = true
+                     
+                     // And we still need to set a final step to close the monad.
+                     // It's also for the unclose action, which will remove the final step in process.
+                     this.__proc.next(function(){})
+                }
+                fluorine.Notifier.trigger(note)
+
+                if( note.name != this.__iname)
+                {
+                    // 2. The last step of this process should be restoring it.
+                    this.__proc.next
+                    (   _.bind
+                        ( function()
+                          {
+                             this.__proc.refresh()
+                             var proc_new = this.__proc
+                             this.constructor.apply(this, this.__init_arguments)
+
+                             // Previous statement will also reset the process,
+                             // and we still need the old one to keep the result.
+                             this.__proc = proc_new
+
+                             // The 'done' flag will also be reset
+                             this.__done = true
+                          }
+                        , this 
+                        )
+                    )
+                }
+            }
+        ,   this
         )
     )
 
@@ -1075,14 +1151,6 @@ fluorine.Event.o.prototype.run = function()
         throw new Error("ERROR: The monad is not done.");
     }
 
-    // At final stage, send the message out. 
-    this.__proc.next
-    (   function(note)
-        {
-            fluorine.Notifier.trigger(note)
-        }
-    )
-
     // "Run" this process when the event comes.
     fluorine.Notifier.on
     (   this.__iname
@@ -1093,6 +1161,7 @@ fluorine.Event.o.prototype.run = function()
             }
         ,   this
         )
+    //  FIXME: No id notifier !!!!
     )
     return this.__proc
 }

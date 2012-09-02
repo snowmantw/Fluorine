@@ -82,14 +82,16 @@ fluorine.Process.o.prototype.run = function(result)
 
     if( 0 == this.__queue.length )
     {
-        this.__queue = this.__recycle_queue
-
         return ;
     }
 
     var __fn = this.__queue.shift()
+    this.__recycle_queue.push(__fn)
+
+    // The function will call next function to run, 
+    // if it's not the end of the process.
     __fn.apply({}, arguments)
-    this.__recycle_queue.unshift(__fn)
+
 }
 
 // Refresh the process. Make it runnable again.
@@ -97,6 +99,10 @@ fluorine.Process.o.prototype.run = function(result)
 // refresh:: Process fs
 fluorine.Process.o.prototype.refresh = function()
 {
+    while( 0 != this.__queue.length )
+    {
+        this.__recycle_queue.push(this.__queue.shift())
+    }
     this.__queue = this.__recycle_queue
     this.__recycle_queue = []
 }
