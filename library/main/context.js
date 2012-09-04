@@ -1159,7 +1159,7 @@ fluorine.Event.o.prototype.run = function()
 
     // "Run" this process when the event comes.
     fluorine.Notifier.on
-    (   this.__iname
+    (   this.__iname+"_"+Date.now().toString()
     ,   _.bind
         (   function(note)
             {   
@@ -1168,7 +1168,6 @@ fluorine.Event.o.prototype.run = function()
             }
         ,   this
         )
-    //  FIXME: No id notifier !!!!
     )
     return this.__proc
 }
@@ -1225,4 +1224,57 @@ fluorine.Event.o.prototype.run = function()
 //
 // Circuits in Yampa programs, can only use defined signal functions. User can't directly handle the signals.
 // But there will be some named signals in the program. All user can do is feeding them into SFs as they want.
+//
+// ----
+// About WebSocket
+//
+// * IO().getSocket().connect() --> 保證之後的運算可以收到 socket ，變成 IO Socket 的串連
+//   --> 或是 Socket 與 IO 無關
+//
+// * IO.Socket().connect().forward('server event').disconnect().send()
+//
+// 可是 connect 等事件好像不容易用出
+// 處理完要送出也是一樣的意思
+// 侷限在該 Socket 的一連串處理。
+// IO 並不侷限在某檔案處理：他可以多個來源。
+// 重點是某些 IO 值一直被處理。
+// 如果以一串流來講？ IO.socket().on('ae1').as('a1').on('be1').as('b1')
+//                      .socket().on('ae2').as('a2').on('be2').as('b2')
+//                      ...
+//
+// 但 IO IPO 是打開處理與結束。IO Socket 不是。他是像 AFRP 。
+// Socket 事件的轉發是確定的。
+//
+// 主動送出的部份，給定 Socket(host:port) ，然後如果是已經開啟的，就內部自動不重複。
+// 當然這部份位置可以用 environment 設定好。或用其他變數指定。
+// smonad = function(){ return Socket(address).send(some-thing) } :: IO ()
+//
+// Socket(address).connect()
+//                .forward('event-from-server')('some-note')
+//                .forward()()
+//                .close()
+//
+// 然後掛在該事件上
+//
+// Event('some-note')
+//  .bind
+//   (  function(note)
+//      {   note.socket.send()
+//          note.socket.close()
+//
+//          // register other socket.
+//          Socket(address).connect().....close().run()
+//      }
+//   ).out().close()
+//
+// 但如果我們按照 haskell hOpenFile 之類的，其實是可以傳一個 handler。
+// 只是 handler 與 socket 不同處在於 socket 會送事件，handler 不是那樣的。
+//
+// open :: handler -> doSomething handler -> close handler
+// open :: socket  -> ... wait ?? ... -> close socket 
+//
+// 真的採用 event forward  的作法。每個 event 都會附 socket 當作 async socket 中的 handler
+// 然後處理者可能 close socket。
+//
+// openFile 最後會傳出 IO Handler ，也就是要繼續在這當中作。這是否要與 AFRP 衝突？
 //
