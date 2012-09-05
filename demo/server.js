@@ -1,6 +1,9 @@
-var ejs = require('ejs');
-var express = require('express');
-var app = express.createServer();
+var ejs = require('ejs')
+var express = require('express')
+var app = express()
+var http = require('http')
+var server = http.createServer(app)
+var ws = new (require('websocket').server)({httpServer: server})
 
 var allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');
@@ -43,5 +46,21 @@ app.get('/testAjax', function(req,res){
     res.send('100')
 });
 
+ws.on
+(   'request'
+,   function(req)
+{   var connection = req.accept(null, req.origin)
+    console.log('req',req)
 
-app.listen(3000);
+    // another event in
+    connection.on
+    (   'message'
+    ,   function(data)
+    {
+        console.log('[DEBUG] test data: ', data)
+    }
+    )
+}
+)
+
+server.listen(3000);

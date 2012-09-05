@@ -497,6 +497,27 @@ fluorine.IO.o.prototype.toEnvironment = function(name)
 }
 
 //
+// Make the result as the Event monad's one argument.
+// Such functions should make sure it's proc result will prepare all things the next monad needed.
+//
+// toEvent :: IO (Process a) -> Event (Process a)
+fluorine.IO.o.prototype.toEvent = function()
+{
+    this.__proc.next
+    (   _.bind
+        ( function()
+        {   // Because results in Event monad will be directly forward to the next.
+
+            this.__proc.run.apply(this.__proc, arguments)  
+        }
+        ,   this
+        )
+    )
+
+    return this
+}
+
+//
 // Convert the RESULT of IO monad to UI monad.
 // This is NOT what the Haskell does, but it can work.
 //
@@ -670,6 +691,23 @@ fluorine.IO.__genAjaxError = function(name_res)
 //
 //     UI('body').$().css('backgroundColor', 'red').done().run()
 //
+// ----
+//
+// Note: The constructor can accept DOM as context handling target, too. 
+// This behavior is for the convience while handling asynchronous sending-receiving model.
+//
+// Example:
+//
+//      //(receiver of notification, if UI constructor disallow passing UI DOM in)
+//      function(note){ (note.target.css().appendTo().... ) } 
+//
+//      //(if UI constructor allow passing UI DOM in)
+//      function(note){ UI(note.target).$().css()..... }
+//
+// The second function shows the target will be handled in the UI context.
+// It's better than the first version.
+//
+//
 fluorine.UI = function(selector)
 {
     return new fluorine.UI.o(selector)
@@ -693,7 +731,9 @@ fluorine.UI.o = function(slc)
 // Use the restricted jQuery to manipulate some DOMs.
 // And select elements.
 //
-// $:: UI selector -> UI [ DOM ]
+// The second type is for the reason mentioned in the constructor.
+//
+// $:: UI selector | UI [DOM] -> UI [ DOM ]
 fluorine.UI.o.prototype.$ = function()
 {
     this.__$ = jQuery   // Use jQuery as selecting functions.
@@ -933,6 +973,236 @@ fluorine.UI.o.prototype.run = function()
 
 // ----
 
+// ## Socket
+//
+// Socket monad should be both a event forwarding and computation monad.
+//
+// Just like open a file and return it's handler, other functions receiving 
+// socket notifications will get the socket monad itself, and can do more 
+// things then handle only the notification.
+// 
+// EX. 
+//      // This initializing monad will be executed and starting forward event.
+//
+//      var mSInit = function(addr)
+//      {   Socket(addr).connect().forward('server-event')('note-a')....toEnvironment()
+//      }
+//      Environment().bind(mSInit).done().run()
+//
+// User can think the Socket computation as an "asynchronous" IO processing.
+// In IO monad:
+//  
+//      openFile >>= \handle -> ( do something ...) >>= \handle -> close handle 
+//
+// All steps are synchronouse in this IPO chain. But similiar IPOs in socket are asynchronous, 
+// especially it uses events to trigger all handlers:
+//
+//      var socket = 
+//      socket.on('event-server-1', function(){ socket.emit() })..
+//      socket.on('event-server-N', function(){...})
+//      socket.close()
+//
+// These steps composing a IPO chain, but they do all things asynchronously.
+// And steps are based on events, not like fluorine.IO, events in it are in order. 
+// ( even though they're asynchronous for other "process" ).
+//
+// So we must make the Socket another Event forwarding and computation mixed monad.
+//
+
+//
+// Construct the socket. Passing address ( "127.0.0.1:654" ) or handler.
+//
+// data AddressOrHandler = Address | SocketHandler
+// Socket:: SocketAddress ( AddressOrHandler ) 
+//
+// ----
+//
+// Note: The constructor can accept SocketHandler as context handling target, too. 
+// This behavior is for the convience while handling asynchronous sending-receiving model.
+//
+// Example:
+//
+//      //(receiver of notification, if the constructor disallow passing SocketHandler in)
+//      function(note){ (note.socket.forward().send().... ) } 
+//
+//      //(if UI constructor allow passing SocketHandler in)
+//      function(note){ Socket(note.socket).forward().send().... ) } 
+//
+// The second function shows the target will be handled in the UI context.
+// It's better than the first version.
+//
+fluorine.Socket = function(addrORhandler)
+{
+    return new fluorine.Socket.o(addrORhandler)
+}
+
+fluorine.Socket.o = function(addrORhandler)
+{
+    this.__subject = addrORhandler
+
+    this.__done = false
+
+    // Because our monads are `Monad (Process a)`, not `Monad a`
+    this.__proc = fluorine.Process()
+
+    return this
+}
+
+// connect:: Socket SocketAddress -> Socket SocketHandler
+fluorine.Socket.o.prototype.connect = function()
+{
+    this.__proc.next
+    (   _.bind
+        ( function(address)
+        {   var socket = new WebSocket(address) // TODO: Sub-protocols supports ? 
+            this.__proc.run(socket)
+        }
+        ,   this
+        )
+    )
+
+    return this
+}
+
+// disconnect:: Socket SocketHandler -> Socket ()
+fluorine.Socket.o.prototype.disconnect = function()
+{
+    this.__proc.next
+    (   _.bind
+        ( function(socket)
+        { 
+            socket.close()
+            this.__proc.run()
+        }
+        )
+    )
+    return this
+}
+
+// Forward native WebSocket events as notifications.
+// WebSocket events: open, message, error, close.
+// 
+// Note: we will append 'note.handler' to the notification as a SocketHandler reference,
+// and the 'note.name' to pass the name of event.
+//
+// Note: because the original socket onmessage event only gurrantee that the receiver will get the data,
+// the handler must parse the data and forward sub-notes if it's necessary.
+//
+// forward:: Socket SocketHandler -> EventName -> MessageName -> Socket SocketHandler
+fluorine.Socket.o.prototype.forward = function(ename)
+{
+    // Because native events should be bound in these methods:
+    // onmessage, onopen, onclose; we must convert String ename into method name and call them.
+
+    var md_name = 'on'+ename
+
+    return _.bind
+    (   function(mname)
+    {   this.__proc.next
+        (   _.bind
+            (   function(socket)
+            {   
+                var fnForward = function(event)
+                {   var note = event || {}
+                    note.name = mname
+                    note.handler = socket
+                    fluorine.Notifier.trigger(note)
+                }
+                socket[md_name] = fnForward
+                
+                this.__proc.run(socket)
+            }  
+            ,   this
+            )
+        )
+
+        return this
+    }   // MessageName
+    ,   this
+    )
+}
+
+//
+// Send string-like data. Include String, ArrayBuffer or Blob.
+//
+// data Rope = String | ArrayBuffer | Blob
+// Socket SocketHandler -> Rope -> Socket SocketHandler
+fluorine.Socket.o.prototype.send = function(rope)
+{
+    this.__proc.next
+    (   _.bind
+        (   function(socket)
+        {
+            socket.send(rope)
+            this.__proc.run(socket)
+        }
+        ,   this
+        )
+    )
+    return this
+}
+
+fluorine.Socket.o.prototype.done = function()
+{
+    if( this.__done ) { return }
+    this.__done = true;
+
+    // The last step of this process should be restoring it.
+    this.__proc.next
+    (   _.bind
+        ( function()
+        {
+             this.__proc.refresh()
+             var proc_new = this.__proc
+             var $old = this.__$
+             this.constructor.call(this, this.__subject)
+
+             // Set the selector. Previous statement, the constructor, will also reset the process,
+             // and we still need the old one to keep the result.
+             this.__proc = proc_new
+
+             // The 'done' flag will also be reset
+             this.__done = true
+          }
+        , this 
+        )
+    )
+    return this;
+}
+
+fluorine.Socket.o.prototype.run = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // This will run the whole process, 
+    // and it's only useful when this function is at the end of whole process.
+    this.__proc.run(this.__subject)
+    return this.__proc
+}
+
+// "Undo" the last step ( done() ) of this monad.
+// The monad MUST be closed.
+//
+// unclose:: Socket s -> Socket s
+fluorine.Socket.o.prototype.unclose = function()
+{
+    if( ! this.__done )
+    {
+        throw new Error("ERROR: The monad is not done.")
+    }
+
+    // FIXME: Dirty way. 
+    // But I don't want to provide a public interface of process queue.
+    this.__proc.__queue.pop()
+
+    return this
+}
+
+// ----
+
 // ## Event
 //
 // Event should be the most top monad in the stack.
@@ -1062,11 +1332,56 @@ fluorine.Event.o.prototype.out = function(name)
     )
 }
 
+//
+// Bind some monad to handle the (Event t)
+// 
+// Note: Remember our moand mixed the environment concepts.
+//
+// Event t -> ( t -> Event t' ) -> Event t'
+fluorine.Event.o.prototype.bind = function(mact)
+{
+    this.__proc.next
+    (   _.bind
+        (   function()  // Environment parts.
+        {   var monad_inner = mact.apply({}, arguments)
+            monad_inner.unclose()
+            var proc_inner = monad_inner.__proc
+
+            // The final step of inner monad should fit Event monad.
+            // Arguments passing should follow the this monad's principle ( embedded environment ).
+            proc_inner.next
+            (   _.bind
+                (   function() 
+                {   
+                    this.__proc.run.apply(this.__proc, arguments)
+                }
+                ,   this
+                )
+            )
+
+            // Add all steps from inner to base monad.
+            // This will dynamic change the process while it's running.
+            this.__proc.preconcat(proc_inner)
+
+            // The callbacks of inner monad will still access to the old proc,
+            // not the merged one. It's terrible to change another monad's inner state,
+            // but I can't find other better ways to do solve this problem.
+            //
+            monad_inner.__proc = this.__proc    // The base moand's inner process ( merged )
+            this.__proc.run.apply(this.__proc, arguments)
+        }   
+        ,   this     
+        )
+    )
+
+    return this
+}
+
 // Close this monad. 
 //
 // done:: Event r 
-fluorine.Event.o.prototype.done = function(){
-
+fluorine.Event.o.prototype.done = function()
+{
     if( this.__done ) { return }
     this.__done = true
 
@@ -1159,7 +1474,7 @@ fluorine.Event.o.prototype.run = function()
 
     // "Run" this process when the event comes.
     fluorine.Notifier.on
-    (   this.__iname+"_"+Date.now().toString()
+    (   this.__iname+"."+Date.now().toString()
     ,   _.bind
         (   function(note)
             {   
@@ -1172,6 +1487,7 @@ fluorine.Event.o.prototype.run = function()
     return this.__proc
 }
 
+// ** Memo **
 /*
     
    Event("message.google.test").bind( e_msg -> e ).out().done()  -- 建立一條 path, bind 很多 operations. 前面運算一定會自動被 out send message
@@ -1196,7 +1512,6 @@ fluorine.Event.o.prototype.run = function()
 
 */
 
-// ** Memo **
 //
 // Signal start with MessageName.
 // Should have `switch` functions to manage inner SF circuits, and plays a major role.
@@ -1244,6 +1559,15 @@ fluorine.Event.o.prototype.run = function()
 //
 // 但 IO IPO 是打開處理與結束。IO Socket 不是。他是像 AFRP 。
 // Socket 事件的轉發是確定的。
+//
+// 像 UI, Socket 這樣的 Monad  設計轉發是因為，不希望處理事件的邏輯，超出該 context 。
+// 也就是利用 UI 或 Socket 的一連串運算，應該只能使用該 Monad 所提供的功能（在該 context 內）。
+// 就算是 bind，最終也應該給回屬於該 Monad 的值 m a。
+//
+// 所以 Socket 與 UI 中會提供該 context 合理運算的所有函式。超過的事件處理部份應該要靠轉發出去。
+//
+// 因此針對事實上是會被以任意邏輯處理的事件，用轉發的方式，在 JS 具有物件 scope 的事件模型，
+// 與如 Yampa 那樣全域事件分派的模型作接軌。 
 //
 // 主動送出的部份，給定 Socket(host:port) ，然後如果是已經開啟的，就內部自動不重複。
 // 當然這部份位置可以用 environment 設定好。或用其他變數指定。
