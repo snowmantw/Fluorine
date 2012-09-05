@@ -1057,6 +1057,7 @@ fluorine.Socket.o.prototype.connect = function()
         {   var socket = new WebSocket(address) // TODO: Sub-protocols supports ? 
             this.__proc.run(socket)
         }
+        ,   this
         )
     )
 
@@ -1097,26 +1098,28 @@ fluorine.Socket.o.prototype.forward = function(ename)
 
     return _.bind
     (   function(mname)
-    {   _.bind
-        (   function(socket)
-        {   
-            var fnForward = function(event)
-            {   var note = event || {}
-                note.name = ename   // still use native event name as the argument.
-                note.handler = socket
-                fluorine.Notifier.trigger(note)
-            }
-            socket[md_name] = fnForward
-            
-            this.__proc.run(socket)
-        }   // MessageName
-        ,   this
+    {   this.__proc.next
+        (   _.bind
+            (   function(socket)
+            {   
+                var fnForward = function(event)
+                {   var note = event || {}
+                    note.name = mname
+                    note.handler = socket
+                    fluorine.Notifier.trigger(note)
+                }
+                socket[md_name] = fnForward
+                
+                this.__proc.run(socket)
+            }  
+            ,   this
+            )
         )
-    }   // EventName
+
+        return this
+    }   // MessageName
     ,   this
     )
-
-    return this
 }
 
 //
@@ -1133,6 +1136,7 @@ fluorine.Socket.o.prototype.send = function(rope)
             socket.send(rope)
             this.__proc.run(socket)
         }
+        ,   this
         )
     )
     return this
@@ -1175,7 +1179,7 @@ fluorine.Socket.o.prototype.run = function()
 
     // This will run the whole process, 
     // and it's only useful when this function is at the end of whole process.
-    this.__proc.run()
+    this.__proc.run(this.__subject)
     return this.__proc
 }
 
