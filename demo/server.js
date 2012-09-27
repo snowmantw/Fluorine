@@ -27,6 +27,7 @@ app.configure(function()
     app.use(express.bodyParser());
     app.use(express.methodOverride());
     app.use('/library',express.static( __dirname + '/../library'));
+    app.use('/build',express.static( __dirname + '/../build'));
     app.use('/spec',express.static( __dirname + '/../spec'));
     app.use('/media',express.static( __dirname + '/../media'));
     app.use(app.router);
