@@ -1068,7 +1068,8 @@ fluorine.Event.o::bind = (mact) ->
   this
 
 
-# Close this monad. 
+# Close this monad. Remember that this function should be chainned after a `out` function,
+# which will send another note out.
 #
 # done:: Event r 
 fluorine.Event.o::done = ->
@@ -1138,7 +1139,6 @@ fluorine.Event.o::run = ->
   
   # "Run" this process when the event comes.
   fluorine.Notifier.on @__iname + "." + Date.now().toString(), _.bind((note) ->
-    console.log "handle note: ", @__iname
     @__proc.run note
   , this)
   @__proc
