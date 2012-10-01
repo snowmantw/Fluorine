@@ -14,8 +14,15 @@ refresh: all
 	${NODE} demo/server.js
 
 clean: 
-	@rm -rf ${BUILD}/*
+	@if [ -e ${BUILD} ]; then \
+		rm -rf ${BUILD}/*   ; \
+	else					  \
+		mkdir ${BUILD}		; \
+	fi
 
-${TARGETS}:
-	@find ${SOURCE}/$@ -name "*.coffee" -exec ${COFFEE} -p -c {} > ${BUILD}/$@.js \;
+${TARGETS}: clean
+	@if [ ! -e ${BUILD} ]; then \
+		mkdir ${BUILD}		;   \
+	fi						;	\
+	find ${SOURCE}/$@ -name "*.coffee" -exec ${COFFEE} -p -c {} > ${BUILD}/$@.js \;
 
