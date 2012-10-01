@@ -3,12 +3,12 @@ BUILD = build
 COFFEE = /usr/local/bin/coffee
 DEMO = demo
 NODE = /usr/local/bin/node
-OBJS = context.js notifier.js process.js
+OBJS = context.js notifier.js process.js spec.js
 SOURCE = source
 TARGETS = ${OBJS:.js=}
 
 
-all: clean notifier process context 
+all: clean notifier process context spec
 
 refresh: all
 	${NODE} demo/server.js
