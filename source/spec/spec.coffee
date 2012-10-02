@@ -284,9 +284,14 @@ describe "Environment", ->
         console.log @dijk
         this
       ).bind(->
-        IO().get("/testAjax")._(parser)._((num_remote) ->
-          num_remote + 300
-        ).toEnvironment("erl").done()
+        IO().get("/testAjax")
+            ._(parser)
+            ._
+            ((num_remote) ->
+                num_remote + 300
+            )
+            .toEnvironment("erl")
+        .done()
       )._(->
         console.log @erl
         this
