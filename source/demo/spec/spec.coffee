@@ -286,10 +286,9 @@ describe "Environment", ->
       ).bind(->
         IO().get("/testAjax")
             ._(parser)
-            ._
-            ((num_remote) ->
-                num_remote + 300
-            )
+            ._((num_remote) ->
+                    num_remote + 300
+              )
             .toEnvironment("erl")
         .done()
       )._(->

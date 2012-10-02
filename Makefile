@@ -16,9 +16,6 @@ TARGET_DEMOS = ${OBJ_DEMOS:.js=}
 
 all: clean notifier process context spec
 
-refresh: all
-	${NODE} demo/server.js
-
 clean: 
 	@if [ -e ${BUILD} ]; then \
 		rm -rf ${BUILD}/*   ; \
