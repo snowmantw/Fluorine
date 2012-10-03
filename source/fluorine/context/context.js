@@ -723,8 +723,12 @@ fluorine.UI.o = function(slc)
     // Pass an initialize step to enclose variables.
     //
     this.__proc.next
-    (   function()
-    {   this.__proc.run(slc)  } 
+    (   _.bind
+        (   function()
+        {   this.__proc.run(slc)  
+        } 
+        ,   this
+        )
     )
 
     // For refreshing this monad after run it.
@@ -1053,8 +1057,12 @@ fluorine.Socket.o = function(addrORhandler)
     // Pass an initialize step to enclose variables.
     //
     this.__proc.next
-    (   function()
-    {   this.__proc.run(addrORhandler)  } 
+    (   _.bind
+        ( function()
+        { this.__proc.run(addrORhandler)  
+        } 
+        , this
+        )
     )
 
     this.__init_arguments = arguments
