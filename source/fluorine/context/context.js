@@ -1500,7 +1500,6 @@ fluorine.Event.o.prototype.run = function()
     ,   _.bind
         (   function(note)
             {   
-                console.log('handle note: ', this.__iname)
                 this.__proc.run(note)
             }
         ,   this
