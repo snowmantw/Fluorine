@@ -29,6 +29,7 @@ app.configure(function()
     app.use('/library',express.static( __dirname + '/../../library'));
     app.use('/build',express.static( __dirname + '/../../build'));
     app.use('/media',express.static( __dirname + '/media'));
+    app.use('/style',express.static( __dirname + '/style'));
     app.use(app.router);
 });
 

@@ -14,7 +14,7 @@ TARGETS = ${OBJS:.js=}
 TARGET_DEMOS = ${OBJ_DEMOS:.js=}
 
 
-all: clean notifier process context spec
+all: clean notifier process context spec todo
 
 clean: 
 	@if [ -e ${BUILD} ]; then \
@@ -27,7 +27,7 @@ ${TARGETS}: clean
 	@if [ ! -e ${BUILD_FLUORINE} ]; then 	\
 		mkdir -p ${BUILD_FLUORINE}		  ; \
 	fi									  ;	\
-	find ${SOURCE_FLUORINE}/$@ -name "*.coffee" -exec ${COFFEE} -p -c {} > ${BUILD_FLUORINE}/$@.js \;
+	find ${SOURCE_FLUORINE}/$@ -name "*.js" -exec cat {} > ${BUILD_FLUORINE}/$@.js \;
 
 ${TARGET_DEMOS}: clean
 	@if [ ! -e ${BUILD_DEMO} ]; then 		\
