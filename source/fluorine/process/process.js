@@ -25,9 +25,11 @@ fluorine.Process.o = function()
 
 // Set the next step.
 //
-// next:: (Process fs, (a->b) ) -> Process ( a->b )
-fluorine.Process.o.prototype.next = function(fn)
+// next:: (Process fs, (a->b), StepName {- optional -} ) -> Process ( a->b )
+fluorine.Process.o.prototype.next = function(fn, name)
 {
+    // Function is NOT object for other users, so we can add attr and don't worry about conflicts.
+    fn.__name = name    
     this.__queue.push(fn)
 }
 
@@ -90,8 +92,20 @@ fluorine.Process.o.prototype.run = function(result)
 
     // The function will call next function to run, 
     // if it's not the end of the process.
-    __fn.apply({}, arguments)
 
+    try{
+        __fn.apply({}, arguments)
+    } catch(e)
+    {
+        // Print multiple times when this step is deep in stack.
+        if( undefined == e.__printed )
+        {
+            console.error('[ERROR] Process terminated at step #'+this.__queue.length+', step name(if any): '+__fn.__name, e)
+            e.__printed = true
+        }
+        // debugger
+        throw e
+    }
 }
 
 // Refresh the process. Make it runnable again.
