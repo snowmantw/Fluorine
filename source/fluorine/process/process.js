@@ -100,7 +100,7 @@ fluorine.Process.o.prototype.run = function(result)
         // Print multiple times when this step is deep in stack.
         if( undefined == e.__printed )
         {
-            console.error('[ERROR] Process terminated at step #'+this.__queue.length+', step name(if any): '+__fn.__name, e)
+            console.error('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
             e.__printed = true
         }
         // debugger
