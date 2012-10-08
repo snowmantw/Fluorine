@@ -7,10 +7,10 @@ self.app.Queue ?= {}
 
 # Render one queue-block to string.
 #
-# :: Text -> Date -> [DOM Button] -> String
+# :: Text -> Date -> [HTML Button] -> String
 self.app.Queue.renderBlock = (content) -> (date) -> (buttons) ->
    _.template(self.app.Template['queue-block'])\
-       ( 'content': content, 'date': date.toString(), 'buttons': buttons ) 
+       ( 'content': content, 'date': date.toString(), 'buttons': buttons )
 
 # Render single block button to string.
 #
@@ -21,13 +21,11 @@ self.app.Queue.renderBlockButton = (clz) ->
 fluorine.Notifier.init()
 fluorine.Event('app.bootstrap')
         .bind\
-        ( -> fluorine.UI('#queue').$()
+        ( () -> fluorine.UI('#queue')
+                .$()
                 .append\
-                (
-                   _.template(self.app.Template['queue-block'])(
-                       { 'content': "Todo..."
-                       , 'date': (new Date()).getTime().toString() 
-                       })
+                (  self.app.Queue.renderBlock('Todo...')
+                        (new Date())([self.app.Queue.renderBlockButton('bt1')])
                 )
                 .done()
         )

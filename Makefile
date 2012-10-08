@@ -2,7 +2,7 @@
 BUILD = build
 BUILD_FLUORINE = build/fluorine
 BUILD_DEMO = build/demo
-COFFEE = /usr/local/bin/coffee
+COFFEE = /usr/local/bin/coffee --bare
 DEMO = demo
 NODE = /usr/local/bin/node
 OBJS = context.js notifier.js process.js
