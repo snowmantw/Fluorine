@@ -103,7 +103,7 @@ fluorine.Process.o.prototype.run = function(result)
             console.error('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
             e.__printed = true
         }
-        // debugger
+        debugger
         throw e
     }
 }
