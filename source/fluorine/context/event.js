@@ -269,13 +269,20 @@ fluorine.Event.o.prototype.run = function()
         throw new Error("ERROR: The monad is not done.");
     }
 
+    var bind_name = this.__iname+'.'+Date.now().toString()
+
     // "Run" this process when the event comes.
     fluorine.Notifier.on
-    (   this.__iname+"."+Date.now().toString()
+    (   bind_name 
     ,   _.bind
         (   function(note)
-            {   
+            {   try{
                 this.__proc.run(note)
+                } catch(e)
+                {
+                    fluorine.Notifier.off(bind_name)
+                    console.error('[ERROR] Unbind crashed process: ', bind_name, e)
+                }
             }
         ,   this
         )
