@@ -43,6 +43,8 @@ fluorine.UI.o = function(slc)
     this.__done = false
     this.__proc = fluorine.Process()
 
+    this.__run_count = 0    // Whether this process had been run or not ? 
+
     // Pass an initialize step to enclose variables.
     //
     this.__proc.next
@@ -52,6 +54,7 @@ fluorine.UI.o = function(slc)
         } 
         ,   this
         )
+    ,   'UI'
     )
 
     // For refreshing this monad after run it.
@@ -82,6 +85,7 @@ fluorine.UI.o.prototype.$ = function()
             }
         ,   this
         )
+    ,   'UI::$'
     )
     return this
 }
@@ -95,7 +99,14 @@ fluorine.UI.o.prototype.bind = function( act )
     this.__proc.next
     (   _.bind
         (   function(dom_prev)
-            {   // When the execution reach this frame, 
+            {   // If this process had been run and refreshed, do not bind ( change ) the proc queue again.
+                if( 0 != this.__run_count )
+                {
+                    this.__proc.run(dom_prev)
+                    return
+                } 
+                
+                // When the execution reach this frame, 
                 // merge the original process with new process in the generated monad.
                 var monad_inner = act(dom_prev) 
                 monad_inner.unclose()
@@ -110,6 +121,7 @@ fluorine.UI.o.prototype.bind = function( act )
                         }
                     ,   this    // the base monad
                     )
+                ,   'UI::bind.continue'
                 )
 
                 // Add all steps from inner to base monad.
@@ -127,6 +139,7 @@ fluorine.UI.o.prototype.bind = function( act )
             }
         ,   this
         )
+    ,   'UI::bind'
     )
     return this
 }
@@ -138,21 +151,42 @@ fluorine.UI.o.prototype.bind = function( act )
 // The forwarded event will bring original evnt data as data.
 // It will own type as: Event EventObject 
 //
-// forward:: UI DOM -> EventName -> MessageName -> UI DOM
+// User should pass a EventName and filter function, 
+// to forward (dispatch) events to notifications.
+//
+// Note: Although the '$(document).ready' is NOT a event of DOMs,
+// we still treat as a 'ready' event, and can be forwarded.
+//
+// Note: Some event may only provide {name: EventName} as Event object. 
+//
+// forward:: UI DOM -> EventName -> (Event -> MessageName) -> UI DOM
 fluorine.UI.o.prototype.forward = function(ename)
 {
-    return _.bind(   function(fname)
+    return _.bind(   function(filter)
         {   this.__proc.next
             (   _.bind( function(dom)
-                {   jQuery(dom).bind(ename, function(event){ 
-                        var n = event; n.name = fname;
-                        fluorine.Notifier.trigger(n) 
-                    })
-        
-                    this.__proc.run()
+                {   
+                    if( 'ready' == ename )
+                    {
+                        jQuery(dom).ready
+                        (   function()
+                        {   
+                            fluorine.Notifier.trigger(filter({'type': 'ready'}))
+                        }
+                        )
+                    }
+                    else
+                    {
+                        jQuery(dom).bind(ename, function(event){ 
+                            event.name = filter(event)
+                            fluorine.Notifier.trigger(event) 
+                        })
+                    }
+                    this.__proc.run(dom)
                 }
                 , this
                 )   // bind
+            ,   'UI::forward'
             )   // next
 
             return this  // curry
@@ -187,6 +221,7 @@ fluorine.UI.o.__delegate = function(args)
             }
         ,   this
         )
+    ,   'UI::__delegate'
     )
 }
 
@@ -241,9 +276,12 @@ fluorine.UI.o.prototype.done = function(){
         ( function()
           {
              this.__proc.refresh()
+
              var proc_new = this.__proc
              var $old = this.__$
+
              this.constructor.apply(this, this.__init_arguments)
+             this.__run_count ++
 
              // __$ will become null, and the steps in restored process can't use it.
              this.__$ = $old
@@ -257,6 +295,7 @@ fluorine.UI.o.prototype.done = function(){
           }
         , this 
         )
+    ,   'UI::done'
     )
 
     return this;

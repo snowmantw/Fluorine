@@ -46,6 +46,8 @@ fluorine.Event.o = function(iname)
     // For refreshing this monad after run it.
     this.__init_arguments = arguments
 
+    this.__run_count = 0    // Whether this process had been run or not ? 
+
     // When running,
     // convert note as next function's arguments.
     this.__proc.next
@@ -56,6 +58,7 @@ fluorine.Event.o = function(iname)
             }
         ,   this
         )
+    ,   'Event'
     )
 
     return this
@@ -102,6 +105,7 @@ fluorine.Event.o.prototype._ = function( fn )
             }
          ,  this
          )
+    ,   'Event::_'
     )
 
     return this
@@ -122,6 +126,7 @@ fluorine.Event.o.prototype.out = function(name)
                     }
                 ,   this 
                 )
+            ,   'Event::out'
             )
             return this
         }   // #1.
@@ -140,7 +145,14 @@ fluorine.Event.o.prototype.bind = function(mact)
     this.__proc.next
     (   _.bind
         (   function()  // Environment parts.
-        {   var monad_inner = mact.apply({}, arguments)
+        {   // If this process had been run and refreshed, do not bind ( change ) the proc queue again.
+            if( 0 != this.__run_count )
+            {
+                this.__proc.run.apply(this.__proc, arguments)
+                return
+            } 
+            
+            var monad_inner = mact.apply({}, arguments)
             monad_inner.unclose()
             var proc_inner = monad_inner.__proc
 
@@ -154,6 +166,7 @@ fluorine.Event.o.prototype.bind = function(mact)
                 }
                 ,   this
                 )
+            ,   'Event::bind.continue'
             )
 
             // Add all steps from inner to base monad.
@@ -169,6 +182,7 @@ fluorine.Event.o.prototype.bind = function(mact)
         }   
         ,   this     
         )
+    ,   'Event::bind'
     )
 
     return this
@@ -210,6 +224,8 @@ fluorine.Event.o.prototype.done = function()
                      // We must execute the next step; it is just added by ourself.
                      this.__proc.run(note)
                 }
+
+                // Trigger the `out` note.
                 fluorine.Notifier.trigger(note)
 
                 if( note.name != this.__iname)
@@ -222,6 +238,7 @@ fluorine.Event.o.prototype.done = function()
                              this.__proc.refresh()
                              var proc_new = this.__proc
                              this.constructor.apply(this, this.__init_arguments)
+                             this.__run_count ++
 
                              // Previous statement will also reset the process,
                              // and we still need the old one to keep the result.
@@ -232,6 +249,7 @@ fluorine.Event.o.prototype.done = function()
                           }
                         , this 
                         )
+                    ,   'Event::done'
                     )
 
                      // We must execute the next step; it is just added by ourself.

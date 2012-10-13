@@ -94,6 +94,9 @@ fluorine.Process.o.prototype.run = function(result)
     // if it's not the end of the process.
 
     try{
+        // TODO: Should use logger and debugging level...
+        console.log('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name)
+
         __fn.apply({}, arguments)
     } catch(e)
     {
@@ -103,7 +106,7 @@ fluorine.Process.o.prototype.run = function(result)
             console.error('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
             e.__printed = true
         }
-        debugger
+        //debugger
         throw e
     }
 }
@@ -113,10 +116,19 @@ fluorine.Process.o.prototype.run = function(result)
 // refresh:: Process fs
 fluorine.Process.o.prototype.refresh = function()
 {
+    // FIXME:
+    // Push all left steps in queue into refreshed queue.
+    // 
+    // This loop works only when a process be refreshed before it got done.
+    // The contextes need not it.
+    /*
     while( 0 != this.__queue.length )
     {
-        this.__recycle_queue.push(this.__queue.shift())
+        var step = this.__queue.shift()
+        console.log('[DEBUG] Adding left step in original queue, step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+step.__name)
+        this.__recycle_queue.push(step)
     }
+    */
     this.__queue = this.__recycle_queue
     this.__recycle_queue = []
 }
