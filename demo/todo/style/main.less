@@ -12,18 +12,38 @@
 
 .queue-block 
 {
-    padding-top: 20px;
+    padding: 5px;
 
-    .menu
+    .menubar
     {
         text-align: right;
+
+        .button
+        {
+            cursor: pointer;
+            &.close
+            {
+                background: url('/media/btn_close.png') no-repeat;
+                background-size: 15px 15px;
+                display: inline-block;
+                height: 15px;
+                width: 15px;
+            }
+        }
     }
 
     .content
     {
+        border:none;
         font-size: 24pt;
         height: 135px;
         text-align: center;
+        width: 100%;
+    }
+
+    .content:focus
+    {
+        outline: none;
     }
 
     .date
