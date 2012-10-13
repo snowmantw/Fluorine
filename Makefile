@@ -2,7 +2,7 @@
 BUILD = build
 BUILD_FLUORINE = build/fluorine
 BUILD_DEMO = build/demo
-COFFEE = /usr/local/bin/coffee --bare
+COFFEE = /usr/local/bin/coco -bcp
 DEMO = demo
 NODE = /usr/local/bin/node
 OBJS = context.js notifier.js process.js
@@ -33,6 +33,6 @@ ${TARGET_DEMOS}: clean
 	@if [ ! -e ${BUILD_DEMO} ]; then 		\
 		mkdir -p ${BUILD_DEMO}  		  ; \
 	fi									  ;	\
-	find ${SOURCE_DEMO}/$@ -name "*.coffee" -exec ${COFFEE} -p -c {} > ${BUILD_DEMO}/$@.js \;
+	find ${SOURCE_DEMO}/$@ -name "*.co" -exec ${COFFEE} -p -c {} > ${BUILD_DEMO}/$@.js \;
 
 

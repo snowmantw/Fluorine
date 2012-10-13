@@ -1,0 +1,82 @@
+
+self.app ?= {}
+self.app.Queue ?= {}
+
+
+#
+# Render one queue-block to DOM.
+#
+# :: Text -> Date -> [HTML Button] -> DOM
+self.app.Queue.renderBlock = (content) -> (date) -> (buttons) ->
+   $(
+    _.template(self.app.Template['queue-block'])\
+       ( 'content': content, 'date': date.toDateString(), 'buttons': buttons )
+    ).data('date',date).get(0) # Cache for extracting.
+
+#
+# Extract informations from DOM.
+#
+# :: DOM -> { content: Text, date: Date, __template: TemplateName }
+self.app.Queue.extractBlock = (dom) ->
+    {
+      'content'    : $(dom).find('input.content').val()
+      'date'       : $(dom).find('div.date').data('date')
+      '__template' : 'queue-block'
+    }
+
+#
+# Render single block button to DOM.
+#
+# :: CSSClass {-the css class of this button-} -> DOM 
+self.app.Queue.renderBlockButton = (clz) ->
+  _.template(self.app.Template['queue-block-menu-button'])('type':clz)
+
+fluorine.Notifier.init()
+fluorine.Event('app.bootstrap')
+        .bind\
+        ( -> fluorine.UI('#queue').
+                $().
+                append\
+                (   # The backslashes are necessary...
+                    # And The indents of parentheneses must be align to the params.
+                self.app.Queue.renderBlock('Todo...')\
+                    (new Date())([self.app.Queue.renderBlockButton('close')])
+                ).
+                done()
+        )
+        .bind\
+        ( -> fluorine.UI('body').  # Global binding like in Yampa.
+                $().
+                forward('keypress')\
+                (
+                (e) ->
+                    return "queue.content.input" if $(e.target).hasClass('content')
+                    "_"
+                ).
+                forward('click')\
+                (
+                (e) ->
+                    return "queue.content.edit" if $(e.target).hasClass('content')
+                    "_"
+                ).
+                done()
+        )
+        .out('_')( (_)-> {} )
+        .done()
+        .run()
+
+fluorine.Event('queue.content.edit')
+        .bind\
+        ( (note)-> fluorine.UI(note.target).
+                     $().
+                     attr('contenteditable', 'true').
+                     done()
+        )
+        .out('_')( (_)-> {} )
+        .done()
+        .run()
+
+# ---- Program Start ----
+
+fluorine.UI('document').$().forward('ready')(->'app.bootstrap').done().run()
+
