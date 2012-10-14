@@ -235,7 +235,7 @@ fluorine.UI.o.__mapMonadic = function(uimonad)
     // If a function provides both version, the version of pure value requiring will be usable 
     // only when user chainning it as run. 
     // 
-    var names = [ 'addClass', 'after', 'append'
+    var names = [ 'animate', 'addClass', 'after', 'append'
                 , 'appendTo', 'attr' , 'before'
                 , 'css'
                 , 'clone', 'detach', 'empty'
