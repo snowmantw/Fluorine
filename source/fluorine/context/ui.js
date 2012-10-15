@@ -90,6 +90,30 @@ fluorine.UI.o.prototype.$ = function()
     return this
 }
 
+// **Purely** compute something accroding to data from UI.
+//
+// The computation `fn` will get previous result as its first argument.
+//
+// Note: This is almost the `>>=` operator in Haskell,
+// but we modify the type signature for convenience.
+//
+// _:: IO r -> ( a -> b ) -> UI r'
+fluorine.IO.o.prototype._ = function( fn )
+{
+    this.__proc.next
+    (    _.bind
+         (  function(dom)
+            {    var result = fn(dom)
+                 this.__proc.run(result)
+            }
+         ,  this
+         )
+    )
+
+    return this
+}
+
+
 //
 // Bind another monadic action. This function will pass the UI DOM to the action.
 //
