@@ -97,8 +97,8 @@ fluorine.UI.o.prototype.$ = function()
 // Note: This is almost the `>>=` operator in Haskell,
 // but we modify the type signature for convenience.
 //
-// _:: IO r -> ( a -> b ) -> UI r'
-fluorine.IO.o.prototype._ = function( fn )
+// _:: UI r -> ( a -> b ) -> UI r'
+fluorine.UI.o.prototype._ = function( fn )
 {
     this.__proc.next
     (    _.bind
