@@ -263,6 +263,7 @@ fluorine.UI.o.__mapMonadic = function(uimonad)
                 , 'appendTo', 'attr' , 'before'
                 , 'css'
                 , 'clone', 'detach', 'empty'
+                , 'find','children','parents','parent'
                 , 'hide'
                 , 'height', 'html', 'innerHeight'
                 , 'innerWidth', 'insertAfter', 'insertBefore'
