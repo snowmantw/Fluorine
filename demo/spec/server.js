@@ -21,14 +21,14 @@ var allowCrossDomain = function(req, res, next) {
 
 app.configure(function()
 {
-    app.set('views', __dirname+'/../template');
+    app.set('views', __dirname+'/template');
     app.set("view options",{layout:false});
     app.use(allowCrossDomain)
     app.use(express.bodyParser());
     app.use(express.methodOverride());
-    app.use('/library',express.static( __dirname + '/../library'));
-    app.use('/spec',express.static( __dirname + '/../spec'));
-    app.use('/media',express.static( __dirname + '/../media'));
+    app.use('/library',express.static( __dirname + '/../../library'));
+    app.use('/build',express.static( __dirname + '/../../build'));
+    app.use('/media',express.static( __dirname + '/media'));
     app.use(app.router);
 });
 
@@ -39,7 +39,7 @@ app.all('/*', function(req, res, next) {
 });
 
 app.get('/', function(req,res){
-    res.render('index.ejs')
+    res.render('spec.ejs')
 });
 
 app.get('/testAjax', function(req,res){
