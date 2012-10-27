@@ -1,0 +1,158 @@
+
+fluorine.infect()
+fluorine.debug(true)
+
+describe "Process", !->
+
+  describe "\#next", !->
+    self.it "should grow while each action adds their executing part into the process.", !->
+      proc = Process()
+      proc.next !(a)->
+        a + 1
+
+      proc.next !(a, b)->
+        b + 2
+
+      proc.next !(a, b, c)->
+        c + 3
+
+      proc.next !(a, b, c, d)->
+        d + 4
+
+      proc.next !(a, b, c, d, e)->
+        e + 5
+
+      expect(proc.__queue.length).toEqual 5
+
+  describe "\#run", !->
+    self.it "should execute only one function after run once.", !->
+      proc = Process()
+      proc.next !(a)->
+        proc.run a + 1
+
+      proc.next !(b)->
+        proc.run b + 1
+
+      proc.run 0
+      expect(proc.extract()).toEqual 2
+
+    self.it "should execute exactly n times after run n times.", !->
+      proc = Process()
+      proc.next !(a)->
+        proc.run a + 1
+
+      proc.next !(b)->
+        proc.run b + 2
+
+      proc.next !(c)->
+        proc.run c + 3
+
+      proc.run 0
+      expect(proc.extract()).toEqual 6
+
+    self.it "should conquer the asynchronous callback hell.", !->
+      proc = Process()
+      runs !->
+        proc.next !->
+          proc.run 99
+
+        proc.next !->
+          jQuery.get "/testAjax", !(data)->
+            proc.run data # the end of asynchronous steps
+
+
+        proc.next !(data)->
+          proc.run data
+
+        proc.run() # synchronous
+
+      waits 500
+      runs !->
+        expect(Number(proc.extract())).toEqual 100
+
+
+self.Context = self.fluorine.Context
+describe "Context", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#as", !->
+    self.it "should name results of previous computation as user needed", !->
+      # 300
+      # 0 + 100 + 300 
+      m = Context().
+            _( -> 0).as("foo").
+            _( (a)-> a+8 ).as("bar")
+
+      proc_m = m.done()
+      runned_m = proc_m()
+      expect(runned_m.extract()).toEqual 8
+      expect(m.__environment['foo']).toEqual 0
+      expect(m.__environment['bar']).toEqual 8
+
+  describe "\#let", !->
+    self.it "should force next stage is as", !->
+        m = Context(10).
+              let( (x) -> x-10 ).as('a').
+              let( (y) -> y == 0 ).as('b')
+              
+        proc_m = m.done()
+        runned_m = proc_m()
+        expect(m.__environment['a']).toEqual 0
+        expect(m.__environment['b']).toEqual true
+        
+  describe "\#bind", !->
+     self.it "should be able to bind deep contexts", !->
+        m = Context(10).
+              let( (x) -> x-10 ).as('a').
+              let( (y) -> y == 0 ).as('b').
+              bind(
+                ->
+                    Context(20).
+                    let( (x) -> x+@a+10 ).as('c').  # should "inherit" previous's environment.
+                    let( (y) -> y == 30 ).as('d').
+                    let( -> 300 ).as('z').
+                    bind(
+                      ->
+                          Context(@d).
+                            let( (x) -> not @b ).as('e').
+                            done()
+                      ).done()
+                )  # Coco syntax note: last P must equal to the arrow, and the arrow can not equal to the body
+              
+              
+        proc_m = m.done()
+        runned_m = proc_m()
+        expect(m.__environment['d']).toEqual true
+        expect(m.__environment['e']).toEqual false
+        
+                        
+         
+`
+(function() {
+  var jasmineEnv = jasmine.getEnv();
+  jasmineEnv.updateInterval = 250;
+
+  var consoleReporter = new jasmine.ConsoleReporter();
+  jasmineEnv.addReporter(consoleReporter);
+
+  /*
+  jasmineEnv.specFilter = function(spec) {
+    return consoleReporter.specFilter(spec);
+  };
+  */
+
+  var currentWindowOnload = window.onload;
+  window.onload = function() {
+    if (currentWindowOnload) {
+      currentWindowOnload();
+    }
+
+    execJasmine();
+  };
+
+  function execJasmine() {
+    jasmineEnv.execute();
+  }
+})();
+`

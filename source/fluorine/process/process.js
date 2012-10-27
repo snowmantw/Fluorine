@@ -1,4 +1,9 @@
 
+if( undefined === self.fluorine )
+{
+    throw new Error('[ERROR] Should include fluorine.utils first.')
+}
+
 // These functions exist because Javascript provide some asynchronous ways 
 // to execute the program, but support no mechanism to control in-order and 
 // out-of-order parts well.
@@ -10,13 +15,14 @@
 // functional programming.
 
 // Creating function that create a new process.
-fluorine.Process = function()
+self.fluorine.Process = function()
 {
-    return new fluorine.Process.o();
+    self.fluorine.registerInfect('Process', self.fluorine.Process)
+    return new self.fluorine.Process.o();
 }
 
 // DO NOT USE. IT'S ONLY FOR INSTANCE.
-fluorine.Process.o = function()
+self.fluorine.Process.o = function()
 {
     this.__result = null
     this.__queue = []
@@ -25,16 +31,18 @@ fluorine.Process.o = function()
 
 // Set the next step.
 //
-// next:: (Process fs, (a->b) ) -> Process ( a->b )
-fluorine.Process.o.prototype.next = function(fn)
+// next:: (Process fs, (a->b), StepName {- optional -} ) -> Process ( a->b )
+self.fluorine.Process.o.prototype.next = function(fn, name)
 {
+    // Function is NOT object for other users, so we can add attr and don't worry about conflicts.
+    fn.__name = name    
     this.__queue.push(fn)
 }
 
 // Concat two "process".
 //
 // concat:: (Process fs, Process gs) -> Process fgs
-fluorine.Process.o.prototype.concat = function(proc)
+self.fluorine.Process.o.prototype.concat = function(proc)
 {
     this.__queue = this.__queue.concat(proc.__queue);
 }
@@ -42,7 +50,7 @@ fluorine.Process.o.prototype.concat = function(proc)
 // Prepend another process' steps.
 //
 // preconcat:: (Process fs, Process gs) -> Process gfs
-fluorine.Process.o.prototype.preconcat = function(proc)
+self.fluorine.Process.o.prototype.preconcat = function(proc)
 {
     this.__queue = proc.__queue.concat(this.__queue);
 }
@@ -64,7 +72,7 @@ fluorine.Process.o.prototype.preconcat = function(proc)
 // even the undefined ( call with no arguments ).
 //
 // run:: Process ( a->b ) -> b | Tuple -> Process b | Tuple
-fluorine.Process.o.prototype.run = function(result)
+self.fluorine.Process.o.prototype.run = function(result)
 {
     // Tuple | 0 or 1
     if( 2 <= arguments.length )
@@ -90,19 +98,43 @@ fluorine.Process.o.prototype.run = function(result)
 
     // The function will call next function to run, 
     // if it's not the end of the process.
-    __fn.apply({}, arguments)
 
+    try{
+        // TODO: Should use logger and debugging level...
+        fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name)
+
+        __fn.apply({}, arguments)
+    } catch(e)
+    {
+        // Print multiple times when this step is deep in stack.
+        if( undefined == e.__printed )
+        {
+            fluorine.logger()('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
+            e.__printed = true
+        }
+        //debugger
+        throw e
+    }
 }
 
 // Refresh the process. Make it runnable again.
 //
 // refresh:: Process fs
-fluorine.Process.o.prototype.refresh = function()
+self.fluorine.Process.o.prototype.refresh = function()
 {
+    // FIXME:
+    // Push all left steps in queue into refreshed queue.
+    // 
+    // This loop works only when a process be refreshed before it got done.
+    // The contextes need not it.
+    /*
     while( 0 != this.__queue.length )
     {
-        this.__recycle_queue.push(this.__queue.shift())
+        var step = this.__queue.shift()
+        console.log('[DEBUG] Adding left step in original queue, step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+step.__name)
+        this.__recycle_queue.push(step)
     }
+    */
     this.__queue = this.__recycle_queue
     this.__recycle_queue = []
 }
@@ -110,10 +142,12 @@ fluorine.Process.o.prototype.refresh = function()
 // Extract the last result of called functions.
 //
 // extract:: Process ( a->b ) -> b
-fluorine.Process.o.prototype.extract = function()
+self.fluorine.Process.o.prototype.extract = function()
 {
     return this.__result;    
 }
+
+self.fluorine.registerInfect('Process', self.fluorine.Process)
 
 /**
  * -- Programmer's Hidden Notes --

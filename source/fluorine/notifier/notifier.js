@@ -1,4 +1,9 @@
 
+if( undefined === self.fluorine )
+{
+    throw new Error('[ERROR] Should include fluorine.utils first.')
+}
+
 //
 // The Notifier is the core of fluorine at low-level.
 // Every cross-components computation should use notification rather than directly call each other.
@@ -12,8 +17,8 @@
 
 // The namespace objects.
 
-fluorine = {} || fluorine;
-fluorine.Notifier = {};
+self.fluorine = self.fluorine || {}
+self.fluorine.Notifier = {}
 
 //
 // Initialize the notifier.
@@ -21,15 +26,16 @@ fluorine.Notifier = {};
 // they will be wiped out
 //
 // init:: Notifier n 
-fluorine.Notifier.init = function()
+self.fluorine.Notifier.init = function()
 {
-    fluorine.Notifier.trie = {};
-    return fluorine.Notifier;
+    self.fluorine.Notifier.trie = {};
+    return self.fluorine.Notifier;
 }
 
 //
-// Register a handler on a note.
-//
+// Register a handler on a note. 
+// Override existing binding function if the `str_names` is the same, and provide no context/id.
+// 
 // The last argument, "context", can be any object, 
 // and the callback will be called with it as context.  
 // 
@@ -37,21 +43,21 @@ fluorine.Notifier.init = function()
 // handlers bound on "abc.de.gh" will also be triggered.
 //
 // on:: Notifier n -> ( NoteName, (note -> a), Context ) -> Notifier n'
-fluorine.Notifier.on = function(str_names, cb, context)
+self.fluorine.Notifier.on = function(str_names, cb, context)
 {
     if( "" == str_names )
     {
         return; // don't allow the empty name, even though it will match "all" notes.
     }
-    fluorine.EventTrie.set
-    (   fluorine.Notifier.trie, str_names, 
+    self.fluorine.EventTrie.set
+    (   self.fluorine.Notifier.trie, str_names, 
         function(note)
         {   
             cb.call(context, note); 
         }
     );
 
-    return fluorine.Notifier;
+    return self.fluorine.Notifier;
 }
 
 //
@@ -62,7 +68,7 @@ fluorine.Notifier.on = function(str_names, cb, context)
 // Only the "name" filed is required.
 //
 // trigger:: Notifier n -> Note -> Notifier n
-fluorine.Notifier.trigger = function(note)
+self.fluorine.Notifier.trigger = function(note)
 {
     // note is a single string.
     if( ! note.name )
@@ -70,7 +76,7 @@ fluorine.Notifier.trigger = function(note)
         note = {'name': note}; 
     }
 
-    var cbs = fluorine.EventTrie.match(fluorine.Notifier.trie, note.name);
+    var cbs = self.fluorine.EventTrie.match(self.fluorine.Notifier.trie, note.name);
     for( var itr = 0; itr != cbs.length; itr++)
     {
 
@@ -83,7 +89,7 @@ fluorine.Notifier.trigger = function(note)
         //__st__ = setTimeout(function(){ cb.call(null,note); clearTimeout(__st__); },0);
     }
 
-    return fluorine.Notifier;
+    return self.fluorine.Notifier;
 }
 
 //
@@ -92,23 +98,23 @@ fluorine.Notifier.trigger = function(note)
 // So if the parent got removed, children under the name will also be removed.
 //
 // off:: Notifier n -> NoteName -> Notifier n
-fluorine.Notifier.off = function(str_names)
+self.fluorine.Notifier.off = function(str_names)
 {
-    fluorine.EventTrie.remove(fluorine.Notifier.trie, str_names);
+    self.fluorine.EventTrie.remove(self.fluorine.Notifier.trie, str_names);
 }
 
 // ## Inner structure of fluorine.Notifier
 //
 // DO NOT USE. IT'S ONLY FOR IMPLEMENTS.
 
-fluorine.EventTrie = {};
+self.fluorine.EventTrie = {};
 
-fluorine.EventTrie.set = function(tree, str_names, cb)
+self.fluorine.EventTrie.set = function(tree, str_names, cb)
 {
-    fluorine.EventTrie.doSet(tree, str_names.split('.'), cb);
+    self.fluorine.EventTrie.doSet(tree, str_names.split('.'), cb);
 }
 
-fluorine.EventTrie.doSet = function(tree, names, cb)
+self.fluorine.EventTrie.doSet = function(tree, names, cb)
 {
     var entry = tree[names[0]];
     if(1 == names.length)
@@ -129,15 +135,15 @@ fluorine.EventTrie.doSet = function(tree, names, cb)
     {
         tree[names[0]] = { '__data__': null};
     }
-    fluorine.EventTrie.doSet(tree[names[0]], names.slice(1), cb);
+    self.fluorine.EventTrie.doSet(tree[names[0]], names.slice(1), cb);
 }
 
-fluorine.EventTrie.remove = function(tree, str_names)
+self.fluorine.EventTrie.remove = function(tree, str_names)
 {
-    fluorine.EventTrie.doRemove(tree, str_names.split('.'));
+    self.fluorine.EventTrie.doRemove(tree, str_names.split('.'));
 }
 
-fluorine.EventTrie.doRemove = function(tree, names)
+self.fluorine.EventTrie.doRemove = function(tree, names)
 {
     var entry = tree[names[0]];
     if(1 == names.length)
@@ -149,21 +155,21 @@ fluorine.EventTrie.doRemove = function(tree, names)
 
     if( undefined != entry )
     {
-        fluorine.EventTrie.doRemove(tree[names[0]], names.slice(1));
+        self.fluorine.EventTrie.doRemove(tree[names[0]], names.slice(1));
     }
 }
 
-fluorine.EventTrie.match = function(tree, name)
+self.fluorine.EventTrie.match = function(tree, name)
 {
-    return fluorine.EventTrie.doMatch(tree, name.split('.'));
+    return self.fluorine.EventTrie.doMatch(tree, name.split('.'));
 }
 
-fluorine.EventTrie.doMatch = function(tree, names)
+self.fluorine.EventTrie.doMatch = function(tree, names)
 {
 
     if(0 == names.length)
     {
-        return fluorine.EventTrie.getNodes(tree, []);
+        return self.fluorine.EventTrie.getNodes(tree, []);
     } 
 
     var entry = tree[names[0]];
@@ -173,11 +179,11 @@ fluorine.EventTrie.doMatch = function(tree, names)
         return [];
     }
 
-    return fluorine.EventTrie.doMatch( entry, names.slice(1) );
+    return self.fluorine.EventTrie.doMatch( entry, names.slice(1) );
 }
 
 // get all nodes after matching point.
-fluorine.EventTrie.getNodes = function(tree, mem)
+self.fluorine.EventTrie.getNodes = function(tree, mem)
 {
     if( null != tree.__data__ )
     {
@@ -187,9 +193,10 @@ fluorine.EventTrie.getNodes = function(tree, mem)
     {
         if( "__data__" != idx )
         {
-            fluorine.EventTrie.getNodes( tree[idx], mem );
+            self.fluorine.EventTrie.getNodes( tree[idx], mem );
         }
     }
     return mem;
 }
 
+self.fluorine.registerInfect('Notifier', self.fluorine.Notifier)
