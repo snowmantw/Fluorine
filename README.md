@@ -44,9 +44,34 @@ This means users of this library, can access the value ( DOM ) only after the pr
 And a extracting action is need:
 
     // Run the process and extract the value.
-    UI('.button').$().css('background-color', 'red').done().run().extract() 
+    UI('.button').$().css('background-color', 'red').done()().extract() 
 
 In this way, we can manage asynchronous execution within our contexts.
+
+## Principles and Features
+
+- Context constructors play mutiple roles: 
+  - Data constructor    : `IO(a)` means construct a datum with value `a`, and
+  - Type declaration    : `IO(a)` means this datum typed as `IO a`, and
+  - Context beginning   : `IO(a)` means we want to begin a series of IO compuation, and
+  - Computation guard   : `IO(a)` means it's different from pure `a`, thus it can't directly involve pure computations.
+
+- Contexts are all embedded with an inner environment, EX: 
+  - `IO(2).as('a').let( funtion(){ return 2 } ).as('b')._(function(){return this.b - this.a }).done()() // return 0` 
+
+- Contexts are all embedded with an inner process. Customing more context functions need to use these inner process.
+  ( @see `fluorine.Process` and existing context functions like `fluorine.Context._` )
+
+- Bind function play a role as "context-transformer" bind. Means it will automatically extract and bind inner context's values to next function,
+  following base context's rules.
+
+- Outside functions can't directly access the result of computated contexts, unless call `extract` function explicitly.
+
+- Never extract an `IO` context. It's the lowest context, like the same name monad in Haskell.
+
+- When context provide only basic combinators, always doing pure computations inside `let` or `_` function ( call it "lambda" if you want )
+
+- Similarly, always doing impure computations inside `bind` function, which allow developer to bind another context
 
 ## Example
 
@@ -61,7 +86,7 @@ In this way, we can manage asynchronous execution within our contexts.
                 return append( this.first_content, this.second_content )
             }
           )
-        .done()
+        .done()()   // `done` will generate a context, and we can directly run it.
 
     // ----
 
@@ -82,8 +107,8 @@ In this way, we can manage asynchronous execution within our contexts.
                  .toUI()
          }
          )
-        .done
-    .run().extract()    // UI context has extract.
+        .done()()
+    .extract()    // UI context has extract.
 
 ## License 
 
