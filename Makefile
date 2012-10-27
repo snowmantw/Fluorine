@@ -5,7 +5,7 @@ BUILD_DEMO = build/demo
 COFFEE = /usr/local/bin/coco -bcp
 DEMO = demo
 NODE = /usr/local/bin/node
-OBJS = context.js notifier.js process.js
+OBJS = context.js notifier.js process.js utils.js
 OBJ_DEMOS = spec.js todo.js
 SOURCE = source
 SOURCE_FLUORINE = source/fluorine
@@ -14,7 +14,7 @@ TARGETS = ${OBJS:.js=}
 TARGET_DEMOS = ${OBJ_DEMOS:.js=}
 
 
-all: clean notifier process context spec todo
+all: clean utils notifier process context spec todo
 
 clean: 
 	@if [ -e ${BUILD} ]; then \
