@@ -116,9 +116,15 @@ self.fluorine.Context.o.prototype =
             // 
 
             // Receive inner context's result and continue executing this base monad.
+            // @see Context.done and `Context._`
             inner
             (   _.bind( function(a)
             {
+                // The last step of inner monad should already transform it as base monad,
+                // just like type signature require: ( a -> m n b ).
+                // 
+                // And this context is a very basic context, so there is no need to check whether 
+                // the pass out context legal or not.  
                 this.__process.run(a)
             }
             , this
