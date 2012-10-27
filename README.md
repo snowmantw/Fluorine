@@ -65,6 +65,10 @@ In this way, we can manage asynchronous execution within our contexts.
 - Bind function play a role as "context-transformer" bind. Means it will automatically extract and bind inner context's values to next function,
   following base context's rules.
 
+- Native, discrete events will be forwarded to global signal/event switch, and handle them in an AFRP-like way. 
+  This concept porting is for eliminating distributed events, which usually occurs every logic corner in the application,
+  and let event handling logics distributes everywhere, too. 
+
 - Outside functions can't directly access the result of computated contexts, unless call `extract` function explicitly.
 
 - Never extract an `IO` context. It's the lowest context, like the same name monad in Haskell.
