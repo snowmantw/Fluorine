@@ -68,7 +68,7 @@ describe "Process", !->
 
       waits 500
       runs !->
-        expect(Number(proc.extract())).toEqual 100
+        expect(Number(proc.extract())).toEqual 10
 
 
 self.Context = self.fluorine.Context
@@ -126,7 +126,102 @@ describe "Context", !->
         expect(m.__environment['d']).toEqual true
         expect(m.__environment['e']).toEqual false
         
-                        
+self.IO = self.fluorine.IO
+describe "IO", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#get", !->
+    self.it "should get text resouce fomr server ", !->
+        runned_m = null
+        m = IO().
+            get('/testAjax').as('ten').
+            _( -> 10 ).
+            _( -> this.ten - 10 )
+        runs( !->
+            proc_m = m.done()
+            runned_m := proc_m()
+        )
+        waits(300)
+        runs( !->
+            expect(runned_m.extract()).toEqual 0
+        )
+
+
+    self.it "should be able to request binary data from server.", !->
+      isGIF = false
+      
+      # make sure it's a gif (GIF8)
+      m1 = IO().getBinary("/media/TestGIF.gif")._((data) ->
+        arr = new Uint8Array(data)
+        i = undefined
+        len = undefined
+        length = arr.length
+        frames = 0
+        isGIF := true  if arr[0] is 0x47 or arr[1] is 0x49 or arr[2] is 0x46 or arr[3] is 0x38
+      ).done()()
+      waits 500
+      runs !->
+        expect(isGIF).toEqual true
+
+
+  describe "\#post", !->
+    self.it "should POST JSON to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"} ).post('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "post ok"
+    self.it "should POST ArrayBuffer to server.", !->
+        a = null
+        m = IO()._( -> new Uint8Array([1,2,3])).postBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+    self.it "should POST Blob to server.", !->
+        a = null
+        m = IO()._( -> new Blob(['blob object'], {'type': 'text/plain'}) ).postBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+  describe "\#put", !->
+    self.it "should PUT JSON to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"}  ).put('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "put ok"
+
+    self.it "should PUT ArrayBuffer to server.", !->
+        a = null
+        m = IO()._( -> new Uint8Array([1,2,3])).putBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+    self.it "should PUT Blob to server.", !->
+        a = null
+        m = IO()._( -> new Blob(['blob object'], {'type': 'text/plain'}) ).putBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+  describe "\#delete", !->
+    self.it "should DELETE JSON to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"}  ).delete('/testAjax/asd').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "delete ok"
          
 `
 (function() {
