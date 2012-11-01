@@ -215,13 +215,51 @@ describe "IO", !->
             expect(a).toEqual "others"  # server can't parse binary data yet.
 
   describe "\#delete", !->
-    self.it "should DELETE JSON to server.", !->
+    self.it "should DELETE to server.", !->
         a = null
         m = IO()._( -> {'a':"foobar"}  ).delete('/testAjax/asd').
                 _( (r)-> a := r ).done()()
         waits 500
         runs !->
             expect(a).toEqual "delete ok"
+
+  describe "\#bind", !->
+    self.it "should bind some context and use it's result to GET from server, and bind handler of PUT.", !->
+        a = null
+        m = IO().get('/testAjax').
+                 _( (x) -> {'a': "foobar" } if x == 10 ).
+                bind(
+                    ->
+                        Context(20).
+                        let( (x) -> x+@a+10 ).as('c'). 
+                        let( (y) -> y == 30 ).as('d').
+                        let( -> 300 ).as('z').
+                        bind(
+                          ->
+                              Context(@d).
+                                _( (x) -> {'a': "foobar"} if(not @b) ).
+                                done()
+                          ).done()
+                    ).
+                put('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "put ok"
+
+    self.it "should make IOs as sequence, mixed with some pure computations.", !->
+        m = IO().get('/testAjax').as('a').
+                 _( (x) -> {'a': "foobar"}).
+                 put('/testAjax').as('b').
+                 delete('/testAjax/asd').as('c')
+        m.done()()
+        waits 500
+        runs !->
+          expect(m.__environment['a']).toEqual "10"
+          expect(m.__environment['b']).toEqual "put ok"
+          expect(m.__environment['c']).toEqual "delete ok"
+        
+
          
 `
 (function() {

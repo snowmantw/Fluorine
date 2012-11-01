@@ -426,14 +426,26 @@ self.fluorine.IO.o.prototype = _.extend
 	this.__process.next
 	(   _.bind(function()
 	{
-	    // The callback will trigger the "endpoint" of previous process.
-	    // The success callback will resume the execution after it get called.
-	    jQuery.ajax({
-		  type: 'DELETE',
-		  url: url,
-		  success: fluorine.IO.o.__genAjaxSuccess(this.__process),
-		  error: fluorine.IO.o.__genAjaxError(url)
-	    })
+            var process = this.__process
+            var request = new XMLHttpRequest()
+            request.open('DELETE', url, true)
+
+            request.addEventListener
+            (  'load'
+            ,  function() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   'error'
+            ,  function(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send()
+
 	},  this)
 	, 'IO:delete')
 

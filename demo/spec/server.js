@@ -46,7 +46,6 @@ app.get('/testAjax', function(req,res){
 });
 
 app.post('/testAjax', function(req, res){
-console.log(req.params)
     if( 'foobar' == req.param('a') )
     {
         res.send('post ok')
