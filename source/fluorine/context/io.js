@@ -453,3 +453,5 @@ self.fluorine.IO.o.prototype = _.extend
     }
 }
 )
+
+self.fluorine.registerInfect('IO', self.fluorine.IO)
