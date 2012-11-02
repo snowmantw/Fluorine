@@ -45,6 +45,10 @@ app.get('/testAjax', function(req,res){
     res.send('10')
 });
 
+app.get('/testUI/:slc', function(req,res){
+    res.send(req.params.slc)    // send the selector back.
+});
+
 app.post('/testAjax', function(req, res){
     if( 'foobar' == req.param('a') )
     {
