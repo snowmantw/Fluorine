@@ -128,3 +128,8 @@ self.fluorine.UI.o.prototype = _.extend
     }
 }
 )
+<<<<<<< HEAD
+=======
+
+self.fluorine.registerInfect('UI', self.fluorine.UI)
+>>>>>>> dev
