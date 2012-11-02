@@ -23,13 +23,12 @@ app.configure(function()
 {
     app.set('views', __dirname+'/template');
     app.set("view options",{layout:false});
-    app.use(allowCrossDomain)
-    app.use(express.bodyParser());
-    app.use(express.methodOverride());
     app.use('/library',express.static( __dirname + '/../../library'));
     app.use('/build',express.static( __dirname + '/../../build'));
     app.use('/media',express.static( __dirname + '/media'));
-    app.use(app.router);
+    app.use(allowCrossDomain)
+    app.use(express.methodOverride());
+    app.use(express.bodyParser());
 });
 
 app.all('/*', function(req, res, next) {
@@ -43,7 +42,40 @@ app.get('/', function(req,res){
 });
 
 app.get('/testAjax', function(req,res){
-    res.send('100')
+    res.send('10')
+});
+
+app.post('/testAjax', function(req, res){
+    if( 'foobar' == req.param('a') )
+    {
+        res.send('post ok')
+    }
+    else
+    {
+        res.send('others')  // FIXME: Binary data ?
+    }
+});
+
+app.put('/testAjax', function(req, res){
+    if( 'foobar' == req.param('a') )
+    {
+        res.send('put ok')
+    }
+    else
+    {
+        res.send('others')  // FIXME: Binary data ?
+    }
+});
+
+app.delete('/testAjax/:test', function(req, res){
+    if( 'asd' == req.params.test )
+    {
+        res.send('delete ok')
+    }
+    else
+    {
+        res.send('not ok')
+    }
 });
 
 ws.on
