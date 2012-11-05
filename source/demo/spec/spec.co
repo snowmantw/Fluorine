@@ -294,6 +294,7 @@ describe "UI", !->
             expect(m[name]).not.toBe(undefined)
         )
 
+  describe "\#bind", !->
     self.it "should allow mixin with IO context", !->
         m = UI().
              bind( -> IO().get('/testUI/body').done()).
@@ -310,6 +311,28 @@ describe "UI", !->
              forward('click.spec','spec_click').done()()
         $('body').click()
         expect(result).toEqual true
+
+self.Event = self.fluorine.Event
+describe "Event", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#initialize", !->
+    self.it "should allow bind notes handlers", !->
+        m = Event('SpecNote')._( -> 10 ).as('a').
+             bind(
+                 ->
+                    IO().get('/testAjax').done()
+                 ).
+             as('b').
+             _( -> 0 == @a-Number(@b) ).as('c')
+
+        proc_m   = m.done()
+        runned_m = proc_m()
+        Notifier.trigger('SpecNote')
+        waits 300
+        runs !->
+          expect(m.__environment['c']).toEqual true
          
 `
 (function() {
