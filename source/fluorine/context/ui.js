@@ -126,6 +126,32 @@ self.fluorine.UI.o.prototype = _.extend
 
         return this
     }
+
+    // Forward native event as a reactive event.
+    // User should give the original event's name and the forwarding one's,
+    // then once the original event got triggered, the forwarding note will named as user given,
+    // and bring all key/value pairs in the original event.
+    //
+    // @see `fluorine.Notifier` to get more informations about notifications.
+    //
+    // This function exists because the gap between ideal reactive pattern and the unperfect reality.
+    //
+    // :: UI DOM -> String -> String -> UI DOM
+   ,forward: function(orig, fwd)
+    {
+        this.__process.next 
+        (   _.bind(function(dom)
+        {
+           this.__process.run(jQuery(dom).bind(orig, function(e){
+                                
+                fluorine.Notifier.trigger(_.extend(e, {name: fwd}))
+           })) 
+
+        }, this)
+        , 'UI::forward')
+        
+        return this
+    }
 }
 )
 
