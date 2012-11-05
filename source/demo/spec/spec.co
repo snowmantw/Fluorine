@@ -258,8 +258,50 @@ describe "IO", !->
           expect(m.__environment['a']).toEqual "10"
           expect(m.__environment['b']).toEqual "put ok"
           expect(m.__environment['c']).toEqual "delete ok"
-        
 
+self.UI = self.fluorine.UI
+describe "UI", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#$", !->
+    self.it "should mapping jQery methods ", !->
+        names = [ 'animate', 'addClass', 'after', 'append'
+                , 'appendTo', 'attr' , 'before'
+                , 'css'
+                , 'clone', 'detach', 'empty'
+                , 'find','children','parents','parent'
+                , 'end', 'andSelf'
+                , 'fadeIn', 'fadeOut'
+                , 'hide'
+                , 'height', 'html', 'innerHeight'
+                , 'innerWidth', 'insertAfter', 'insertBefore'
+                , 'offset', 'outerHeight', 'outerWidth'
+                , 'prepend', 'prependTo', 'remove'
+                , 'removeAfter', 'removeClass', 'removeProp'
+                , 'replaceAll', 'replaceWith', 'scrollLeft'
+                , 'show'
+                , 'scrollTop', 'text', 'toggleClass'
+                , 'unwrap', 'val', 'wrap'
+                , 'wrap', 'wrapAll', 'wrapInner'
+                , 'filter', 'not', 'eq', 'has'
+                ]
+        m = UI('body').$()
+        _.each\
+        (
+          names
+        , !(name)->
+            expect(m[name]).not.toBe(undefined)
+        )
+
+    self.it "should allow mixin with IO context", !->
+        m = UI().
+             bind( -> IO().get('/testUI/body').done()).
+             $().css('background','cyan').
+             attr('tested','true').done()()
+        waits 300
+        runs !->
+            expect($('body').attr('tested')).toEqual "true"
          
 `
 (function() {
