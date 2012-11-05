@@ -149,6 +149,8 @@ self.fluorine.UI.o.prototype = _.extend
 
         }, this)
         , 'UI::forward')
+        
+        return this
     }
 }
 )
