@@ -304,6 +304,13 @@ describe "UI", !->
         runs !->
             expect($('body').attr('tested')).toEqual "true"
 
+    self.it "should forwarding events as spec", !->
+        result = false
+        fluorine.Notifier.on('spec_click', !-> result := true)
+        m = UI('body').
+             forward('click.spec','spec_click').done()()
+        $('body').click()
+        expect(result).toEqual true
 
 self.Event = self.fluorine.Event
 describe "Event", !->
