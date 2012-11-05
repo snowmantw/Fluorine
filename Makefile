@@ -29,7 +29,8 @@ context: clean
 	fi									  ;	\
         cat ${SOURCE_FLUORINE}/$@/context.js >> ${BUILD_FLUORINE}/context.js ;\
         cat ${SOURCE_FLUORINE}/$@/io.js >> ${BUILD_FLUORINE}/context.js ;\
-        cat ${SOURCE_FLUORINE}/$@/ui.js >> ${BUILD_FLUORINE}/context.js \
+        cat ${SOURCE_FLUORINE}/$@/ui.js >> ${BUILD_FLUORINE}/context.js ;\
+        cat ${SOURCE_FLUORINE}/$@/event.js >> ${BUILD_FLUORINE}/context.js \
 
 ${TARGETS}: clean
 	@if [ ! -e ${BUILD_FLUORINE} ]; then 	\
