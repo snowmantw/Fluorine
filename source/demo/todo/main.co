@@ -61,9 +61,7 @@ fluorine.Event('app.bootstrap')
                 ).
                 done()
         )
-        .out('_')( (_)-> {} )
-        .done()
-        .run()
+        .done()()
 
 fluorine.Event('queue.content.edit')
         .bind\
@@ -72,11 +70,9 @@ fluorine.Event('queue.content.edit')
                      attr('contenteditable', 'true').
                      done()
         )
-        .out('_')( (_)-> {} )
-        .done()
-        .run()
+        .done()()
 
 # ---- Program Start ----
 
-fluorine.UI('document').$().forward('ready')(->'app.bootstrap').done().run()
+fluorine.UI('document').$().forward('ready')(->'app.bootstrap').done()()
 
