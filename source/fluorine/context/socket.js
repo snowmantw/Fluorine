@@ -22,7 +22,7 @@ self.fluorine.Socket = function(a)
 
 // Inner implement of this context.
 //
-self.fluorine.Socket.o = self.fluorine.Context.o
+self.fluorine.Socket.o = function(a){ self.fluorine.Context.o.call(this, a) }
 
 // Extends basic the context.
 _.extend( self.fluorine.Socket.o.prototype, self.fluorine.Context.o.prototype )
@@ -48,6 +48,7 @@ self.fluorine.Socket.o.prototype = _.extend
     }
 
     // Send data ( Blob, String, ArrayBuffer ) to server.
+    // If the connection is not established, send after it done.
     //
     // SocketData = SocketData Blob String ArrayBuffer
     // :: Socket Handler -> SocketData -> Socket Handler
@@ -56,14 +57,23 @@ self.fluorine.Socket.o.prototype = _.extend
         this.__process.next
         (   _.bind( function(socket)
         {
-            socket.send(data)
+            if( 1 != socket.readyState )
+            {
+                socket.addEventListener('open', function(){
+                    socket.send(data)
+                })
+            }
+            else
+            {
+                socket.send(data)
+            }
             this.__process.run(socket)
         },  this)
         ,   'Socket::connect')
         return this
     }
 
-    // Close the socket.
+    // Close the socket. If the connection is not established, close after it done.
     //
     // :: Socket Handler -> CodeNumber -> String -> Socket ()
    ,close: function(code, reason)
@@ -71,15 +81,27 @@ self.fluorine.Socket.o.prototype = _.extend
         this.__process.next
         (   _.bind( function(socket)
         {
-            socket.close(code, reason)
+            if( 1 != socket.readyState )
+            {
+                socket.addEventListener('open', function(){
+                    socket.close()
+                })
+            }
+            else
+            {
+                socket.close(code, reason)
+            }
             this.__process.run()
-        }
-        ),  'Socket::close')
+        }, this)
+        ,  'Socket::close')
+        return this
     }
 
     // Forward Socket event as a reactive event. 
     // User should pass a filter function, which receive `SocketEvent` and generate a note's name.
     // This function will generate a notificaiton named with filter generated, with flattern data from the event.
+    //
+    // Note the filter should return `undeinfed`, if the event not fit the filter.
     //
     // @see `fluorine.Notifier` to get more informations about notifications.
     //
@@ -90,7 +112,7 @@ self.fluorine.Socket.o.prototype = _.extend
     //
     // SocketEvent = MessageEvent Data Handler| CloseEvent Code Reason WasClean Handler| OpenEvent Handler | ErrorEvent Handler
     //
-    // :: Socket Handler -> (SocketEvent -> String) -> Socket Handler
+    // :: Socket Handler -> (SocketEvent -> Maybe String) -> Socket Handler
    ,forward: function(filter)
     {
         this.__process.next 
@@ -98,26 +120,38 @@ self.fluorine.Socket.o.prototype = _.extend
         {
             socket.addEventListener('open', function(e)
             {
-                var name = filter('open', handler)
-                fluorine.Notifier.trigger({'name': name})           
+                var name = filter('open', socket)
+                if( undefined != name)
+                {
+                    fluorine.Notifier.trigger({'name': name})           
+                }
             })
 
             socket.addEventListener('error', function(e)
             {
-                var name = filter('error', handler)
-                fluorine.Notifier.trigger({'name': name})           
+                var name = filter('error', socket)
+                if( undefined != name)
+                {
+                    fluorine.Notifier.trigger({'name': name})           
+                }
             })
 
             socket.addEventListener('close', function(e)
             {
-                var name = filter('close', e.code, e.reason, e.wasClean, handler)
-                fluorine.Notifier.trigger(_.extend(e, {'name': name}))
+                var name = filter('close', e.code, e.reason, e.wasClean, socket)
+                if( undefined != name)
+                {
+                    fluorine.Notifier.trigger(_.extend(e, {'name': name}))
+                }
             })
             
             socket.addEventListener('message', function(e)
             {
-                var name = filter('message', e.data, handler)
-                fluorine.Notifier.trigger(_.extend(e, {'name': name}))
+                var name = filter('message', e.data, socket)
+                if( undefined != name)
+                {
+                    fluorine.Notifier.trigger(_.extend(e, {'name': name}))
+                }
             })
 
             this.__process.run(socket)
