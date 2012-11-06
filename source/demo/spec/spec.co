@@ -308,7 +308,7 @@ describe "UI", !->
         result = false
         fluorine.Notifier.on('spec_click', !-> result := true)
         m = UI('body').
-             forward('click.spec','spec_click').done()()
+             forward('click.spec', -> 'spec_click').done()()
         $('body').click()
         expect(result).toEqual true
 
