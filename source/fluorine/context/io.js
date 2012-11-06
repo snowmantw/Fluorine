@@ -26,7 +26,7 @@ self.fluorine.IO = function(a)
 
 // Inner implement of this context.
 //
-self.fluorine.IO.o = self.fluorine.Context.o
+self.fluorine.IO.o = function(a){ self.fluorine.Context.o.call(this, a) }
 
 
 // Statics functions.

@@ -22,7 +22,7 @@ self.fluorine.UI = function(a)
 
 // Inner implement of this context.
 //
-self.fluorine.UI.o = self.fluorine.Context.o
+self.fluorine.UI.o = function(a){ self.fluorine.Context.o.call(this, a) }
 
 // Statics functions.
 _.extend( self.fluorine.UI.o,
