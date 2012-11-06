@@ -333,6 +333,22 @@ describe "Event", !->
         waits 300
         runs !->
           expect(m.__environment['c']).toEqual true
+
+self.Socket = self.fluorine.Socket
+describe "Socket", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#open", !->
+    self.it "should allow open and close", !->
+        a = false
+        m = Socket().connect('ws://127.0.0.1:3030').
+                forward( !(name, open_hr)-> a:=true if name == "open" ).
+                close().
+                done()()
+        waits 300
+        runs !->
+            expect(a).toEqual true
          
 `
 (function() {
