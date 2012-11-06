@@ -145,7 +145,7 @@ self.fluorine.UI.o.prototype = _.extend
            if( 'ready' == name)
            {
                 jQuery('document').ready( function(){
-                    fluorine.Notifier.trigger(_.extend(e, {name: fwd(e)}))
+                    fluorine.Notifier.trigger({name: fwd({})})
                 })
            }
            else
