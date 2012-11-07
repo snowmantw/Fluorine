@@ -35,13 +35,14 @@ self.fluorine.Socket.o.prototype = _.extend
 {
     // Open a socket with specific URL.
     //
-    // :: URL -> [ Protocol ] -> Socket Handler 
-    connect: function(url, protocols)
+    // ConnectionInfo:: ConnectionInfo URL Protocols {-[ Protocol ]-}
+    // :: Socket ConnectionInfo -> Socket Handler 
+    connect: function()
     {
         this.__process.next
-        (   _.bind( function()
+        (   _.bind( function(cinfo)
         {
-            this.__process.run(new WebSocket(url, protocols))
+            this.__process.run(new WebSocket(cinfo.url, cinfo.protocols))
         },  this)
         ,   'Socket::connect')
         return this
