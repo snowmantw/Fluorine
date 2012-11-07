@@ -342,7 +342,7 @@ describe "Socket", !->
   describe "\#open", !->
     self.it "should allow open and close", !->
         a = false
-        m = Socket().connect('ws://127.0.0.1:3030').
+        m = Socket('url': 'ws://127.0.0.1:3030').connect().
                 forward( !(name, data, hr)-> a:=true if name == "close" ).
                 close().
                 done()()
