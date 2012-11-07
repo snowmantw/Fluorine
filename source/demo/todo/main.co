@@ -47,14 +47,12 @@ fluorine.Event('app.bootstrap')
         .bind\
         ( -> fluorine.UI('body').  # Global binding like in Yampa.
                 $().
-                forward('keypress')\
-                (
+                forward('keypress',
                 (e) ->
                     return "queue.content.input" if $(e.target).hasClass('content')
                     "_"
                 ).
-                forward('click')\
-                (
+                forward('click',
                 (e) ->
                     return "queue.content.edit" if $(e.target).hasClass('content')
                     "_"
@@ -74,5 +72,5 @@ fluorine.Event('queue.content.edit')
 
 # ---- Program Start ----
 
-fluorine.UI('document').$().forward('ready')(->'app.bootstrap').done()()
+fluorine.UI('document').$().forward('ready', ->'app.bootstrap').done()()
 
