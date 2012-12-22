@@ -56,15 +56,17 @@ self.fluorine.Event.o.prototype = _.extend
     // Override exist one to provide more 
     // debug message while the event got triggered.
     //
+    // The data will come with the note, so needn't any param.
+    //
     // :: Context m,n => m n a -> b -> m n b
-    initialize: function(a)
+    initialize: function()
     {
         this.__process.next
-        (   _.bind( function()
+        (   _.bind( function(note)  // Run while note coming.
         {
             // If bound, there is an environment from base context.
             this.__environment = this.__environment || {}
-            this.__process.run(a)
+            this.__process.run(note)
         },  this
         ), 'Event::initialize<'+this.__name+'>' )
         return this
@@ -85,8 +87,8 @@ self.fluorine.Event.o.prototype = _.extend
         var id = this.__name+'.'+fluorine.uuid()
         
         // Begin from first step of this context.
-        fluorine.Notifier.on(id, _.bind( function(){
-            this.__process.run()
+        fluorine.Notifier.on(id, _.bind( function(note){
+            this.__process.run(note)
         }, this )) 
         return this.__process
     }

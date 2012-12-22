@@ -5,8 +5,8 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <meta http-equiv="Content-Language" content="zh-tw" />
     <title>Fluorine Demo - Todo</title>
-    <link rel="stylesheet/css" href="/library/twitter-bootstrap/css/bootstrap.min.css"/>
     <link rel="stylesheet/less" href="/style/main.less"/>
+    <link rel="stylesheet" href="/library/twitter-bootstrap/css/bootstrap.min.css"/>
 
     <script src="/library/jquery/jquery-min.js"></script>
     <script src="/library/twitter-bootstrap/js/bootstrap.min.js"></script>
@@ -24,8 +24,14 @@
 </head>
   <body>
       <div class="subpage" id="main">
-          <div id="queue">
-          </div>
+        <div id="queue-wrapper">
+              <div id="queue-prev" class="queue">
+              </div>
+              <div id="queue-now" class="queue">
+              </div>
+              <div id="queue-next" class="queue">
+              </div>
+        </div>
       </div>
   </body>
 </html>

@@ -147,14 +147,14 @@ self.fluorine.UI.o.prototype = _.extend
                 jQuery('document').ready( function(){
                     fluorine.Notifier.trigger({name: fwd({})})
                 })
+                this.__process.run(dom)
            }
            else
            {
                this.__process.run(jQuery(dom).bind(name, function(e){
                     fluorine.Notifier.trigger(_.extend(e, {name: fwd(e)}))
-               })) 
+               }).get(0)) 
            }
-
         }, this)
         , 'UI::forward')
         
