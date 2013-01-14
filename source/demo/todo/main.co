@@ -2,16 +2,20 @@
 self.app ?= {}
 self.app.Queue ?= {}
 
-
 #
 # Render one queue-block to DOM.
 #
-# :: Text -> Date -> [HTML Button] -> DOM
+# :: Text -> Date -> [DOM Button] -> DOM
 self.app.Queue.renderBlock = (content) -> (date) -> (buttons) ->
    $(
     _.template(self.app.Template['queue-block'])\
-       ( 'content': content, 'date': date.toDateString(), 'buttons': buttons )
-    ).data('date',date).get(0) # Cache for extracting.
+       ( 'content': content, 'date': date.toDateString())
+    ).
+    find('.menubar').
+        append(buttons).
+        end().
+    data('date',date).
+    get(0) # Cache for extracting.
 
 #
 # Extract informations from DOM.
@@ -27,43 +31,55 @@ self.app.Queue.extractBlock = (dom) ->
 #
 # Render single block button to DOM.
 #
-# :: CSSClass {-the css class of this button-} -> DOM 
-self.app.Queue.renderBlockButton = (clz) ->
-  _.template(self.app.Template['queue-block-menu-button'])('type':clz)
+# :: CSSClass {-the css class of this button-} -> Boolean {- is actived -} -> DOM 
+self.app.Queue.renderBlockButton = (clz) -> (actived) ->
+  # If clz mapping to icon got unproper name, filter it.
+    $(_.template(self.app.Template['queue-block-menu-button'])('type':clz,'icon':clz)).
+    each( (idx)-> $(this).addClass('active') if actived ; this).
+    get(0)
+
+#
+# Append a current queue block to queue-now.
+#
+# :: UI ()
+self.app.Queue.appendCurrent = ->
+    fluorine.UI('#queue-now').
+    $().
+    append\
+    (   # The backslashes are necessary...
+        # And The indents of parentheneses must be align to the params.
+    self.app.Queue.renderBlock('Todo...')\
+        (new Date())\
+        ([ self.app.Queue.renderBlockButton('remove')(false),
+           self.app.Queue.renderBlockButton('ok')(false),
+           self.app.Queue.renderBlockButton('plus')(false)])
+    ).
+    done()
+
+#
+# Forwarding all native events.
+#
+# :: UI ()
+self.app.Queue.forwardEvents = ->
+    fluorine.UI('body').  # Global binding like in Yampa.
+    $().
+    forward('keypress',
+    (e) ->
+        return "queue.content.input" if $(e.target).hasClass('content')
+        "_"
+    ).
+    forward('click',
+    (e) ->
+        return "queue.content.edit" if $(e.target).hasClass('content')
+        "_"
+    ).
+    done()
 
 fluorine.Notifier.init()
 fluorine.Event('app.bootstrap')
-        .bind\
-        ( -> fluorine.UI('#queue').
-                $().
-                append\
-                (   # The backslashes are necessary...
-                    # And The indents of parentheneses must be align to the params.
-                self.app.Queue.renderBlock('Todo...')\
-                    (new Date())([self.app.Queue.renderBlockButton('close')])
-                ).
-                done()
-        )
-        .bind\
-        ( -> fluorine.UI('body').  # Global binding like in Yampa.
-                $().
-                forward('keypress')\
-                (
-                (e) ->
-                    return "queue.content.input" if $(e.target).hasClass('content')
-                    "_"
-                ).
-                forward('click')\
-                (
-                (e) ->
-                    return "queue.content.edit" if $(e.target).hasClass('content')
-                    "_"
-                ).
-                done()
-        )
-        .out('_')( (_)-> {} )
-        .done()
-        .run()
+        .bind(self.app.Queue.appendCurrent)
+        .bind(self.app.Queue.forwardEvents) # Global binding like Yampa.
+        .done()()
 
 fluorine.Event('queue.content.edit')
         .bind\
@@ -72,11 +88,9 @@ fluorine.Event('queue.content.edit')
                      attr('contenteditable', 'true').
                      done()
         )
-        .out('_')( (_)-> {} )
-        .done()
-        .run()
+        .done()()
 
 # ---- Program Start ----
+fluorine.UI('document').$().forward('ready', ->'app.bootstrap').done()()
 
-fluorine.UI('document').$().forward('ready')(->'app.bootstrap').done().run()
 

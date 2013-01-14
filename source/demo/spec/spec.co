@@ -68,7 +68,7 @@ describe "Process", !->
 
       waits 500
       runs !->
-        expect(Number(proc.extract())).toEqual 100
+        expect(Number(proc.extract())).toEqual 10
 
 
 self.Context = self.fluorine.Context
@@ -126,7 +126,229 @@ describe "Context", !->
         expect(m.__environment['d']).toEqual true
         expect(m.__environment['e']).toEqual false
         
-                        
+self.IO = self.fluorine.IO
+describe "IO", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#get", !->
+    self.it "should get text resouce fomr server ", !->
+        runned_m = null
+        m = IO().
+            get('/testAjax').as('ten').
+            _( -> 10 ).
+            _( -> this.ten - 10 )
+        runs( !->
+            proc_m = m.done()
+            runned_m := proc_m()
+        )
+        waits(300)
+        runs( !->
+            expect(runned_m.extract()).toEqual 0
+        )
+
+
+    self.it "should be able to request binary data from server.", !->
+      isGIF = false
+      
+      # make sure it's a gif (GIF8)
+      m1 = IO().getBinary("/media/TestGIF.gif")._((data) ->
+        arr = new Uint8Array(data)
+        i = undefined
+        len = undefined
+        length = arr.length
+        frames = 0
+        isGIF := true  if arr[0] is 0x47 or arr[1] is 0x49 or arr[2] is 0x46 or arr[3] is 0x38
+      ).done()()
+      waits 500
+      runs !->
+        expect(isGIF).toEqual true
+
+
+  describe "\#post", !->
+    self.it "should POST JSON to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"} ).post('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "post ok"
+    self.it "should POST ArrayBuffer to server.", !->
+        a = null
+        m = IO()._( -> new Uint8Array([1,2,3])).postBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+    self.it "should POST Blob to server.", !->
+        a = null
+        m = IO()._( -> new Blob(['blob object'], {'type': 'text/plain'}) ).postBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+  describe "\#put", !->
+    self.it "should PUT JSON to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"}  ).put('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "put ok"
+
+    self.it "should PUT ArrayBuffer to server.", !->
+        a = null
+        m = IO()._( -> new Uint8Array([1,2,3])).putBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+    self.it "should PUT Blob to server.", !->
+        a = null
+        m = IO()._( -> new Blob(['blob object'], {'type': 'text/plain'}) ).putBinary('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "others"  # server can't parse binary data yet.
+
+  describe "\#delete", !->
+    self.it "should DELETE to server.", !->
+        a = null
+        m = IO()._( -> {'a':"foobar"}  ).delete('/testAjax/asd').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "delete ok"
+
+  describe "\#bind", !->
+    self.it "should bind some context and use it's result to GET from server, and bind handler of PUT.", !->
+        a = null
+        m = IO().get('/testAjax').
+                 _( (x) -> {'a': "foobar" } if x == 10 ).
+                bind(
+                    ->
+                        Context(20).
+                        let( (x) -> x+@a+10 ).as('c'). 
+                        let( (y) -> y == 30 ).as('d').
+                        let( -> 300 ).as('z').
+                        bind(
+                          ->
+                              Context(@d).
+                                _( (x) -> {'a': "foobar"} if(not @b) ).
+                                done()
+                          ).done()
+                    ).
+                put('/testAjax').
+                _( (r)-> a := r ).done()()
+        waits 500
+        runs !->
+            expect(a).toEqual "put ok"
+
+    self.it "should make IOs as sequence, mixed with some pure computations.", !->
+        m = IO().get('/testAjax').as('a').
+                 _( (x) -> {'a': "foobar"}).
+                 put('/testAjax').as('b').
+                 delete('/testAjax/asd').as('c')
+        m.done()()
+        waits 500
+        runs !->
+          expect(m.__environment['a']).toEqual "10"
+          expect(m.__environment['b']).toEqual "put ok"
+          expect(m.__environment['c']).toEqual "delete ok"
+
+self.UI = self.fluorine.UI
+describe "UI", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#$", !->
+    self.it "should mapping jQery methods ", !->
+        names = [ 'animate', 'addClass', 'after', 'append'
+                , 'appendTo', 'attr' , 'before'
+                , 'css'
+                , 'clone', 'detach', 'empty'
+                , 'find','children','parents','parent'
+                , 'end', 'andSelf'
+                , 'fadeIn', 'fadeOut'
+                , 'hide'
+                , 'height', 'html', 'innerHeight'
+                , 'innerWidth', 'insertAfter', 'insertBefore'
+                , 'offset', 'outerHeight', 'outerWidth'
+                , 'prepend', 'prependTo', 'remove'
+                , 'removeAfter', 'removeClass', 'removeProp'
+                , 'replaceAll', 'replaceWith', 'scrollLeft'
+                , 'show'
+                , 'scrollTop', 'text', 'toggleClass'
+                , 'unwrap', 'val', 'wrap'
+                , 'wrap', 'wrapAll', 'wrapInner'
+                , 'filter', 'not', 'eq', 'has'
+                ]
+        m = UI('body').$()
+        _.each\
+        (
+          names
+        , !(name)->
+            expect(m[name]).not.toBe(undefined)
+        )
+
+  describe "\#bind", !->
+    self.it "should allow mixin with IO context", !->
+        m = UI().
+             bind( -> IO().get('/testUI/body').done()).
+             $().css('background','cyan').
+             attr('tested','true').done()()
+        waits 300
+        runs !->
+            expect($('body').attr('tested')).toEqual "true"
+
+    self.it "should forwarding events as spec", !->
+        result = false
+        fluorine.Notifier.on('spec_click', !-> result := true)
+        m = UI('body').
+             forward('click.spec', -> 'spec_click').done()()
+        $('body').click()
+        expect(result).toEqual true
+
+self.Event = self.fluorine.Event
+describe "Event", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#initialize", !->
+    self.it "should allow bind notes handlers", !->
+        m = Event('SpecNote')._( -> 10 ).as('a').
+             bind(
+                 ->
+                    IO().get('/testAjax').done()
+                 ).
+             as('b').
+             _( -> 0 == @a-Number(@b) ).as('c')
+
+        proc_m   = m.done()
+        runned_m = proc_m()
+        Notifier.trigger('SpecNote')
+        waits 300
+        runs !->
+          expect(m.__environment['c']).toEqual true
+
+self.Socket = self.fluorine.Socket
+describe "Socket", !->
+  beforeEach !->
+    fluorine.Notifier.init()
+
+  describe "\#open", !->
+    self.it "should allow open and close", !->
+        a = false
+        m = Socket().connect('ws://127.0.0.1:3030').
+                forward( !(name, data, hr)-> a:=true if name == "close" ).
+                close().
+                done()()
+        waits 300
+        runs !->
+            expect(a).toEqual true
          
 `
 (function() {
