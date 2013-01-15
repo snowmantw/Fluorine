@@ -1,0 +1,25 @@
+
+{
+    "name": "Fluorine",   
+    "version": "0.0.2",   
+    "author": "Greg Weng <snowmantw@gmail.com>",   
+    "description": "a context based library to provide a way to isolate side-effect in programs. also has some async control flow managing functions. ",
+    "main": "fluorine.js",
+    "keywords":[
+         "util",
+         "functional",
+         "client",
+         "server",
+         "browser"
+    ],
+   "repository":{
+        "type": "git",   
+        "url": "git://github.com/snowmantw/Fluorine.git"
+    },
+   "dependencies":
+    {
+        "underscore": "1.4.x",
+        "jquery": "1.8.x"
+    },
+   "license": "GPLv3"
+}

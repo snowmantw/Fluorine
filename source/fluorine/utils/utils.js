@@ -1,5 +1,14 @@
 
-self.fluorine = self.fluorine || {}
+// For Node.js environment.
+// These lines will be the header of merged 'fluorine.js'.
+//
+if( 'undefined' != typeof require )
+{
+    _ = require('underscore')
+}
+
+self = ( 'undefined' == typeof self ) ?  {} : self 
+self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 
 // ----
 // ## Utils 
@@ -29,7 +38,7 @@ self.fluorine.infect = function()
 //
 self.fluorine.heal = function()
 {
-    if( undefined === self.fluorine.infect.__original ) 
+    if( _.isUndefined(self.fluorine.infect.__original) ) 
     {
         return 
     }   
@@ -48,7 +57,7 @@ self.fluorine.heal = function()
 // :: Name -> Context -> ()
 self.fluorine.registerInfect = function(name, context)
 {
-    if( undefined === self.fluorine.infect.__registry )
+    if( _.isUndefined(self.fluorine.infect.__registry) )
     {
         self.fluorine.infect.__registry = {}
     }
@@ -61,7 +70,7 @@ self.fluorine.registerInfect = function(name, context)
 // :: Boolean | None -> Boolean
 self.fluorine.debug = function(mode)
 {
-    if( undefined != mode )
+    if( ! _.isUndefined(mode) )
     {
         self.fluorine.debug.__debug = mode 
     }
@@ -75,13 +84,13 @@ self.fluorine.debug = function(mode)
 // :: (String -> IO ()) | None -> (String -> IO())
 self.fluorine.logger = function(logger)
 {
-    if( undefined != logger )
+    if( ! _.isUndefined(logger) )
     {
         self.fluorine.logger.__logger = logger   
     }
     
     // Default logger log everything while debug mode is on.
-    if( undefined == self.fluorine.logger.__logger )
+    if( _.isUndefined(self.fluorine.logger.__logger) )
     {
         self.fluorine.logger.__logger = function(str)
         {
@@ -111,3 +120,4 @@ self.fluorine.uuid = function()
     }
     return uuid
 }
+

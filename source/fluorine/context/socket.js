@@ -1,5 +1,5 @@
 
-if( undefined === self.fluorine )
+if( _.isUndefined(self.fluorine) )
 {
     throw new Error('[ERROR] Should include fluorine.utils first.')
 }
@@ -121,7 +121,7 @@ self.fluorine.Socket.o.prototype = _.extend
             socket.addEventListener('open', function(e)
             {
                 var name = filter('open', socket)
-                if( undefined != name)
+                if( ! _.isUndefined(name) )
                 {
                     fluorine.Notifier.trigger({'name': name})           
                 }
@@ -130,7 +130,7 @@ self.fluorine.Socket.o.prototype = _.extend
             socket.addEventListener('error', function(e)
             {
                 var name = filter('error', socket)
-                if( undefined != name)
+                if( ! _.isUndefined(name) )
                 {
                     fluorine.Notifier.trigger({'name': name})           
                 }
@@ -139,7 +139,7 @@ self.fluorine.Socket.o.prototype = _.extend
             socket.addEventListener('close', function(e)
             {
                 var name = filter('close', e.code, e.reason, e.wasClean, socket)
-                if( undefined != name)
+                if( ! _.isUndefined(name) )
                 {
                     fluorine.Notifier.trigger(_.extend(e, {'name': name}))
                 }
@@ -148,7 +148,7 @@ self.fluorine.Socket.o.prototype = _.extend
             socket.addEventListener('message', function(e)
             {
                 var name = filter('message', e.data, socket)
-                if( undefined != name)
+                if( ! _.isUndefined(name) )
                 {
                     fluorine.Notifier.trigger(_.extend(e, {'name': name}))
                 }

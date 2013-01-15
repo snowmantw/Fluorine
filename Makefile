@@ -12,8 +12,13 @@ SOURCE_FLUORINE = source/fluorine
 SOURCE_DEMO = source/demo
 TARGETS = ${OBJS:.js=}
 TARGET_DEMOS = ${OBJ_DEMOS:.js=}
+MERGED = fluorine
+PACKAGE_CONFIG = config
 
-all: clean utils notifier process context spec todo
+all: clean utils notifier process context merge export package spec todo 
+
+package:
+	@cp ${PACKAGE_CONFIG}/package.json ${BUILD_FLUORINE}/
 
 clean: 
 	@if [ -e ${BUILD} ]; then \
@@ -21,6 +26,12 @@ clean:
 	else					  \
 		mkdir -p ${BUILD}	; \
 	fi
+
+export:
+	@cat ${SOURCE_FLUORINE}/$@/export.js >> ${BUILD_FLUORINE}/${MERGED}.js
+
+merge:
+	@find ${BUILD_FLUORINE} ! -name "${MERGED}.js" -type f -exec cat {} >> ${BUILD_FLUORINE}/${MERGED}.js \;
 
 # Contexts: merge order important.
 context: clean
