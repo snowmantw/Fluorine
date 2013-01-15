@@ -1,5 +1,5 @@
 
-if( undefined === self.fluorine )
+if( _.isUndefined(self.fluorine) )
 {
     throw new Error('[ERROR] Should include fluorine.utils first.')
 }

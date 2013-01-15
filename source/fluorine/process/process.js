@@ -1,5 +1,5 @@
 
-if( undefined === self.fluorine )
+if( _.isUndefined(self.fluorine) )
 {
     throw new Error('[ERROR] Should include fluorine.utils first.')
 }
@@ -107,7 +107,7 @@ self.fluorine.Process.o.prototype.run = function(result)
     } catch(e)
     {
         // Print multiple times when this step is deep in stack.
-        if( undefined == e.__printed )
+        if( _.isUndefined(e.__printed) )
         {
             fluorine.logger()('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
             e.__printed = true

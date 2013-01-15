@@ -1,5 +1,5 @@
 
-if( undefined === self.fluorine )
+if( _.isUndefined(self.fluorine) )
 {
     throw new Error('[ERROR] Should include fluorine.utils first.')
 }
@@ -119,7 +119,7 @@ self.fluorine.EventTrie.doSet = function(tree, names, cb)
     var entry = tree[names[0]];
     if(1 == names.length)
     {
-        if( undefined == entry )
+        if( _.isUndefined(entry) )
         {
             tree[names[0]]= {'__data__': cb};
         }
@@ -131,7 +131,7 @@ self.fluorine.EventTrie.doSet = function(tree, names, cb)
     }
 
     // No such subtrie yet, create it.
-    if( undefined == entry )
+    if( _.isUndefined(entry) )
     {
         tree[names[0]] = { '__data__': null};
     }
@@ -153,7 +153,7 @@ self.fluorine.EventTrie.doRemove = function(tree, names)
         return; 
     }
 
-    if( undefined != entry )
+    if( ! _.isUndefined(entry) )
     {
         self.fluorine.EventTrie.doRemove(tree[names[0]], names.slice(1));
     }
@@ -173,7 +173,7 @@ self.fluorine.EventTrie.doMatch = function(tree, names)
     } 
 
     var entry = tree[names[0]];
-    if( undefined == entry )
+    if( _.isUndefined(entry) )
     {
         //throw new Error("ERROR: Match nothing in EventTrie. name: "+names[0]);
         return [];

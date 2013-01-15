@@ -1,5 +1,5 @@
 
-if( undefined === self.fluorine )
+if( _.isUndefined(self.fluorine) )
 {
     throw new Error('[ERROR] Should include fluorine.utils first.')
 }
@@ -129,7 +129,7 @@ _.extend( self.fluorine.IO.o,
             {   
                 (   _.bind(function(req)
                 {   
-                    if( undefined != attr )
+                    if( ! _.isUndefined(attr) )
                     {
                         req[aname] = attr
                         this.__process.run(req)
