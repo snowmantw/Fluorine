@@ -6,7 +6,6 @@ if( 'undefined' != typeof require )
 {
     _ = require('underscore')
 }
-
 self = ( 'undefined' == typeof self ) ?  {} : self 
 self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 
@@ -23,15 +22,17 @@ self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 //
 self.fluorine.infect = function()
 {
+    if( 'undefined' != typeof window){ global = self }
     self.fluorine.infect.__original = {}
     _.each
     (   self.fluorine.infect.__registry
     ,   function(context, name)
     {
-        self.fluorine.infect.__original[name] = self[name]
-        self[name] = context
+        self.fluorine.infect.__original[name] = global[name]
+        global[name] = context
     }
     )
+    global['fluorine'] = self.fluorine
 }
 
 // Heal the infection.
