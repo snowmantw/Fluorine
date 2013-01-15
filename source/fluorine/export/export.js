@@ -6,5 +6,5 @@
 // This file should be the bottom of the merged file.
 //
 
-exports = self.fluorine
+exports.fluorine = self.fluorine
 

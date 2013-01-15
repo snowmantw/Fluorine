@@ -1,4 +1,11 @@
 
+`
+if('undefined' != typeof require){  fluorine = require('fluorine').fluorine }
+else if('undefined' != typeof self){ fluorine = self.fluorine }
+
+if('undefined' == typeof window){ self['it'] = context }
+`
+
 fluorine.infect()
 fluorine.debug(true)
 
@@ -351,6 +358,8 @@ describe "Socket", !->
             expect(a).toEqual true
          
 `
+if('undefined' !== typeof window)
+{
 (function() {
   var jasmineEnv = jasmine.getEnv();
   jasmineEnv.updateInterval = 250;
@@ -377,4 +386,5 @@ describe "Socket", !->
     jasmineEnv.execute();
   }
 })();
+}
 `
