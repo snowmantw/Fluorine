@@ -48,7 +48,6 @@ self.fluorine.Event.o = function(name)
 _.extend( self.fluorine.Event.o.prototype, self.fluorine.Context.o.prototype )
 
 // Extends our new functions.
-// Depend on jQuery.ajax, may be decoupled in near future.
 self.fluorine.Event.o.prototype = _.extend
 (   self.fluorine.Event.o.prototype
 ,

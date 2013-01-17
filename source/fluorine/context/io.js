@@ -451,6 +451,14 @@ self.fluorine.IO.o.prototype = _.extend
 
 	return this
     }
+
+    // Do your dirty works here to elimate the gap between ideal and reality.
+    //
+    // :: IO a -> ( a -> IO b ) -> IO b
+    ,unsafe: function(fn)
+    {
+        return self.fluorine.IO.o._(fn)
+    }
 }
 )
 

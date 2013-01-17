@@ -319,6 +319,28 @@ describe "UI", !->
         $('body').click()
         expect(result).toEqual true
 
+    self.it "should mixin multiple contexts", !->
+
+        html = "<div id='text-div' style='border:2px red solid'>Some Text Div Here</div>"
+        e = UI(html).$().appendTo('body').done()
+
+        m = UI().
+             bind( -> IO().get('/testUI/body').done()).as('slc').
+             bind( -> IO().get('/testUI/some-text').done()).as('txt').
+             _( -> @slc ).$().css('background','cyan').
+             bind( -> e).
+             _( -> @slc).$().
+             bind( -> IO().get('/testUI/text-div').done()).
+             _( (s)-> '#'+s ).as('slc2').
+             $().
+             _( ($e)-> $e.text(@txt) ).
+             done()()
+        waits 300
+        runs !->
+            expect($('body').attr('tested')).toEqual "true"
+            expect($('#text-div').text()).toEqual "some-text"
+    
+
 self.Event = self.fluorine.Event
 describe "Event", !->
   beforeEach !->
