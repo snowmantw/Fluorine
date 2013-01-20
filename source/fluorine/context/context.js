@@ -87,11 +87,25 @@ self.fluorine.Context.o.prototype =
         return this
     }
 
+
+    // @2013-01-17 22:44:10+08:00
+    //
+    // NOTE: This is NOT a real MonadTransformer version.
+    // It still can bind another context and execute them correctly,
+    // so we keep it in here for convience.
+    //
+    // The real MonadTransformer version should be
+    // :: Context m,n => m n a -> ( a -> m n b ) -> m n b
+    //
+    // Besides, it also means our context should be initialized with a fixed inner context as it's `n`.
+    //
+    // ----
+    //
     // Bind another context as inner context.
     // Bound function ( context generator ) can access the inner environment.
     // The generated context should be done.
     //
-    // :: Context m,n => m n a -> ( a -> m n b ) -> m n b
+    // :: Context m,n => m a -> ( a -> n b ) -> m b
    ,bind: function(gen)
     {
         this.__process.next
@@ -101,6 +115,9 @@ self.fluorine.Context.o.prototype =
             //              |----||----|  |---- ...    inner context
             //
             var inner = gen.call(this.__environment,val)
+
+            // Common mistake check.
+            if( ! _.isFunction(inner) ){ throw "Binding an undone context or just not a context."}
             
             // Can't just execute the inner and get value. 
             // because IO context haven't `extract()`, 
@@ -212,7 +229,7 @@ self.fluorine.Context.o.prototype =
         // If continue: 
         // - User can only run this process because the return function
         // - User run it with continue function
-        // - The continue step got execute after whole steps inside this context got executed
+        // - The continue step got executed after whole steps inside this context got executed
         // - Continues steps of base context got execute
         return _.bind( function(continue_fn, base_env)
         {

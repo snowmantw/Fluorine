@@ -101,7 +101,10 @@ self.fluorine.Process.o.prototype.run = function(result)
 
     try{
         // TODO: Should use logger and debugging level...
-        fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name)
+        fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)
+                            +', step name(if any): '+__fn.__name
+                            +' ( call with ),', arguments
+                         )
 
         __fn.apply({}, arguments)
     } catch(e)

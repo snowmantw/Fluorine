@@ -84,12 +84,39 @@ self.fluorine.Event.o.prototype = _.extend
 
         // Append a UUID to the note name, so we will not override the original name.
         var id = this.__name+'.'+fluorine.uuid()
+
+        // NOTE: If this event bind other contexts,
+        // simpley re-execute it will rebind all contexts.
+        // This will cause duplicated inner contexts problem.
         
         // Begin from first step of this context.
         fluorine.Notifier.on(id, _.bind( function(note){
-            this.__process.run(note)
+            this.trigger(note)
+
         }, this )) 
         return this.__process
+    }
+
+    // Solution for strange behavior while bind Event in other context:
+    //
+    // Because Event has two entrypoint: 
+    //
+    // 1. run() while register it's process to Notifier, 
+    // 2. *trigger()* while it got triggered
+    //
+    // Event context should add one entry function named `trigger` instead simple `run`,
+    // and the `trigger` should set a flag in process' "this" to  let the continue function in it's bind to be null,
+    // while it got executed by Notifier. 
+    //
+    // Otherwise, if the process execute via `run`, the flag will be false and the bound continue function 
+    // will not be null, and it will continue with the rest part of base context.
+    //
+    // :: Event -> Process b
+    ,trigger: function(e)
+    {
+        // Don't continue with base context's remain steps.
+        this.__continue_fn = null
+        this.__process.run(e)
     }
 }
 )

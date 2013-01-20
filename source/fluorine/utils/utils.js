@@ -82,7 +82,7 @@ self.fluorine.debug = function(mode)
 // Return the logger function. 
 // Default one is print out everything unless debug is off.
 //
-// :: (String -> IO ()) | None -> (String -> IO())
+// :: ((String,Object) -> IO ()) | None -> ((String,Object) -> IO())
 self.fluorine.logger = function(logger)
 {
     if( ! _.isUndefined(logger) )
@@ -93,11 +93,11 @@ self.fluorine.logger = function(logger)
     // Default logger log everything while debug mode is on.
     if( _.isUndefined(self.fluorine.logger.__logger) )
     {
-        self.fluorine.logger.__logger = function(str)
+        self.fluorine.logger.__logger = function(str, obj)
         {
         if( fluorine.debug() )
         {
-            console.log(str)               
+            console.log(str, obj) 
         }}
     }
     return self.fluorine.logger.__logger
