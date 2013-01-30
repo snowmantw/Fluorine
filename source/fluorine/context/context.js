@@ -12,7 +12,7 @@ if( _.isUndefined(self.fluorine) )
 // Provide following features:
 //
 // - Embedded environment, provide `this` and `as()` to let bound function access it.
-// - Basic lambda ( `_` ) and `bind` function.
+// - Basic lambda ( `_` ) and `tie` function.
 // - Basic `done` function which return another function to execute the context, 
 //   and do process refreshing for executing the context repeately.  
 //
@@ -47,7 +47,7 @@ self.fluorine.Context.o = function(a)
     this.__run_times = 0    // Counter can only initialize once.
     this.__process = new self.fluorine.Process()
     
-    // For binding.
+    // For tieing.
     this.__continue_fn = null
 
     // Initialize step only pass the value to the next step.
@@ -58,7 +58,7 @@ self.fluorine.Context.o = function(a)
 
 self.fluorine.Context.o.prototype =
 {   
-    // Pure function binder. It should only bind pure functions. 
+    // It should only bind pure functions. 
     //
     // :: Context m,n => m n a -> ( a -> b ) -> m n b
     _: function(fn)
@@ -87,11 +87,10 @@ self.fluorine.Context.o.prototype =
         return this
     }
 
-
     // @2013-01-17 22:44:10+08:00
     //
-    // NOTE: This is NOT a real MonadTransformer version.
-    // It still can bind another context and execute them correctly,
+    // NOTE: This is NOT a real MonadTransformer bind.
+    // It still can tie another context and execute them correctly,
     // so we keep it in here for convience.
     //
     // The real MonadTransformer version should be
@@ -106,7 +105,7 @@ self.fluorine.Context.o.prototype =
     // The generated context should be done.
     //
     // :: Context m,n => m a -> ( a -> n b ) -> m b
-   ,bind: function(gen)
+   ,tie: function(gen)
     {
         this.__process.next
         (   _.bind( function(val)
@@ -149,9 +148,27 @@ self.fluorine.Context.o.prototype =
             , this.__environment)()
 
         },  this
-        ), 'Context::bind, next level --> ' )
+        ), 'Context::tie, next level --> ' )
         return this
     } 
+
+    // Try to implement real transformer's bind.
+    //
+    // :: Context m,n => m n a -> ( a -> m n b ) -> m n b
+    ,bind: function(act)
+    {
+        this.__process.next
+        (   _.bind( function(na)    
+        {
+            // Will receive `n a`, because we're in `m` context.
+            // And we don't know how to extract `n a` to `a`, actually.
+            
+            // m ( `n a` >>= (a -> m n b)) == m (n a) -> m (m n b),
+            // then `unit` the later: we got it.
+
+        }
+        ), 'Context::bind')
+    }
 
     // Initialize environment and others.
     //
@@ -237,7 +254,7 @@ self.fluorine.Context.o.prototype =
            if( continue_fn )
            {
                this.__continue(continue_fn, base_env)
-               return _.bind(this.run, this)  // Delegate calling to binder.
+               return _.bind(this.run, this)  // Delegate calling to the tied function.
            }
            return this.run()
         }, this)

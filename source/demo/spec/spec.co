@@ -108,18 +108,18 @@ describe "Context", !->
         expect(m.__environment['a']).toEqual 0
         expect(m.__environment['b']).toEqual true
         
-  describe "\#bind", !->
-     self.it "should be able to bind deep contexts", !->
+  describe "\#tie", !->
+     self.it "should be able to tie deep contexts", !->
         m = Context(10).
               let( (x) -> x-10 ).as('a').
               let( (y) -> y == 0 ).as('b').
-              bind(
+              tie(
                 ->
                     Context(20).
                     let( (x) -> x+@a+10 ).as('c').  # should "inherit" previous's environment.
                     let( (y) -> y == 30 ).as('d').
                     let( -> 300 ).as('z').
-                    bind(
+                    tie(
                       ->
                           Context(@d).
                             let( (x) -> not @b ).as('e').
@@ -230,18 +230,18 @@ describe "IO", !->
         runs !->
             expect(a).toEqual "delete ok"
 
-  describe "\#bind", !->
-    self.it "should bind some context and use it's result to GET from server, and bind handler of PUT.", !->
+  describe "\#tie", !->
+    self.it "should tie some context and use it's result to GET from server, and tie handler of PUT.", !->
         a = null
         m = IO().get('/testAjax').
                  _( (x) -> {'a': "foobar" } if x == 10 ).
-                bind(
+                tie(
                     ->
                         Context(20).
                         let( (x) -> x+@a+10 ).as('c'). 
                         let( (y) -> y == 30 ).as('d').
                         let( -> 300 ).as('z').
-                        bind(
+                        tie(
                           ->
                               Context(@d).
                                 _( (x) -> {'a': "foobar"} if(not @b) ).
@@ -301,10 +301,10 @@ describe "UI", !->
             expect(m[name]).not.toBe(undefined)
         )
 
-  describe "\#bind", !->
+  describe "\#tie", !->
     self.it "should allow mixin with IO context", !->
         m = UI().
-             bind( -> IO().get('/testUI/body').done()).
+             tie( -> IO().get('/testUI/body').done()).
              $().css('background','cyan').
              attr('tested','true').done()()
         waits 300
@@ -325,12 +325,12 @@ describe "UI", !->
         e = UI(html).$().appendTo('body').done()
 
         m = UI().
-             bind( -> IO().get('/testUI/body').done()).as('slc').
-             bind( -> IO().get('/testUI/some-text').done()).as('txt').
+             tie( -> IO().get('/testUI/body').done()).as('slc').
+             tie( -> IO().get('/testUI/some-text').done()).as('txt').
              _( -> @slc ).$().css('background','cyan').
-             bind( -> e).
+             tie( -> e).
              _( -> @slc).$().
-             bind( -> IO().get('/testUI/text-div').done()).
+             tie( -> IO().get('/testUI/text-div').done()).
              _( (s)-> '#'+s ).as('slc2').
              $().
              _( ($e)-> $e.text(@txt) ).
@@ -347,9 +347,9 @@ describe "Event", !->
     fluorine.Notifier.init()
 
   describe "\#initialize", !->
-    self.it "should allow bind notes handlers", !->
+    self.it "should allow tie notes handlers", !->
         m = Event('SpecNote')._( -> 10 ).as('a').
-             bind(
+             tie(
                  ->
                     IO().get('/testAjax').done()
                  ).
