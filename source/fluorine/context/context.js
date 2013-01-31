@@ -116,7 +116,7 @@ self.fluorine.Context.o.prototype =
             var inner = gen.call(this.__environment,val)
 
             // Common mistake check.
-            if( ! _.isFunction(inner) ){ throw "Binding an undone context or just not a context."}
+            if( ! _.isFunction(inner) ){ throw "Tying an undone context or just not a context."}
             
             // Can't just execute the inner and get value. 
             // because IO context haven't `extract()`, 
@@ -152,23 +152,63 @@ self.fluorine.Context.o.prototype =
         return this
     } 
 
-    // Try to implement real transformer's bind.
+    // Try to implement real bind like transformer's.
     //
     // :: Context m,n => m n a -> ( a -> m n b ) -> m n b
+    /*
     ,bind: function(act)
     {
         this.__process.next
-        (   _.bind( function(na)    
+        (   _.bind( function(na_run)    
         {
-            // Will receive `n a`, because we're in `m` context.
-            // And we don't know how to extract `n a` to `a`, actually.
-            
-            // m ( `n a` >>= (a -> m n b)) == m (n a) -> m (m n b),
-            // then `unit` the later: we got it.
+            // Setup the continue function of `na`:
+            //
+            // embedded a base context's handler in 
+            // to bind the value which is base monadic, 
+            // and then let the `act`  do it's job.
 
-        }
+            // `na` will be `n (ContextM a)`,
+            // and this `Context` can access the `ContextM a` bypass the `n` 
+            // via embedding it's handler into `n>>=`
+            
+
+            // In our "type" format, we will set na's continue function,
+            // and let it execute the Context handler.
+
+            // TODO: ? Need to combine the original and our continue function ?
+
+            // We need to run the inner context to run base context .
+            // Note that the `na` is a argument and in runtime.
+            // 
+            // Why use continue because we shouldn't run a done context,
+            // and this is not a standard restriction, but a issue come with contexts which can be closed.
+
+            // Note: `na_done` is a function which an receive a function as the next step after execute itself.
+            // This is described in the `done` function ( see what it return ).
+
+            na_run
+            ( function(ma)
+            {
+                // Ok, we can access to `ContextM a`,
+                // the `na`'s result.
+                // We should decide how to continue with this result,
+                // just like the `MaybeT` does.
+
+                // The continue function is simply the `fn` passed,
+                // we should execute it with `ma` result and get the next `m n a`;
+                // this next context's `n a` should pass to `this.__process.run` to 
+                // continue this process (and be used again). 
+                // Again, this is because we implement this bind in a static/runtime system,
+                // so we need to care about continuation of the process.
+
+                // And please note we don't do any special thing to handle the `na` inside this context.
+                // Other context should override this default implement to use the true power of transformer.
+            },{}
+            ) 
+        },  this
         ), 'Context::bind')
     }
+    */
 
     // Initialize environment and others.
     //
@@ -241,7 +281,6 @@ self.fluorine.Context.o.prototype =
             }
         },  this
         ), 'Context::done' )
-
 
         // If continue: 
         // - User can only run this process because the return function
