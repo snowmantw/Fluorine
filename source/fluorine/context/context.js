@@ -161,36 +161,20 @@ self.fluorine.Context.o.prototype =
         this.__process.next
         (   _.bind( function(na_run)    
         {
-            // Setup the continue function of `na`:
+            // As normal transformer described, the `bind` will receive a inner monadic function,
+            // and we should embedded our judgement function of base monad in it's context.
             //
-            // embedded a base context's handler in 
-            // to bind the value which is base monadic, 
-            // and then let the `act`  do it's job.
+            // @see `MaybeT` examples in most guides about monad transformer. 
 
-            // `na` will be `n (ContextM a)`,
-            // and this `Context` can access the `ContextM a` bypass the `n` 
-            // via embedding it's handler into `n>>=`
-            
-
-            // In our "type" format, we will set na's continue function,
-            // and let it execute the Context handler.
-
-            // TODO: ? Need to combine the original and our continue function ?
-
-            // We need to run the inner context to run base context .
-            // Note that the `na` is a argument and in runtime.
-            // 
-            // Why use continue because we shouldn't run a done context,
-            // and this is not a standard restriction, but a issue come with contexts which can be closed.
-
-            // Note: `na_done` is a function which an receive a function as the next step after execute itself.
+            // Note: `na_run` is a function which an receive a function as the next step after execute itself.
             // This is described in the `done` function ( see what it return ).
+            //
+            // We simulate the embedded binding processing with our Process and continue mechanism.
 
             na_run
-            ( function(ma)
+            ( _.bind( function(ma_run)
             {
-                // Ok, we can access to `ContextM a`,
-                // the `na`'s result.
+                // Ok, we can access to `ContextM a`, the `na`'s result.
                 // We should decide how to continue with this result,
                 // just like the `MaybeT` does.
 
@@ -203,8 +187,27 @@ self.fluorine.Context.o.prototype =
 
                 // And please note we don't do any special thing to handle the `na` inside this context.
                 // Other context should override this default implement to use the true power of transformer.
-            },{}
-            ) 
+
+                // Now: 
+                // "Extract" `ma` without any judgement.
+
+                // Note: extract from IO will cause problem. So I can realize why no `IOT` which will embedded an `IO` in.
+                // But in our contexts, asynchonous contexts are still the problem
+                ma_run( _.bind( function(a)
+                {
+                    // -> M n a means THIS should be a state with such sig. and `na` inner is ok enough.
+                    mnb_run = act(a)
+
+                    // We must get `n b` and pass it to next step, rather than `m n b`
+                    mnb_run
+                    ( _.bind( function(nb)
+                    {
+                       this.__process.run(nb)
+                    }, this))
+                }, this))
+
+            }, this)) 
+
         },  this
         ), 'Context::bind')
     }
