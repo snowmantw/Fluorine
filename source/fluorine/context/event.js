@@ -113,7 +113,6 @@ self.fluorine.Event.o.prototype = _.extend
     // :: Event -> Process b
     ,trigger: function(e)
     {
-console.log('triggered')
         // Don't continue with base context's remain steps.
         this.__continue_fn = null
         this.__process.run(e)

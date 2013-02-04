@@ -1546,7 +1546,6 @@ self.fluorine.Event.o.prototype = _.extend
         // Begin from first step of this context.
         fluorine.Notifier.on(id, _.bind( function(note){
             this.trigger(note)
-
         }, this )) 
         return this.__process
     }
@@ -1568,6 +1567,7 @@ self.fluorine.Event.o.prototype = _.extend
     // :: Event -> Process b
     ,trigger: function(e)
     {
+console.log('triggered')
         // Don't continue with base context's remain steps.
         this.__continue_fn = null
         this.__process.run(e)
