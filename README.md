@@ -77,6 +77,18 @@ In this way, we can manage asynchronous execution within our contexts.
 
 - Similarly, always doing impure computations inside `bind` function, which allow developer to bind another context
 
+## Convenience vs. Correctness
+
+I've tried to implement a "real" monad version and strictly follow the way Haskell does,
+but it's a difficult mission ( for me !) and I'm under stress from other daily projects.
+
+So I deprecated the first version and hope I can get some prototype as soon as possible,
+at least to evalute my ideas about these function structures are right or wrong.
+
+Now you can see there're some ideas that are definitely incorrect from the view of pure functional world.
+But these features are at least "syntax" functional ( well...) .
+And I think there're chances to refactor this library and eDSL to make it more functional.
+
 ## Example
 
     // Get a file and process its content with pure functions.
@@ -98,7 +110,7 @@ In this way, we can manage asynchronous execution within our contexts.
     //
     UI('.data-form').$()
         .eq(0)
-        .bind
+        .tie
          (  function(ui_form)
          {   return IO()
                  .get('/data-form.json')
