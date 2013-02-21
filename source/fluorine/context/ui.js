@@ -64,6 +64,10 @@ _.extend( self.fluorine.UI.o,
                 {
                     fluorine.UI.o.__delegate_find.call(this, args) 
                 }
+                else if('end' == name)
+                {    
+                    fluorine.UI.o.__delegate_end.call(this, args) 
+                }   
                 else
                 {
                     fluorine.UI.o.__delegate.call(this, args) 
