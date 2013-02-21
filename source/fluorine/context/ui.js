@@ -113,7 +113,7 @@ _.extend( self.fluorine.UI.o,
             {
                 var name = args.name 
                 if('find' != name) { throw "Not `find` function in special delegating call." }
-                var dom_result = jQuery(args[0])
+                var dom_result = jQuery(dom_prev).find(args[0])
                 this.__process.run(dom_result)
             }
             ,   this
