@@ -1352,6 +1352,10 @@ _.extend( self.fluorine.UI.o,
                 {
                     fluorine.UI.o.__delegate_find.call(this, args) 
                 }
+                else if('end' == name)
+                {    
+                    fluorine.UI.o.__delegate_end.call(this, args) 
+                }   
                 else
                 {
                     fluorine.UI.o.__delegate.call(this, args) 
@@ -1389,6 +1393,27 @@ _.extend( self.fluorine.UI.o,
         ,   'UI::__delegate<'+args.name+'>'
         )
     }
+
+    // Special handler function.
+    //
+    // :: UI s -> *args (with 'name' property, which is 'find') -> ()
+   ,__delegate_end: function(args)
+    {
+        this.__process.next
+        (   _.bind
+            (   function(dom_prev)
+            {
+                var name = args.name 
+
+                // Special states for jQuery 'find' and 'end'.
+                dom_result = this.__jq_stack_doms.pop()
+                this.__process.run(dom_result)
+            }
+            ,   this
+            )
+        ,   'UI::__delegate<'+args.name+'>'
+        )
+    }
     
     // Special handler function.
     //
@@ -1401,7 +1426,12 @@ _.extend( self.fluorine.UI.o,
             {
                 var name = args.name 
                 if('find' != name) { throw "Not `find` function in special delegating call." }
-                var dom_result = jQuery(args[0])
+                var dom_result = jQuery(dom_prev).find(args[0])
+
+                if(this.__jq_stack_doms){ this.__jq_stack_doms = [] }
+
+                // Special states for jQuery find and end.
+                this.__jq_stack_doms.push(dom_result)
                 this.__process.run(dom_result)
             }
             ,   this
