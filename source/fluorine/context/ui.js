@@ -59,7 +59,15 @@ _.extend( self.fluorine.UI.o,
             function()
             {   var args = _.map(arguments, function(a){return a})
                 args.name = name 
-                fluorine.UI.o.__delegate.call(this, args) 
+                
+                if('find' == name)
+                {
+                    fluorine.UI.o.__delegate_find.call(this, args) 
+                }
+                else
+                {
+                    fluorine.UI.o.__delegate.call(this, args) 
+                }
                 return this;
             }
        })
@@ -86,6 +94,26 @@ _.extend( self.fluorine.UI.o,
                 // using jQuery as default is just for convenience.
                 //
                 var dom_result = jQuery(dom_prev)[name].apply(dom_prev, args)
+                this.__process.run(dom_result)
+            }
+            ,   this
+            )
+        ,   'UI::__delegate<'+args.name+'>'
+        )
+    }
+    
+    // Special handler function.
+    //
+    // :: UI s -> *args (with 'name' property, which is 'find') -> ()
+   ,__delegate_find: function(args)
+    {
+        this.__process.next
+        (   _.bind
+            (   function(dom_prev)
+            {
+                var name = args.name 
+                if('find' != name) { throw "Not `find` function in special delegating call." }
+                var dom_result = jQuery(args[0])
                 this.__process.run(dom_result)
             }
             ,   this
