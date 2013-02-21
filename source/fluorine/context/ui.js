@@ -118,7 +118,14 @@ _.extend( self.fluorine.UI.o,
                 var name = args.name 
 
                 // Special states for jQuery 'find' and 'end'.
-                dom_result = this.__jq_stack_doms.pop()
+                if( 'undefined'  == typeof this.__jq_stack_doms || 0 == this.__jq_stack_doms.length) 
+                {
+                    dom_result = dom_prev
+                }
+                else
+                {
+                    dom_result = this.__jq_stack_doms.pop()
+                }
                 this.__process.run(dom_result)
             }
             ,   this
@@ -140,7 +147,7 @@ _.extend( self.fluorine.UI.o,
                 if('find' != name) { throw "Not `find` function in special delegating call." }
                 var dom_result = jQuery(dom_prev).find(args[0])
 
-                if(this.__jq_stack_doms){ this.__jq_stack_doms = [] }
+                if(! this.__jq_stack_doms){ this.__jq_stack_doms = [] }
 
                 // Special states for jQuery find and end.
                 this.__jq_stack_doms.push(dom_result)
