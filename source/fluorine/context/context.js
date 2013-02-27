@@ -178,7 +178,7 @@ self.fluorine.Context.o.prototype =
                 // We should decide how to continue with this result,
                 // just like the `MaybeT` does.
 
-                // The continue function is simply the `fn` passed,
+                // This continue function simply pass `fn` ;
                 // we should execute it with `ma` result and get the next `m n a`;
                 // this next context's `n a` should pass to `this.__process.run` to 
                 // continue this process (and be used again). 
@@ -191,7 +191,7 @@ self.fluorine.Context.o.prototype =
                 // Now: 
                 // "Extract" `ma` without any judgement.
 
-                // Note: extract from IO will cause problem. So I can realize why no `IOT` which will embedded an `IO` in.
+                // Note: extract from IO will cause problem. So I can understand why no `IOT` which will embedded an `IO` in.
                 // But in our contexts, asynchonous contexts are still the problem
                 ma_run( _.bind( function(a)
                 {

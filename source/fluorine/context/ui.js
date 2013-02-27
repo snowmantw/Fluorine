@@ -22,23 +22,27 @@ self.fluorine.UI = function(a)
 
 // Inner implement of this context.
 //
-self.fluorine.UI.o = function(a){ self.fluorine.Context.o.call(this, a) }
+self.fluorine.UI.o = function(a)
+{   
+    self.fluorine.Context.o.call(this, a) 
+}
 
 // Statics functions.
 _.extend( self.fluorine.UI.o,
 {
+    __jquery_mapped: false
+
     // Mapping jQuery's monadic methods to this context.
     // Use these functions just like in jQuery. The main difference is that these functions become lazy. 
     //
     // :: UI r -> UI r
-    __mapjQuery: function(uicontext)
+    ,__mapjQuery: function(uicontext)
     {
         var names = [ 'animate', 'addClass', 'after', 'append'
                     , 'appendTo', 'attr' , 'before'
                     , 'css'
                     , 'clone', 'detach', 'empty'
-                    , 'find','children','parents','parent'
-                    , 'end', 'andSelf'
+                    , 'children','parents','parent'
                     , 'fadeIn', 'fadeOut'
                     , 'hide'
                     , 'height', 'html', 'innerHeight'
@@ -59,19 +63,7 @@ _.extend( self.fluorine.UI.o,
             function()
             {   var args = _.map(arguments, function(a){return a})
                 args.name = name 
-                
-                if('find' == name)
-                {
-                    fluorine.UI.o.__delegate_find.call(this, args) 
-                }
-                else if('end' == name)
-                {    
-                    fluorine.UI.o.__delegate_end.call(this, args) 
-                }   
-                else
-                {
-                    fluorine.UI.o.__delegate.call(this, args) 
-                }
+                fluorine.UI.o.__delegate.call(this, args) 
                 return this;
             }
        })
@@ -105,62 +97,6 @@ _.extend( self.fluorine.UI.o,
         ,   'UI::__delegate<'+args.name+'>'
         )
     }
-
-    // Special handler function.
-    //
-    // :: UI s -> *args (with 'name' property, which is 'find') -> ()
-   ,__delegate_end: function(args)
-    {
-        this.__process.next
-        (   _.bind
-            (   function(dom_prev)
-            {
-                var name = args.name 
-
-                // Special states for jQuery 'find' and 'end'.
-                if( 'undefined'  == typeof this.__environment.__jq_stack_doms || 0 == this.__environment.__jq_stack_doms.length) 
-                {
-                    // jQuery: $('body').end() --> document; parent use while no `find` occured.
-                    dom_result = $(dom_prev).parent()
-                }
-                else
-                {
-                    dom_result = this.__environment.__jq_stack_doms.pop()
-                }
-                this.__process.run(dom_result)
-            }
-            ,   this
-            )
-        ,   'UI::__delegate<'+args.name+'>'
-        )
-    }
-    
-    // Special handler function.
-    //
-    // :: UI s -> *args (with 'name' property, which is 'find') -> ()
-   ,__delegate_find: function(args)
-    {
-        this.__process.next
-        (   _.bind
-            (   function(dom_prev)
-            {
-                var name = args.name 
-                if('find' != name) { throw "Not `find` function in special delegating call." }
-
-                if(! this.__environment.__jq_stack_doms)
-                { 
-                    this.__environment.__jq_stack_doms = [] 
-                }
-                // Special states for jQuery find and end.
-                this.__environment.__jq_stack_doms.push(dom_prev)
-                var dom_result = jQuery(dom_prev).find(args[0])
-                this.__process.run(dom_result)
-            }
-            ,   this
-            )
-        ,   'UI::__delegate<'+args.name+'>'
-        )
-    }
 }
 )
 
@@ -179,11 +115,11 @@ self.fluorine.UI.o.prototype = _.extend
     //
     // Can accept `Selector = DOM d | String s` type.
     //
-    // $:: UI Selector -> UI DOM
+    // $:: UI Selector -> UI [DOM]
     $: function()
     {
         // Mapping jQuery methods while needing.
-        fluorine.UI.o.__mapjQuery(this)
+        if( ! this.__jquery_mapped) { fluorine.UI.o.__mapjQuery(this) }
 
         this.__process.next
         (   _.bind(function(slc)
@@ -191,6 +127,44 @@ self.fluorine.UI.o.prototype = _.extend
            this.__process.run(jQuery(slc))
         }, this)
         , 'UI::$')
+
+        return this
+    }
+
+    // Find a DOM from the root of document.
+    // Will discare previous result.
+    //
+    // Note this function is different from jQuery's find, because we don't provide stateful `end` function.
+    // This `find` is more like open file from a path, which also has global view.
+    //
+    // To manipulate selected elements' set, use 'select' function.
+    // 
+    // find:: UI a -> Selector -> UI [DOM]
+    ,find: function(selector)
+    {
+        this.__process.next
+        (  _.bind(function(a)
+        {
+           this.__process.run(jQuery(selector))
+        }, this)
+        , 'UI::find')
+
+        return this
+    }
+
+    // Will choose elements from previous step's result set.
+    // This actually use jQuery's `find` to do selection, so select things beyond the set is possible,
+    // but use it is unwise.
+    //
+    // select:: UI [DOM] -> Selector -> UI [DOM]
+    ,select: function(selector)
+    {
+        this.__process.next
+        (  _.bind(function(set)
+        {
+           this.__process.run(jQuery(set).andSelf().find(selector))
+        }, this)
+        , 'UI::select')
 
         return this
     }

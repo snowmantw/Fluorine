@@ -352,7 +352,7 @@ describe("UI", function(){
   describe("#$", function(){
     self.it("should mapping jQery methods ", function(){
       var names, m;
-      names = ['animate', 'addClass', 'after', 'append', 'appendTo', 'attr', 'before', 'css', 'clone', 'detach', 'empty', 'find', 'children', 'parents', 'parent', 'end', 'andSelf', 'fadeIn', 'fadeOut', 'hide', 'height', 'html', 'innerHeight', 'innerWidth', 'insertAfter', 'insertBefore', 'offset', 'outerHeight', 'outerWidth', 'prepend', 'prependTo', 'remove', 'removeAfter', 'removeClass', 'removeProp', 'replaceAll', 'replaceWith', 'scrollLeft', 'show', 'scrollTop', 'text', 'toggleClass', 'unwrap', 'val', 'wrap', 'wrap', 'wrapAll', 'wrapInner', 'filter', 'not', 'eq'];
+      names = ['animate', 'addClass', 'after', 'append', 'appendTo', 'attr', 'before', 'css', 'clone', 'detach', 'empty', 'children', 'parents', 'parent', 'fadeIn', 'fadeOut', 'hide', 'height', 'html', 'innerHeight', 'innerWidth', 'insertAfter', 'insertBefore', 'offset', 'outerHeight', 'outerWidth', 'prepend', 'prependTo', 'remove', 'removeAfter', 'removeClass', 'removeProp', 'replaceAll', 'replaceWith', 'scrollLeft', 'show', 'scrollTop', 'text', 'toggleClass', 'unwrap', 'val', 'wrap', 'wrap', 'wrapAll', 'wrapInner', 'filter', 'not', 'eq'];
       m = UI('body').$();
       _.each(names, function(name){
         expect(m[name]).not.toBe(undefined);
@@ -381,6 +381,22 @@ describe("UI", function(){
       }).done()();
       $('body').click();
       expect(result).toEqual(true);
+    });
+    self.it("should present how 'find' works differently from jQuery's 'find'", function(){
+      var html, spans;
+      html = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>";
+      $(html).appendTo('body');
+      spans = UI('body').$().select('div.outer').select('.inner').find('span').done()().extract();
+      expect(spans.length).toEqual(2);
+      $(html).remove('div.outer');
+    });
+    self.it("should present how 'select' works", function(){
+      var html, text, spans;
+      html = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>";
+      text = UI(html).$().select('.inner').select('span').text().done()().extract();
+      spans = UI(html).$().select('.inner').select('span').done()().extract();
+      expect(text).toEqual("TXT");
+      expect(spans.length).toEqual(1);
     });
     self.it("should mixin multiple contexts", function(){
       var html, e, m;

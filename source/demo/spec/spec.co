@@ -132,6 +132,25 @@ describe "Context", !->
         runned_m = proc_m()
         expect(m.__environment['d']).toEqual true
         expect(m.__environment['e']).toEqual false
+
+#    describe "\#bind", !->
+#        self.it "should behave like Monad Transformer", !->
+#            mna = Context(IO('/testAjax')).
+#                    bind(
+#                       path ->
+#                            IO(path).
+#                            get(path).
+#                            _( ten -> ten - 10 ).
+#                            done().
+#                            lift(Context)
+#                        ).
+#                    bind(
+#                        zero ->
+#                            IO(zero).
+#                            _( zero -> zero + 10 ).
+#                            done().
+#                            lift(Context)
+#                        )
         
 self.IO = self.fluorine.IO
 describe "IO", !->
@@ -277,8 +296,7 @@ describe "UI", !->
                 , 'appendTo', 'attr' , 'before'
                 , 'css'
                 , 'clone', 'detach', 'empty'
-                , 'find','children','parents','parent'
-                , 'end', 'andSelf'
+                , 'children','parents','parent'
                 , 'fadeIn', 'fadeOut'
                 , 'hide'
                 , 'height', 'html', 'innerHeight'
@@ -318,6 +336,24 @@ describe "UI", !->
              forward('click.spec', -> 'spec_click').done()()
         $('body').click()
         expect(result).toEqual true
+
+    self.it "should present how 'find' works differently from jQuery's 'find'", !->
+        html  = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>"
+
+        # Global jQuery's find need a global page.
+        $(html).appendTo('body')
+        spans = UI('body').$().select('div.outer').select('.inner').find('span').done()().extract()
+        expect(spans.length).toEqual 2  # Even though we narrow down the set, find still can select global scope's spans.
+        $('body div.outer').remove()
+
+    self.it "should present how 'select' works", !->
+        html  = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>"
+
+        # Note the first level will not be a part of the set.
+        text  = UI(html).$().select('.inner').select('span').text().done()().extract()
+        spans = UI(html).$().select('.inner').select('span').done()().extract()
+        expect(text).toEqual "TXT"
+        expect(spans.length).toEqual 1
 
     self.it "should mixin multiple contexts", !->
 
