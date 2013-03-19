@@ -388,7 +388,7 @@ describe("UI", function(){
       $(html).appendTo('body');
       spans = UI('body').$().select('div.outer').select('.inner').find('span').done()().extract();
       expect(spans.length).toEqual(2);
-      $(html).remove('div.outer');
+      $('body div.outer').remove();
     });
     self.it("should present how 'select' works", function(){
       var html, text, spans;

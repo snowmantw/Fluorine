@@ -1328,7 +1328,7 @@ _.extend( self.fluorine.UI.o,
     {
         var names = [ 'animate', 'addClass', 'after', 'append'
                     , 'appendTo', 'attr' , 'before'
-                    , 'css'
+                    , 'css', 'contents'
                     , 'clone', 'detach', 'empty'
                     , 'children','parents','parent'
                     , 'fadeIn', 'fadeOut'
@@ -1336,12 +1336,12 @@ _.extend( self.fluorine.UI.o,
                     , 'height', 'html', 'innerHeight'
                     , 'innerWidth', 'insertAfter', 'insertBefore'
                     , 'offset', 'outerHeight', 'outerWidth'
-                    , 'prepend', 'prependTo', 'remove'
+                    , 'prepend', 'prependTo', 'position', 'remove'
                     , 'removeAfter', 'removeClass', 'removeProp'
                     , 'replaceAll', 'replaceWith', 'scrollLeft'
                     , 'show'
                     , 'scrollTop', 'text', 'toggleClass'
-                    , 'unwrap', 'val', 'wrap'
+                    , 'unwrap', 'val', 'wrap', 'width'
                     , 'wrap', 'wrapAll', 'wrapInner'
                     , 'filter', 'not', 'eq', 'has'
                     ]
