@@ -14,6 +14,7 @@ TARGETS = ${OBJS:.js=}
 TARGET_DEMOS = ${OBJ_DEMOS:.js=}
 MERGED = fluorine
 PACKAGE_CONFIG = config
+DOCS=document
 
 all: clean utils notifier process context merge export package spec todo 
 
@@ -28,7 +29,8 @@ clean:
 	fi
 
 export:
-	@cat ${SOURCE_FLUORINE}/$@/export.js >> ${BUILD_FLUORINE}/${MERGED}.js
+	@cat ${SOURCE_FLUORINE}/$@/export.js >> ${BUILD_FLUORINE}/${MERGED}.js  && \
+	docco -o ${DOCS}/export -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/export.js 
 
 merge:
 	@find ${BUILD_FLUORINE} ! -name "${MERGED}.js" -type f -exec cat {} >> ${BUILD_FLUORINE}/${MERGED}.js \;
@@ -42,13 +44,19 @@ context: clean
         cat ${SOURCE_FLUORINE}/$@/io.js >> ${BUILD_FLUORINE}/context.js ;\
         cat ${SOURCE_FLUORINE}/$@/ui.js >> ${BUILD_FLUORINE}/context.js ;\
         cat ${SOURCE_FLUORINE}/$@/event.js >> ${BUILD_FLUORINE}/context.js ;\
-        cat ${SOURCE_FLUORINE}/$@/socket.js >> ${BUILD_FLUORINE}/context.js \
+        cat ${SOURCE_FLUORINE}/$@/socket.js >> ${BUILD_FLUORINE}/context.js ;\
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/context.js ;\
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/io.js ;\
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/ui.js ;\
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/event.js ;\
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/socket.js
 
 ${TARGETS}: clean
 	@if [ ! -e ${BUILD_FLUORINE} ]; then 	\
 		mkdir -p ${BUILD_FLUORINE}		  ; \
 	fi									  ;	\
-	find ${SOURCE_FLUORINE}/$@ -name "*.js" -exec cat {} > ${BUILD_FLUORINE}/$@.js \;
+	find ${SOURCE_FLUORINE}/$@ -name "*.js" -exec cat {} > ${BUILD_FLUORINE}/$@.js \; ; \
+	find ${SOURCE_FLUORINE}/$@ -name "*.js" -exec docco -o ${DOCS}/$@ -c ${DOCS}/docco.css {} \;
 
 ${TARGET_DEMOS}: clean
 	@if [ ! -e ${BUILD_DEMO} ]; then 		\
@@ -56,4 +64,4 @@ ${TARGET_DEMOS}: clean
 	fi									  ;	\
 	find ${SOURCE_DEMO}/$@ -name "*.co" -exec ${COFFEE} -p -c {} > ${BUILD_DEMO}/$@.js \;
 
-
+.PHONY: context merge export clean package

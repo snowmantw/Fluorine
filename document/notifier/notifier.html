@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>notifier.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>notifier.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>The Notifier is the core of fluorine at low-level.
+Every cross-components computation should use notification rather than directly call each other.
+Every notification will be handled asynchronized, even though this is implementation depended.</p>
+<p>It&#39;s also a Context, so user can use fluent interface to call it, and compose the action.</p>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2>Notifier</h2>
+<p>The namespace objects.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine = self.fluorine || {}
+self.fluorine.Notifier = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Initialize the notifier.
+If there&#39;re registered handlers in previous notifier,
+they will be wiped out</p>
+<p>init:: Notifier n </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Notifier.init = <span class="keyword">function</span>()
+{
+    self.fluorine.Notifier.trie = {};
+    <span class="keyword">return</span> self.fluorine.Notifier;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Register a handler on a note. 
+Override existing binding function if the <code>str_names</code> is the same, and provide no context/id.</p>
+<p>The last argument, &quot;context&quot;, can be any object, 
+and the callback will be called with it as context.  </p>
+<p>The note is namespaced, so if a note &quot;abc.de&quot; triggered, 
+handlers bound on &quot;abc.de.gh&quot; will also be triggered.</p>
+<p>on:: Notifier n -&gt; ( NoteName, (note -&gt; a), Context ) -&gt; Notifier n&#39;</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Notifier.on = <span class="keyword">function</span>(str_names, cb, context)
+{
+    <span class="keyword">if</span>( <span class="string">""</span> == str_names )
+    {
+        <span class="keyword">return</span>; <span class="comment">// don't allow the empty name, even though it will match "all" notes.</span>
+    }
+    self.fluorine.EventTrie.set
+    (   self.fluorine.Notifier.trie, str_names, 
+        <span class="keyword">function</span>(note)
+        {   
+            cb.call(context, note); 
+        }
+    );
+
+    <span class="keyword">return</span> self.fluorine.Notifier;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Trigger a note. The format of a note is</p>
+<pre><code> {name: &quot;namespaced.note.name&quot;, &lt;key&gt;: &lt;value&gt;}</code></pre>
+<p>Only the &quot;name&quot; filed is required.</p>
+<p>trigger:: Notifier n -&gt; Note -&gt; Notifier n</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Notifier.trigger = <span class="keyword">function</span>(note)
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>note is a single string.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span>( ! note.name )
+    {
+        note = {<span class="string">'name'</span>: note}; 
+    }
+
+    <span class="keyword">var</span> cbs = self.fluorine.EventTrie.match(self.fluorine.Notifier.trie, note.name);
+    <span class="keyword">for</span>( <span class="keyword">var</span> itr = <span class="number">0</span>; itr != cbs.length; itr++)
+    {
+
+        <span class="keyword">var</span> cb = cbs[itr];
+        cb.call(<span class="literal">null</span>,note);</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Implement async calling.
+It cause some problems, and I can only freeze it until do a exhausted check.
+OK, it&#39;s bad to use global variable. But how can I do this without it ?
+<strong>st</strong> = setTimeout(function(){ cb.call(null,note); clearTimeout(<strong>st</strong>); },0);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    }
+
+    <span class="keyword">return</span> self.fluorine.Notifier;
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Remove a handler from Notifier.
+The name of note is still namespaced. 
+So if the parent got removed, children under the name will also be removed.</p>
+<p>off:: Notifier n -&gt; NoteName -&gt; Notifier n</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Notifier.off = <span class="keyword">function</span>(str_names)
+{
+    self.fluorine.EventTrie.remove(self.fluorine.Notifier.trie, str_names);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <h2>Inner structure of fluorine.Notifier</h2>
+<p>DO NOT USE. IT&#39;S ONLY FOR IMPLEMENTS.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.EventTrie = {};
+
+self.fluorine.EventTrie.set = <span class="keyword">function</span>(tree, str_names, cb)
+{
+    self.fluorine.EventTrie.doSet(tree, str_names.split(<span class="string">'.'</span>), cb);
+}
+
+self.fluorine.EventTrie.doSet = <span class="keyword">function</span>(tree, names, cb)
+{
+    <span class="keyword">var</span> entry = tree[names[<span class="number">0</span>]];
+    <span class="keyword">if</span>(<span class="number">1</span> == names.length)
+    {
+        <span class="keyword">if</span>( _.isUndefined(entry) )
+        {
+            tree[names[<span class="number">0</span>]]= {<span class="string">'__data__'</span>: cb};
+        }
+        <span class="keyword">else</span>
+        {
+            tree[names[<span class="number">0</span>]][<span class="string">'__data__'</span>] = cb
+        }
+        <span class="keyword">return</span>;
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>No such subtrie yet, create it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span>( _.isUndefined(entry) )
+    {
+        tree[names[<span class="number">0</span>]] = { <span class="string">'__data__'</span>: <span class="literal">null</span>};
+    }
+    self.fluorine.EventTrie.doSet(tree[names[<span class="number">0</span>]], names.slice(<span class="number">1</span>), cb);
+}
+
+self.fluorine.EventTrie.remove = <span class="keyword">function</span>(tree, str_names)
+{
+    self.fluorine.EventTrie.doRemove(tree, str_names.split(<span class="string">'.'</span>));
+}
+
+self.fluorine.EventTrie.doRemove = <span class="keyword">function</span>(tree, names)
+{
+    <span class="keyword">var</span> entry = tree[names[<span class="number">0</span>]];
+    <span class="keyword">if</span>(<span class="number">1</span> == names.length)
+    {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>delete all related objects.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">delete</span> tree[names[<span class="number">0</span>]];
+        <span class="keyword">return</span>; 
+    }
+
+    <span class="keyword">if</span>( ! _.isUndefined(entry) )
+    {
+        self.fluorine.EventTrie.doRemove(tree[names[<span class="number">0</span>]], names.slice(<span class="number">1</span>));
+    }
+}
+
+self.fluorine.EventTrie.match = <span class="keyword">function</span>(tree, name)
+{
+    <span class="keyword">return</span> self.fluorine.EventTrie.doMatch(tree, name.split(<span class="string">'.'</span>));
+}
+
+self.fluorine.EventTrie.doMatch = <span class="keyword">function</span>(tree, names)
+{
+
+    <span class="keyword">if</span>(<span class="number">0</span> == names.length)
+    {
+        <span class="keyword">return</span> self.fluorine.EventTrie.getNodes(tree, []);
+    } 
+
+    <span class="keyword">var</span> entry = tree[names[<span class="number">0</span>]];
+    <span class="keyword">if</span>( _.isUndefined(entry) )
+    {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>throw new Error(&quot;ERROR: Match nothing in EventTrie. name: &quot;+names[0]);</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">return</span> [];
+    }
+
+    <span class="keyword">return</span> self.fluorine.EventTrie.doMatch( entry, names.slice(<span class="number">1</span>) );
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>get all nodes after matching point.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.EventTrie.getNodes = <span class="keyword">function</span>(tree, mem)
+{
+    <span class="keyword">if</span>( <span class="literal">null</span> != tree.__data__ )
+    {
+        mem.push(tree.__data__);
+    }
+    <span class="keyword">for</span>( <span class="keyword">var</span> idx <span class="keyword">in</span> tree )
+    {
+        <span class="keyword">if</span>( <span class="string">"__data__"</span> != idx )
+        {
+            self.fluorine.EventTrie.getNodes( tree[idx], mem );
+        }
+    }
+    <span class="keyword">return</span> mem;
+}
+
+self.fluorine.registerInfect(<span class="string">'Notifier'</span>, self.fluorine.Notifier)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
