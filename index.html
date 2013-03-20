@@ -403,6 +403,7 @@ Fluorine encourage programmers to create small funcions named generators, which 
 In fact these "chains" are just context wrapped values, so they're unsurprisedly can be stored and passed to another function as arguments.
 This feature means it's possible to create Javascript programs with a "compile time" phase, which can find errors before we run it.
 
+---
 
 ## APIs
 
@@ -426,19 +427,74 @@ Annotated sources is here:
 
 <a href="./document/export/export.html">export/export</a>
 
+Note: because comments in source codes not perfectly fit the need of Docco, some codes become hard to read after converted.
+These may not be fixed soon. So [reading source codes](https://github.com/snowmantw/Fluorine/tree/master/source/fluorine) from GitHub is still recommended.
+
+---
+
 ## Use with Other DSLs
 
 Although Fluorine want to provide functional features **without** compiler, it can perform more sweet syntax 
-if you can use it with other DSLs like CoffeeScript or CoCo. The largest different is the annonying function syntax:
+if you can use it with other DSLs like CoffeeScript or CoCo :
 
+    // :: UI ()
+    createMsgBox = !-> UI('body').$().append('<div id="#io-msg"></div>').done()
+
+    // :: String -> UI ()
+    drawMsg = !-> return UI('#io-msg').$().text(msg).done()
+
+    // :: IO ()
+    main = !-> IO().
+            tie( createMsgBox ).
+            get('/ajax/hello').
+            tie( drawMsg ).
+            done()
+
+    // Not execute any chains, until the last moment:
+    main()()
+
+
+The original version with plain Javascript:
+
+    // :: UI ()
+    function createMsgBox()
+    {
+        return UI('body').$().append('<div id="#io-msg"></div>').done()
+    }
+
+    // :: String -> UI ()
+    function drawMsg(msg)
+    {
+        return UI('#io-msg').$().text(msg).done()
+    }
+
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            tie( createMsgBox ).
+            get('/ajax/hello').
+            tie( drawMsg ).
+            done()
+    }
+
+    // Not execute any chains, until the last moment:
+    main()()  
     
-Become:
+And we can get even close to real curry functions ( not directly related to Fluorine, but it's an very important advantage ):
 
+    add3 = a -> b -> c-> a+b+c
 
-And we can get even close with curry functions:
+If we implement that with plain Javascript, it will become a nightmare:
 
-
-If in plain Javascript, it will become nightmare:
+    add3 = function(a)
+    {
+        return function(b){
+            return function(c){
+                return a+b+c        // Nested, WTF
+            }
+        }
+    }
 
 
 --- 
