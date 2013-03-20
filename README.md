@@ -14,7 +14,7 @@ But as a language, Javascript still lacks some important features in real functi
 and it also lacks process controlling which may ease the headache from asynchonous execution.
 
 This library want to resolve these problems without developing new DSL language ( which enforce user must have a compiler in their application ).
-Instead of, it represents a DESL, which is deeply inspired by the famous jQuery library, and borrows many ideas about context-based computation from Haskell.
+Instead of, it represents a eDSL, which is deeply inspired by the famous jQuery library, and borrows many ideas about context-based computation from Haskell.
 Thus developers can still write pure Javascript, with more functional features.
 
 ## Impure Computation Considered Harmful
@@ -98,7 +98,7 @@ And I think there're chances to refactor this library and eDSL to make it more f
     IO().getBinary('foo.bin').as('first_content')
         .getBinary('bar.bin').as('second_cotnent')
         ._( function()
-            {   // Concat file contents.
+            {   // Concat file contents with a pure function.
                 return append( this.first_content, this.second_content )
             }
           )
@@ -120,7 +120,7 @@ And I think there're chances to refactor this library and eDSL to make it more f
                      $(ui_form).find('input["name"]').val(content.name)
                    }
                    )
-                 .toUI()
+                .done()
          }
          )
         .done()()
