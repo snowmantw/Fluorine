@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>context.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>context.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2>Context</h2>
+<p>Basic context should be extended by other contexts.</p>
+<p>Provide following features:</p>
+<ul>
+<li>Embedded environment, provide <code>this</code> and <code>as()</code> to let bound function access it.</li>
+<li>Basic lambda ( <code>_</code> ) and <code>tie</code> function.</li>
+<li>Basic <code>done</code> function which return another function to execute the context, 
+and do process refreshing for executing the context repeately.  </li>
+</ul>
+<p>How to extend it:</p>
+<ul>
+<li>Let your context ( &#39;IO&#39; for example ) extend <code>fluorine.Context</code> to get all static functions,
+include the basic inner implement function <code>o</code> . </li>
+<li>Let your inner implement function extend the extended one.</li>
+<li>Make sure your context&#39;s constructor function will return the right inner implement function. </li>
+<li>Define your own <code>run</code> function if your want to use the default <code>done()</code> as a run Context function. 
+The default one will only execute all steps in process; you may wish to add more features to it.</li>
+</ul>
+<p>Please note our context embedded a process to handle asynchronous execution,
+so the return value of contexts will not be a straght forward datum, but a <code>(Process datum)</code>.</p>
+<p>Data constructor of this context.
+Context constructor should be able to receive anything,
+while contexted functions can has type constrains.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Context = <span class="keyword">function</span>(a)
+{
+
+    <span class="keyword">return</span> <span class="keyword">new</span> self.fluorine.Context.o(a)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Inner implement of this context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Context.o = <span class="keyword">function</span>(a)
+{
+    <span class="keyword">this</span>.__run_times = <span class="number">0</span>    <span class="comment">// Counter can only initialize once.</span>
+    <span class="keyword">this</span>.__process = <span class="keyword">new</span> self.fluorine.Process()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>For tieing.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.__continue_fn = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Initialize step only pass the value to the next step.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.initialize(a)
+
+    <span class="keyword">return</span> <span class="keyword">this</span>
+}
+
+self.fluorine.Context.o.prototype =
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>It should only bind pure functions. </p>
+<p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; b ) -&gt; m n b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    _: <span class="keyword">function</span>(fn)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            <span class="keyword">this</span>.__process.run(fn.call(<span class="keyword">this</span>.__environment,val))
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::_'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Help function to name a value in this context&#39;s inner environment.</p>
+<p>:: m n a -&gt; String -&gt; m n a</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,as: <span class="keyword">function</span>(name)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            <span class="keyword">this</span>.__environment[name] = val
+            <span class="keyword">this</span>.__process.run(val)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::as'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>@2013-01-17 22:44:10+08:00</p>
+<p>NOTE: This is NOT a real MonadTransformer bind.
+It still can tie another context and execute them correctly,
+so we keep it in here for convience.</p>
+<p>The real MonadTransformer version should be
+:: Context m,n =&gt; m n a -&gt; ( a -&gt; m n b ) -&gt; m n b</p>
+<p>Besides, it also means our context should be initialized with a fixed inner context as it&#39;s <code>n</code>.</p>
+<hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Bind another context as inner context.
+Bound function ( context generator ) can access the inner environment.
+The generated context should be done.</p>
+<p>:: Context m,n =&gt; m a -&gt; ( a -&gt; n b ) -&gt; m b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,tie: <span class="keyword">function</span>(gen)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Pattern:  ----          ----     ...    base  context
+             |----||----|  |---- ...    inner context</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> inner = gen.call(<span class="keyword">this</span>.__environment,val)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Common mistake check.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span>( ! _.isFunction(inner) ){ <span class="keyword">throw</span> <span class="string">"Tying an undone context or just not a context."</span>}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Can&#39;t just execute the inner and get value. 
+because IO context haven&#39;t <code>extract()</code>, 
+and can&#39;t let outside get it&#39;s value. </p>
+<p>Especially our IO context need to handle asynchronous calls.
+Instead, we get the process inside context, and run it&#39;s first step as the next step.
+Then insert a &quot;return&quot; step, let the context return to the base context.</p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Pass base context&#39; environment to inner context.
+Note: Even though cloning it is more proper, but cost time to do that seems unecessary.</p>
+<p>Receive inner context&#39;s result and continue executing this base monad.
+@see Context.done and <code>Context._</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            inner
+            (   _.bind( <span class="keyword">function</span>(a)
+            {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>The last step of inner monad should already transform it as base monad,
+just like type signature require: ( a -&gt; m n b ).</p>
+<p>And this context is a very basic context, so there is no need to check whether 
+the pass out context legal or not.  </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                <span class="keyword">this</span>.__process.run(a)
+            }
+            , <span class="keyword">this</span>
+            )
+            , <span class="keyword">this</span>.__environment)()
+
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::tie, next level --&gt; '</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Try to implement real bind like transformer&#39;s.</p>
+<p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; m n b ) -&gt; m n b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="comment">/*
+    ,bind: function(act)
+    {
+        this.__process.next
+        (   _.bind( function(na_run)    
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>As normal transformer described, the <code>bind</code> will receive a inner monadic function,
+and we should embedded our judgement function of base monad in it&#39;s context.</p>
+<p>@see <code>MaybeT</code> examples in most guides about monad transformer. </p>
+<p>Note: <code>na_run</code> is a function which an receive a function as the next step after execute itself.
+This is described in the <code>done</code> function ( see what it return ).</p>
+<p>We simulate the embedded binding processing with our Process and continue mechanism.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            na_run
+            ( _.bind( <span class="keyword">function</span>(ma_run)
+            {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>Ok, we can access to <code>ContextM a</code>, the <code>na</code>&#39;s result.
+We should decide how to continue with this result,
+just like the <code>MaybeT</code> does.</p>
+<p>This continue function simply pass <code>fn</code> ;
+we should execute it with <code>ma</code> result and get the next <code>m n a</code>;
+this next context&#39;s <code>n a</code> should pass to <code>this.__process.run</code> to 
+continue this process (and be used again). 
+Again, this is because we implement this bind in a static/runtime system,
+so we need to care about continuation of the process.</p>
+<p>And please note we don&#39;t do any special thing to handle the <code>na</code> inside this context.
+Other context should override this default implement to use the true power of transformer.</p>
+<p>Now: 
+&quot;Extract&quot; <code>ma</code> without any judgement.</p>
+<p>Note: extract from IO will cause problem. So I can understand why no <code>IOT</code> which will embedded an <code>IO</code> in.
+But in our contexts, asynchonous contexts are still the problem</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                ma_run( _.bind( <span class="keyword">function</span>(a)
+                {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>-&gt; M n a means THIS should be a state with such sig. and <code>na</code> inner is ok enough.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    mnb_run = act(a)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>We must get <code>n b</code> and pass it to next step, rather than <code>m n b</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    mnb_run
+                    ( _.bind( function(nb)
+                    {
+                       this.__process.run(nb)
+                    }, this))
+                }, this))
+
+            }, this)) 
+
+        },  this
+        ), 'Context::bind')
+    }
+    */</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>Initialize environment and others.</p>
+<p>:: Context m,n =&gt; m n a -&gt; b -&gt; m n b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,initialize: <span class="keyword">function</span>(a) 
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>()
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>If bound, there is an environment from base context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">this</span>.__environment = <span class="keyword">this</span>.__environment || {}
+            <span class="keyword">this</span>.__process.run(a)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::initialize'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>Variant lambda, for simulate the &#39;let..in&#39; syntax feature. 
+User must chain <code>as()</code> after this function.</p>
+<p>The function can receive previous result as lambda. 
+The only difference is this lambda must chain <code>as()</code> after.</p>
+<p>let ... as:: Pass a function return any value, and named it in this context&#39;s environment. </p>
+<p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; b ) -&gt; m n b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,<span class="keyword">let</span>: <span class="keyword">function</span>(fn)
+    {
+        <span class="keyword">this</span>._(fn)
+        <span class="keyword">return</span> {<span class="string">'as'</span>: _.bind(<span class="keyword">this</span>.as, <span class="keyword">this</span>) }
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>Run all steps in this context.
+The function return by default <code>done()</code> will automatically execute this functon.</p>
+<p>:: Process b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,run: <span class="keyword">function</span>()
+    {
+        <span class="keyword">if</span>( ! <span class="keyword">this</span>.__done )
+        {
+            <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">"ERROR: The context is not done."</span>);
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-25">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-25">&#182;</a>
+              </div>
+              <p>Begin from first step of this context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">this</span>.__process.run()
+        <span class="keyword">return</span> <span class="keyword">this</span>.__process
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-26">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-26">&#182;</a>
+              </div>
+              <p>Close this context and ready to run.</p>
+<p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; b )</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,done: <span class="keyword">function</span>()
+    {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-27">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-27">&#182;</a>
+              </div>
+              <p>Already done.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">if</span>( <span class="keyword">this</span>.__done ) { <span class="keyword">return</span> }
+        <span class="keyword">this</span>.__done = <span class="literal">true</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-28">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-28">&#182;</a>
+              </div>
+              <p>The last step of this context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(a)
+        {
+            <span class="keyword">this</span>.__process.run(a)   <span class="comment">// as the result.</span>
+            <span class="keyword">this</span>.__process.refresh()
+            <span class="keyword">this</span>.__run_times ++</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
+              <p>If we want to continue the process:</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span>( <span class="literal">null</span> != <span class="keyword">this</span>.__continue_fn )
+            {
+                <span class="keyword">this</span>.__continue_fn(a)
+            }
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::done'</span> )</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
+              <p>If continue: 
+- User can only run this process because the return function
+- User run it with continue function
+- The continue step got executed after whole steps inside this context got executed
+- Continues steps of base context got execute</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">return</span> _.bind( <span class="keyword">function</span>(continue_fn, base_env)
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>Don&#39;t run context, but set continue function and return self.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>           <span class="keyword">if</span>( continue_fn )
+           {
+               <span class="keyword">this</span>.__<span class="keyword">continue</span>(continue_fn, base_env)
+               <span class="keyword">return</span> _.bind(<span class="keyword">this</span>.run, <span class="keyword">this</span>)  <span class="comment">// Delegate calling to the tied function.</span>
+           }
+           <span class="keyword">return</span> <span class="keyword">this</span>.run()
+        }, <span class="keyword">this</span>)
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Inner implement function.
+Inject a continue function into this context&#39;s step, 
+and avoid directly running after this context got <code>done</code>.</p>
+<p>The function should receive a process value ( this context&#39;s result ),
+and will generate a new process, which let this context can run it.</p>
+<p>The caller should pass the base context&#39;s environment, too.
+This can ensure inner context&#39;s steps executing under base context&#39;s environment.</p>
+<p>:: ( Context m, Context n, Process b, Process c ) =&gt; 
+   m n b -&gt; ( b -&gt; Environment e -&gt; c ) -&gt; () </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,__<span class="keyword">continue</span>: <span class="keyword">function</span>( continue_fn, base_env )
+   {
+        <span class="keyword">this</span>.__continue_fn = continue_fn
+        <span class="keyword">this</span>.__environment = base_env
+   }
+}
+
+self.fluorine.registerInfect(<span class="string">'Context'</span>, self.fluorine.Context)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

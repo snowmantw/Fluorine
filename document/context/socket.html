@@ -1,0 +1,301 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>socket.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>socket.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2>Socket</h2>
+<p>Basic Socket context, provide simple socket events forwardings.
+It (may) also provide some basic functions to let developer construct sub-protocols ( in near future !) .</p>
+<p>Data constructor of this context.
+Context constructor should be able to receive anything,
+while contexted functions can has type constrains.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Socket = <span class="keyword">function</span>(a)
+{
+    <span class="keyword">return</span> <span class="keyword">new</span> self.fluorine.Socket.o(a)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Inner implement of this context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Socket.o = <span class="keyword">function</span>(a){ self.fluorine.Context.o.call(<span class="keyword">this</span>, a) }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Extends basic the context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>_.extend( self.fluorine.Socket.o.prototype, self.fluorine.Context.o.prototype )</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Extends our new functions.
+Depend on jQuery.ajax, may be decoupled in near future.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Socket.o.prototype = _.extend
+(   self.fluorine.Socket.o.prototype
+,
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Open a socket with specific URL.</p>
+<p>:: Socket a -&gt; URL -&gt; [ Protocol ] -&gt; Socket Handler</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    connect: <span class="keyword">function</span>(url, protocols)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>()
+        {
+            <span class="keyword">this</span>.__process.run(<span class="keyword">new</span> WebSocket(url, protocols))
+        },  <span class="keyword">this</span>)
+        ,   <span class="string">'Socket::connect'</span>)
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Send data ( Blob, String, ArrayBuffer ) to server.
+If the connection is not established, send after it done.</p>
+<p>SocketData = SocketData Blob String ArrayBuffer
+:: Socket Handler -&gt; SocketData -&gt; Socket Handler</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,send: <span class="keyword">function</span>( data )
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(socket)
+        {
+            <span class="keyword">if</span>( <span class="number">1</span> != socket.readyState )
+            {
+                socket.addEventListener(<span class="string">'open'</span>, <span class="keyword">function</span>(){
+                    socket.send(data)
+                })
+            }
+            <span class="keyword">else</span>
+            {
+                socket.send(data)
+            }
+            <span class="keyword">this</span>.__process.run(socket)
+        },  <span class="keyword">this</span>)
+        ,   <span class="string">'Socket::connect'</span>)
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Close the socket. If the connection is not established, close after it done.</p>
+<p>:: Socket Handler -&gt; CodeNumber -&gt; String -&gt; Socket ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,close: <span class="keyword">function</span>(code, reason)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(socket)
+        {
+            <span class="keyword">if</span>( <span class="number">1</span> != socket.readyState )
+            {
+                socket.addEventListener(<span class="string">'open'</span>, <span class="keyword">function</span>(){
+                    socket.close()
+                })
+            }
+            <span class="keyword">else</span>
+            {
+                socket.close(code, reason)
+            }
+            <span class="keyword">this</span>.__process.run()
+        }, <span class="keyword">this</span>)
+        ,  <span class="string">'Socket::close'</span>)
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Forward Socket event as a reactive event. 
+User should pass a filter function, which receive <code>SocketEvent</code> and generate a note&#39;s name.
+This function will generate a notificaiton named with filter generated, with flattern data from the event.</p>
+<p>Note the filter should return <code>undeinfed</code>, if the event not fit the filter.</p>
+<p>@see <code>fluorine.Notifier</code> to get more informations about notifications.</p>
+<p>This function exists because the gap between ideal reactive pattern and the unperfect reality.</p>
+<p>Note: the filter will receive below types of SocketEvent, 
+and the data constructor will become string name without suffix &#39;Event&#39;.</p>
+<p>SocketEvent = MessageEvent Data Handler| CloseEvent Code Reason WasClean Handler| OpenEvent Handler | ErrorEvent Handler</p>
+<p>:: Socket Handler -&gt; (SocketEvent -&gt; Maybe String) -&gt; Socket Handler</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,forward: <span class="keyword">function</span>(filter)
+    {
+        <span class="keyword">this</span>.__process.next 
+        (   _.bind(<span class="keyword">function</span>(socket)
+        {
+            socket.addEventListener(<span class="string">'open'</span>, <span class="keyword">function</span>(e)
+            {
+                <span class="keyword">var</span> name = filter(<span class="string">'open'</span>, socket)
+                <span class="keyword">if</span>( ! _.isUndefined(name) )
+                {
+                    fluorine.Notifier.trigger({<span class="string">'name'</span>: name})           
+                }
+            })
+
+            socket.addEventListener(<span class="string">'error'</span>, <span class="keyword">function</span>(e)
+            {
+                <span class="keyword">var</span> name = filter(<span class="string">'error'</span>, socket)
+                <span class="keyword">if</span>( ! _.isUndefined(name) )
+                {
+                    fluorine.Notifier.trigger({<span class="string">'name'</span>: name})           
+                }
+            })
+
+            socket.addEventListener(<span class="string">'close'</span>, <span class="keyword">function</span>(e)
+            {
+                <span class="keyword">var</span> name = filter(<span class="string">'close'</span>, e.code, e.reason, e.wasClean, socket)
+                <span class="keyword">if</span>( ! _.isUndefined(name) )
+                {
+                    fluorine.Notifier.trigger(_.extend(e, {<span class="string">'name'</span>: name}))
+                }
+            })
+            
+            socket.addEventListener(<span class="string">'message'</span>, <span class="keyword">function</span>(e)
+            {
+                <span class="keyword">var</span> name = filter(<span class="string">'message'</span>, e.data, socket)
+                <span class="keyword">if</span>( ! _.isUndefined(name) )
+                {
+                    fluorine.Notifier.trigger(_.extend(e, {<span class="string">'name'</span>: name}))
+                }
+            })
+
+            <span class="keyword">this</span>.__process.run(socket)
+
+        }, <span class="keyword">this</span>)
+        , <span class="string">'Socket::forward'</span>)
+        
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }
+}
+)
+
+self.fluorine.registerInfect(<span class="string">'Socket'</span>, self.fluorine.Socket)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

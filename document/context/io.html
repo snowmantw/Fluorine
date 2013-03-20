@@ -1,0 +1,767 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>io.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>io.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2>IO</h2>
+<p>Basic IO context provide file CRUD operations.</p>
+<p>Provide following features:</p>
+<ul>
+<li>CRUD methods like get/getBinary/getBinaryFile, post, put, delete</li>
+<li>Turn lowlevel asynchronous function calls become &quot;fake&quot; synchronous process, to avoid callback hell</li>
+</ul>
+<p>Data constructor of this context.
+Context constructor should be able to receive anything,
+while contexted functions can has type constrains.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.IO = <span class="keyword">function</span>(a)
+{
+    <span class="keyword">return</span> <span class="keyword">new</span> self.fluorine.IO.o(a)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Inner implement of this context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.IO.o = <span class="keyword">function</span>(a){ self.fluorine.Context.o.call(<span class="keyword">this</span>, a) }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Statics functions.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>_.extend( self.fluorine.IO.o,
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Generate a function to receive ajax result.</p>
+<p>:: Process a -&gt; ( a -&gt; TextStatus -&gt; XHR ) -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    __genAjaxSuccess: <span class="keyword">function</span>(proc)
+    {
+        <span class="keyword">return</span> <span class="keyword">function</span>(data, textStatus, jqXHR)
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Resume execition after receiving.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            proc.run(data)
+        }
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Will throw error while ajax request got failed.</p>
+<p>:: URL -&gt; Query -&gt; ( XHR -&gt; TextStatus -&gt; Error ) -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,__genAjaxError: <span class="keyword">function</span>(url, qry)
+    {
+        <span class="keyword">return</span> <span class="keyword">function</span>(jqXHR, textStatus, errorThrown)
+        {   <span class="keyword">var</span> msg = <span class="string">"ERROR: IO error in request: "</span>+qry+<span class="string">" on "</span>+url
+            console.error(msg, errorThrown)
+            <span class="keyword">throw</span> <span class="keyword">new</span> Error(msg);
+        }
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Default Ajax request function handling binary formats.</p>
+<p>DataType:: ArrayBuffer | Blob 
+:: Process a -&gt; URL -&gt; Query -&gt; DataType -&gt; Request</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,__binaryAjax: <span class="keyword">function</span>( proc, url, query, type)
+    {   <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest();
+        request.open(<span class="string">'GET'</span>, url, <span class="literal">true</span>);
+        request.responseType = type;
+        request.addEventListener
+        (  <span class="string">'load'</span>
+        ,  <span class="keyword">function</span>() 
+           {   self.fluorine.IO.o.
+                __genAjaxSuccess(proc)(request.response, request.statusText, request) 
+           }
+        )
+        request.addEventListener
+        (   <span class="string">'error'</span>
+        ,  <span class="keyword">function</span>(event) 
+           {   self.fluorine.IO.o.
+                __genAjaxError(url)(request, request.statusText, event) 
+           }
+        )
+        <span class="keyword">return</span> request
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>Make XMLHttpRequest chainable.
+Effects hidden, and not to provide this feature yet.</p>
+<p>:: IO r -&gt; IO r</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,__wrapRequest: <span class="keyword">function</span>(io)
+    {
+        <span class="keyword">var</span> fnames =
+        [   <span class="string">'addEventListener'</span>
+        ,   <span class="string">'open'</span>, <span class="string">'setRequestHeader'</span>
+        ,   <span class="string">'send'</span>, <span class="string">'abort'</span>
+        ]
+
+        <span class="keyword">var</span> anames =
+        [   <span class="string">'timeout'</span>
+        ,   <span class="string">'upload'</span> 
+        ,   <span class="string">'withCredentials'</span>
+        ]
+
+        _.each
+        (   fnames
+        ,   <span class="keyword">function</span>(fname)
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Append new request functions in that IO context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            io[fname] = _.bind( <span class="keyword">function</span>()
+            {   <span class="keyword">var</span> args = arguments
+                <span class="keyword">this</span>.__process.next
+                (   _.bind(<span class="keyword">function</span>(req)
+                {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Lazy execute/set request and pass it out.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    req[fname].apply(req, args)
+                    <span class="keyword">this</span>.__process.run(req)
+                }, <span class="keyword">this</span>)
+                , <span class="string">'IO::'</span>+fname
+                )
+            },  io)
+        }
+        )
+
+        _.each
+        (   anames
+        ,   <span class="keyword">function</span>(aname)
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Append new setter functions in that IO context.
+Return the attr value if the passed attr is undefined.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            io[aname] = _.bind( <span class="keyword">function</span>(attr)
+            {   
+                (   _.bind(<span class="keyword">function</span>(req)
+                {   
+                    <span class="keyword">if</span>( ! _.isUndefined(attr) )
+                    {
+                        req[aname] = attr
+                        <span class="keyword">this</span>.__process.run(req)
+                    }
+                    <span class="keyword">else</span>    <span class="comment">// Return value.</span>
+                    {
+                        <span class="keyword">this</span>.__process.run(req[aname])
+                    }
+                }, <span class="keyword">this</span>)
+                , <span class="string">'IO::'</span>+aname
+                )
+            },  io)
+        }
+        )
+    }
+}
+)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Extends basic the context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>_.extend( self.fluorine.IO.o.prototype, self.fluorine.Context.o.prototype )</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>Extends our new functions.
+Depend on jQuery.ajax, may be decoupled in near future.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.IO.o.prototype = _.extend
+(   self.fluorine.IO.o.prototype
+,
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Get text data according to URL and Query. </p>
+<p>:: URL -&gt; IO Text </p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    get: <span class="keyword">function</span>(url)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind(<span class="keyword">function</span>()
+        {
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'GET'</span>, url, <span class="literal">true</span>)
+            request.responseType = <span class="string">'text'</span>
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send()
+
+        }, <span class="keyword">this</span>)
+        ,  <span class="string">'IO::get'</span>)
+        
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Get binary data in ArrayBuffer according to URL and Query.</p>
+<p>:: URL -&gt; IO ArrayBuffer</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,getBinary: <span class="keyword">function</span>(url)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind(<span class="keyword">function</span>()
+        {
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'GET'</span>, url, <span class="literal">true</span>)
+            request.responseType = <span class="string">'arraybuffer'</span>
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send()
+
+        },  <span class="keyword">this</span>)
+        ,   <span class="string">'IO::getBinary'</span>)
+        
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>Get binary data in Blob according to URL and Query.</p>
+<p>:: URL -&gt; IO Blob</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,getBinaryFile: <span class="keyword">function</span>(url)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind(<span class="keyword">function</span>()
+        {
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'GET'</span>, url, <span class="literal">true</span>)
+            request.responseType = <span class="string">'blob'</span>
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send()
+
+        },  <span class="keyword">this</span>)
+        ,   <span class="string">'IO::getBinaryFile'</span>)
+        
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Post previous IO handling result to URL.
+Will automatically convert data as FormData.
+Key/Value paris will automatically transform to form data.</p>
+<p>:: ( NotBinary r ) =&gt; IO r -&gt; URL -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,post: <span class="keyword">function</span>(url)
+    {
+	<span class="keyword">this</span>.__process.next
+	(   _.bind(<span class="keyword">function</span>(data)
+	{
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'POST'</span>, url, <span class="literal">true</span>)
+
+            <span class="keyword">var</span> formData = <span class="keyword">new</span> FormData()
+            <span class="keyword">if</span>( _.isObject(data))
+            {
+                _.chain(data).keys(data).each(<span class="keyword">function</span>(k){formData.append(k, data[k]) })
+            }
+            <span class="keyword">else</span>
+            {
+                formData.append(data,<span class="string">""</span>)    <span class="comment">// Like jQuery</span>
+            }
+
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send(formData)
+
+	},  <span class="keyword">this</span>)
+	, <span class="string">'IO:post'</span>)
+
+	<span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>Post binary data to URL. Include ArrayBuffer and Blob.</p>
+<p>:: ( Binary r ) =&gt; IO r -&gt; URL -&gt; IO</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,postBinary: <span class="keyword">function</span>(url)
+    {
+	<span class="keyword">this</span>.__process.next
+	(   _.bind(<span class="keyword">function</span>(data)
+	{
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'POST'</span>, url, <span class="literal">true</span>)
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send(data)
+
+	},  <span class="keyword">this</span>)
+	, <span class="string">'IO:postBinary'</span>)
+
+	<span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>Put previous IO handling result to URL.
+Will automatically convert data as FormData.
+Key/Value paris will automatically transform to form data.</p>
+<p>:: ( NotBinary r ) =&gt; IO r -&gt; URL -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,put: <span class="keyword">function</span>(url)
+    {
+	<span class="keyword">this</span>.__process.next
+	(   _.bind(<span class="keyword">function</span>(data)
+	{
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'PUT'</span>, url, <span class="literal">true</span>)
+
+            <span class="keyword">var</span> formData = <span class="keyword">new</span> FormData()
+            <span class="keyword">if</span>( _.isObject(data))
+            {
+                _.chain(data).keys(data).each(<span class="keyword">function</span>(k){formData.append(k, data[k]) })
+            }
+            <span class="keyword">else</span>
+            {
+                formData.append(data,<span class="string">""</span>)    <span class="comment">// Like jQuery</span>
+            }
+
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send(formData)
+
+	},  <span class="keyword">this</span>)
+	, <span class="string">'IO:put'</span>)
+
+	<span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>Put binary data to URL. Include ArrayBuffer and Blob.</p>
+<p>:: ( Binary r ) =&gt; IO r -&gt; URL -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,putBinary: <span class="keyword">function</span>(url)
+    {
+	<span class="keyword">this</span>.__process.next
+	(   _.bind(<span class="keyword">function</span>(data)
+	{
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'PUT'</span>, url, <span class="literal">true</span>)
+
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send(data)
+
+	},  <span class="keyword">this</span>)
+	, <span class="string">'IO:put'</span>)
+
+	<span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>Delete resources representing via the URL.</p>
+<p>:: URL -&gt; IO ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,<span class="keyword">delete</span>: <span class="keyword">function</span>(url)
+    {
+	<span class="keyword">this</span>.__process.next
+	(   _.bind(<span class="keyword">function</span>()
+	{
+            <span class="keyword">var</span> process = <span class="keyword">this</span>.__process
+            <span class="keyword">var</span> request = <span class="keyword">new</span> XMLHttpRequest()
+            request.open(<span class="string">'DELETE'</span>, url, <span class="literal">true</span>)
+
+            request.addEventListener
+            (  <span class="string">'load'</span>
+            ,  <span class="keyword">function</span>() 
+               {   self.fluorine.IO.o.
+                    __genAjaxSuccess(process)(request.response, request.statusText, request) 
+               }
+            )
+            request.addEventListener
+            (   <span class="string">'error'</span>
+            ,  <span class="keyword">function</span>(event) 
+               {   self.fluorine.IO.o.
+                    __genAjaxError(url)(request, request.statusText, event) 
+               }
+            )
+            request.send()
+
+	},  <span class="keyword">this</span>)
+	, <span class="string">'IO:delete'</span>)
+
+	<span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>Do your dirty works here to elimate the gap between ideal and reality.</p>
+<p>:: IO a -&gt; ( a -&gt; IO b ) -&gt; IO b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,unsafe: <span class="keyword">function</span>(fn)
+    {
+        <span class="keyword">return</span> self.fluorine.IO.o._(fn)
+    }
+}
+)
+
+self.fluorine.registerInfect(<span class="string">'IO'</span>, self.fluorine.IO)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

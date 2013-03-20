@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>process.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>process.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <p>These functions exist because Javascript provide some asynchronous ways 
+to execute the program, but support no mechanism to control in-order and 
+out-of-order parts well.</p>
+<p>We must ensure each asynchronous action and its callback will suspend 
+and resume the whole process in the end of their steps.</p>
+<p>And, functions in this file are at low-level, and thus not a part of 
+functional programming.</p>
+<p>Creating function that create a new process.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process = <span class="keyword">function</span>()
+{
+    self.fluorine.registerInfect(<span class="string">'Process'</span>, self.fluorine.Process)
+    <span class="keyword">return</span> <span class="keyword">new</span> self.fluorine.Process.o();
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <p>DO NOT USE. IT&#39;S ONLY FOR INSTANCE.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o = <span class="keyword">function</span>()
+{
+    <span class="keyword">this</span>.__result = <span class="literal">null</span>
+    <span class="keyword">this</span>.__queue = []
+    <span class="keyword">this</span>.__recycle_queue = []
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Set the next step.</p>
+<p>next:: (Process fs, (a-&gt;b), StepName {- optional -} ) -&gt; Process ( a-&gt;b )</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.next = <span class="keyword">function</span>(fn, name)
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Function is NOT object for other users, so we can add attr and don&#39;t worry about conflicts.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    fn.__name = name    
+    <span class="keyword">this</span>.__queue.push(fn)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Concat two &quot;process&quot;.</p>
+<p>concat:: (Process fs, Process gs) -&gt; Process fgs</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.concat = <span class="keyword">function</span>(proc)
+{
+    <span class="keyword">this</span>.__queue = <span class="keyword">this</span>.__queue.concat(proc.__queue);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Prepend another process&#39; steps.</p>
+<p>preconcat:: (Process fs, Process gs) -&gt; Process gfs</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.preconcat = <span class="keyword">function</span>(proc)
+{
+    <span class="keyword">this</span>.__queue = proc.__queue.concat(<span class="keyword">this</span>.__queue);
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Execute the next function.
+The function will receive the result of current run,
+and set it as the result of this process.</p>
+<p>The next function will receive the result as it&#39;s (only one) argument.</p>
+<p>Note any other temporary results should be storaged in other places.</p>
+<p>Note for the convience of the lack of tuple,
+this function allow user variable arguments as a tuple.
+But if there is only one argument, the result still in the single argument mode.</p>
+<p>This result is the final result of whole monad, 
+and will be replaced by any value passed in, 
+even the undefined ( call with no arguments ).</p>
+<p>run:: Process ( a-&gt;b ) -&gt; b | Tuple -&gt; Process b | Tuple</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.run = <span class="keyword">function</span>(result)
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Tuple | 0 or 1</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">if</span>( <span class="number">2</span> &lt;= arguments.length )
+    {
+        <span class="keyword">this</span>.__result = []
+        <span class="keyword">for</span>( <span class="keyword">var</span> i <span class="keyword">in</span> arguments)
+        {
+            <span class="keyword">this</span>.__result.push(arguments)
+        }
+    }
+    <span class="keyword">else</span>
+    {
+        <span class="keyword">this</span>.__result = result
+    }
+
+    <span class="keyword">if</span>( <span class="number">0</span> == <span class="keyword">this</span>.__queue.length )
+    {
+        <span class="keyword">return</span> ;
+    }
+
+    <span class="keyword">var</span> __fn = <span class="keyword">this</span>.__queue.shift()
+    <span class="keyword">this</span>.__recycle_queue.push(__fn)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>The function will call next function to run, 
+if it&#39;s not the end of the process.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">try</span>{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>TODO: Should use logger and debugging level...</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        fluorine.logger()(<span class="string">'[DEBUG] Process executing step #'</span>+(<span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span>)
+                            +<span class="string">', step name(if any): '</span>+__fn.__name
+                            +<span class="string">' ( call with ),'</span>, arguments
+                         )
+
+        __fn.apply({}, arguments)
+    } <span class="keyword">catch</span>(e)
+    {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Print multiple times when this step is deep in stack.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">if</span>( _.isUndefined(e.__printed) )
+        {
+            fluorine.logger()(<span class="string">'[ERROR] Process terminated at step #'</span>+(<span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span>)+<span class="string">', step name(if any): '</span>+__fn.__name, e)
+            e.__printed = <span class="literal">true</span>
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>debugger</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">throw</span> e
+    }
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Refresh the process. Make it runnable again.</p>
+<p>refresh:: Process fs</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.refresh = <span class="keyword">function</span>()
+{</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>FIXME:
+Push all left steps in queue into refreshed queue.</p>
+<p>This loop works only when a process be refreshed before it got done.
+The contextes need not it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="comment">/*
+    while( 0 != this.__queue.length )
+    {
+        var step = this.__queue.shift()
+        console.log('[DEBUG] Adding left step in original queue, step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+step.__name)
+        this.__recycle_queue.push(step)
+    }
+    */</span>
+    <span class="keyword">this</span>.__queue = <span class="keyword">this</span>.__recycle_queue
+    <span class="keyword">this</span>.__recycle_queue = []
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Extract the last result of called functions.</p>
+<p>extract:: Process ( a-&gt;b ) -&gt; b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.extract = <span class="keyword">function</span>()
+{
+    <span class="keyword">return</span> <span class="keyword">this</span>.__result;    
+}
+
+self.fluorine.registerInfect(<span class="string">'Process'</span>, self.fluorine.Process)
+
+<span class="comment">/**
+ * -- Programmer's Hidden Notes --
+
+Actions(proc)   -- 表示此 action chain 在哪個 proc 內 
+.action()       -- 其他 action 都只需要把自己的執行函式推入 proc 中
+                -- 而這個執行函式中有一段是去 call 下一個 proc 內的執行函式
+                -- 用 proc.run() 去執行
+.actionAsync()  -- 到這邊，把自己內部的 proc 設定在 callback 內。 
+                -- callback 會在執行階段被執行。屆時，他會繼續去執行剩下的 proc actions.
+                -- 因此，剩下的部份只有在經過了 callback 時才會被執行
+                --
+                -- 執行 async 動作
+                -- callback：中間有一段是執行 proc.run()
+.action()
+.action();
+
+*/</span></pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>
