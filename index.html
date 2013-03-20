@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html>
+<title>Fluorine - a context based Javascript library</title>
+
+<xmp theme="united" style="display:none;">
+<a id="to-github" href="https://github.com/snowmantw/Fluorine"><img style="position: absolute; top: 0; right: 0; border: 0;" src="https://s3.amazonaws.com/github/ribbons/forkme_right_green_007200.png" alt="Fork me on GitHub"></a>
+
+# <a name="top"></a>Fluorine
+
+[Fluorine](https://github.com/snowmantw/Fluorine) is a Javascript library and eDSL, want to help developers constructing their 
+application with more functional features, and build large programs from small functions.
+It currently has these features:
+
+* [Isolate impure parts in the program.](#isolatation)
+* [Allow to mix pure/impure when necessary.](#unsafe)
+* [Flow-Control](#flow-control), to avoid callback hell.
+* [Laziness](#laziness) (well, sort of) .
+
+It's first inspired by the [Arrowlets](http://www.cs.umd.edu/projects/PL/arrowlets/api-arrowlets.xhtml) library, 
+which brought the functional structure, Arrowlet, into Javascript world. Of course, the great [jQuery](http://jquery.com/) 
+and [Underscore.js](http://underscorejs.org/) also shown how amazingly Javascript could be.
+
+Futhurmore, this library also want to experiment the possibility of constructing reasonable Javascript programs 
+**without (too much) class, object and other OOP things**. Because Javascript, at least according to Douglas Crockford, 
+["has more in common with functional languages like Lisp or Scheme than with C or Java".](http://www.crockford.com/javascript/javascript.html)
+This is a good point in this OOP-overflowed age, especailly most of libraries are all eager to provide class, inheritance and other OOP stuffs.
+
+
+## Features
+<a name="isolation"></a>
+### Isolate Impure Parts in Javascript Applications
+
+Fluorine can help Javascript programmers isolate impure parts in their applications, 
+so that errors resulted from side-effects can be reduced as much as possible:
+
+    // Infect whole context to omit prefix namespaces.
+    // You can restore this by call `fluorine.heal()`.
+    fluorine.infect()
+    
+    // Impure function: directly manipulate DOMs in the document.
+    // All impure computing should be wrapped with contexts.
+    //
+    // :: String -> UI ()
+    drawMyName = function(name)
+    {
+        return UI('#name-user').$().text(name).done()
+    }
+    
+    // Pure function: return a plain old string.
+    //
+    // :: String 
+    giveName = function()
+    {
+        return "foobar"
+    }
+
+Programmers can still mix them in some proper ways, like in a generator function 
+returing yet another larger context:
+
+
+    // :: UI ()
+    drawApp = function()
+    {
+        return UI().
+            let(giveName).as('name').
+            tie( function()
+            {
+                // Use them just like "let" in other languages.
+                var slc_ex1 = '#ex1'
+                return UI("<div id='name-user'></div>").$().appendTo('#ex1').done()
+            }).
+            tie( function()
+            {   
+                // Fetch the value pre-defined by `let` and `as`.
+                return drawMyName(this.name)
+            }).
+            done()
+    }
+
+
+### <a name="unsafe"></a>Break the Glass in Emergency
+
+Basically, pure functions and values can't arbitrarily mix with impure things:
+
+    // :: String
+    pureString = function()
+    {
+        return "pure"
+    }
+
+    // :: UI String
+    impureString = function()
+    {
+        return UI("impure").done() 
+    }
+
+    illegal_string = pureString() + impureString()  // Error. 
+
+But in some special cases, we can still do that if the context come with some extractor functions:
+
+    illegal_string = pureString() + impureString()().extract()  // UI String -> String
+
+Also, we can do some dirty things in the theoretically pure combinator, like the `let` or `_`:
+
+    UI('#name-user').$().
+        _(function(e)
+        {
+            // Should keep pure, not violent that like this:
+
+            $(e).text("name changed !")
+        }).
+        done()
+
+This is useful because sometime we may want to embedded 3rd libraries in our contexts.
+
+Nevertheless, these tricks should be exceptions, not normalities.
+
+
+### <a name="flow-control"></a>Flow-control
+
+Fluorine use a hidden and stack based process to manage each step in context chains. The most classical example is the `IO` context:
+
+    IO().
+        get('/ajax/hello').as('hello').
+        get('/ajax/world').as('world').
+        _(function(){ return this.hello + ' ' + this.world }).
+        tie(function(msg)
+        {
+            return UI('<div id="io-msg"></div>').$().text(msg).appendTo('body').done()
+        })
+        done()
+
+Here, we get a serialized execution of multiple Ajax requests. The second `get` will not execute unless the first one got successfully executed.
+In this way, we can "flatten" nested Ajax callbacks such like:
+
+    function requests()
+    {
+        var responses = {}
+        $.get('/one', function(one)
+        {
+            responses["one"] = one
+            $.get('/two', function(two){
+                responses["two"] = two
+                $.get('/three', function(three){
+                    responses["three"] = three
+                    $('#io-msg').text(responses["one"]+responses["two"]+responses["three"])
+                })
+            })
+        })
+    }
+
+Into this:
+
+    function requests()
+    {
+        return IO().
+            get('/one').as('one').
+            get('/two').as('two').
+            get('/three').as('three').
+            tie(function()
+            {
+                return UI('#io-msg').$().text(this["one"]+this["two"]+this["three"]).done()
+            }).
+            done()
+    }
+
+Of course there're many flow-control libraries promising this, but Fluorine hope this feature can naturally become a part of context-based computing,
+not a standalone feature.
+
+Concurrent IOs like initialize multiple requests in the same time is not implemented yet. It will be a important feature in the near future.
+
+
+### <a name="laziness"></a>Laziness ( well, sort of ) 
+
+Context chains in Fluorine will not execute immediately, unless it's required.
+
+    // Normal jQuery chain will execute immediately:
+    act = $('#io-msg').hide().css('background-color', 'cyan').text('New message').fadeIn()
+
+    // Fluorine chain: nothing happened.
+    act = UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done()
+
+So we can storage the chain to embedded and apply it in anywhere we want
+
+    // Can return entire chain because it will not execute in this function. 
+    function newMessage()
+    { 
+        return UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done()
+    }
+
+    // When the program initialize, execute it:
+    newMessage()()
+
+And because we provide `id` function, using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
+
+    Event('initialize').
+        tie(id( UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done() )).
+        done()
+
+This is exactly why users should never expect to extract values from IOs: we can't guarrantee the IO chain will 
+execute and return the value as users wish. In fact, if someone do this:
+
+    var hello = IO().
+        get('/ajax/hello').
+        done()().extract()
+    
+    UI('#io-msg').$().text(hello).done()()
+
+The `hello` shall be null because the `get` still waiting the response. If values from IO is needed, embedded another contexts in the chain is the standard way to do that:
+
+    IO().
+        get('/ajax/hello').
+        tie( function( msg )
+        {
+            return UI('#io-msg').$().text(msg).done()
+        }).
+        done()()
+
+
+## Dependencies
+
+* [jQuery](http://jquery.com) : UI context.
+* [Underscore.js](http://underscorejs.org) : use it for your good !
+
+## Recommends
+
+* [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming
+
+</xmp>
+<script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
+<script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+<script src="http://underscorejs.org/underscore-min.js"></script>
+<script src="https://raw.github.com/snowmantw/Fluorine/master/build/fluorine/fluorine.js"></script>
+<script>
+    $(document).ready(function(){
+        $('#headline').wrap('<a href="http://snowmantw.github.com/Fluorine" />');
+    })
+</script>
+<style type="text/css">
+    #to-github img
+    {
+        margin-top:0px;
+        z-index: 99;
+    }
+</style>
+</html>
