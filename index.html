@@ -18,7 +18,7 @@ It currently has these features:
 
 It's first inspired by the [Arrowlets](http://www.cs.umd.edu/projects/PL/arrowlets/api-arrowlets.xhtml) library, 
 which brought the functional structure, Arrowlet, into Javascript world. Of course, the great [jQuery](http://jquery.com/) 
-and [Underscore.js](http://underscorejs.org/) also shown how amazingly Javascript could be.
+and [Underscore.js](http://underscorejs.org/) also shown how amazing Javascript could be.
 
 Futhurmore, this library also want to experiment the possibility of constructing reasonable Javascript programs 
 **without (too much) class, object and other OOP things**. Because Javascript, at least according to Douglas Crockford, 
@@ -26,11 +26,29 @@ Futhurmore, this library also want to experiment the possibility of constructing
 This is a good point in this OOP-overflowed age, especailly most of libraries are all eager to provide class, inheritance and other OOP stuffs.
 
 
+## Main Concepts
+
+Fluorine use a structure named **context** to wrap those computations with side-effects. 
+The name "context" means it's different from other purer and stronger structures like 
+[Arrowlet](http://www.haskell.org/haskellwiki/Typeclassopedia#Arrow), 
+[Monad](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad) and 
+[MonadTransformer](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad_transformers). 
+These structures are delicate enough but this little eDSL is hard to implement them well (at least, in current stage) .
+
+Contexts in Fluorine are just predefined functions like the "jQuery" function, and the main difference is 
+that the later don't provide mechanisms to execute lazily, so we can't directly combine all jQuery chains togeter to build a large program. 
+
+Other differences between jQuery and Fluorine's contexts are that jQuery didn't care about side-effects, 
+and it's chaning functions mainly provide UI manipulations. These differences don't mean it isn't a great Javascript library, 
+but only show there are some holes need to be filled. So Fluorine can and must be used with `jQuery` and `underscore.js`, which build important
+UI and other computations, then our contexts can orgranize them in proper ways.
+ 
+
 ## Features
 <a name="isolation"></a>
 ### Isolate Impure Parts in Javascript Applications
 
-Fluorine can help Javascript programmers isolate impure parts in their applications, 
+Fluorine's contexts can help Javascript programmers isolate impure parts in their applications, 
 so that errors resulted from side-effects can be reduced as much as possible:
 
     // Infect whole context to omit prefix namespaces.
@@ -54,7 +72,7 @@ so that errors resulted from side-effects can be reduced as much as possible:
         return "foobar"
     }
 
-Programmers can still mix them in some proper ways, like in a generator function 
+Programmers still can mix them in some proper ways, like in a generator function 
 returing yet another larger context:
 
 
@@ -96,7 +114,7 @@ Basically, pure functions and values can't arbitrarily mix with impure things:
 
     illegal_string = pureString() + impureString()  // Error. 
 
-But in some special cases, we can still do that if the context come with some extractor functions:
+But in some special cases, we still can do that if the context come with some extractor functions:
 
     illegal_string = pureString() + impureString()().extract()  // UI String -> String
 
@@ -180,7 +198,7 @@ Context chains in Fluorine will not execute immediately, unless it's required.
     // Fluorine chain: nothing happened.
     act = UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done()
 
-So we can storage the chain to embedded and apply it in anywhere we want
+So we can storage the chain to embed and apply it in anywhere we want
 
     // Can return entire chain because it will not execute in this function. 
     function newMessage()
@@ -216,15 +234,206 @@ The `hello` shall be null because the `get` still waiting the response. If value
         }).
         done()()
 
+---
 
-## Dependencies
+## Installation
+
+Clone it from Github, then locate the merged source file in `build/fluorine/fluorine.js`.
+
+    git clone https://github.com/snowmantw/Fluorine.git
+
+Or, you can install it via [bower](https://github.com/twitter/bower) :
+
+    bower install Fluorine
+
+Lasted tagged version in GitHub:
+
+https://github.com/snowmantw/Fluorine/archive/v0.2.zip
+
+### Dependencies
 
 * [jQuery](http://jquery.com) : UI context.
 * [Underscore.js](http://underscorejs.org) : use it for your good !
 
-## Recommends
+### Recommends
 
-* [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming
+* [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming.
+
+---
+
+## How to Use It
+
+
+### Initialize
+
+Normally, use `fluorine.infect()` first, to omit prefix namespace and do some initialization works:
+
+    fluorine.infect()
+
+This will embedded Fluorine utils functions and contexts in `window` object, so you call directly use them:
+
+    fluorine.infect()
+    IO().
+        get('/ajax/hello').
+        tie(function(hello)
+        {
+            return UI('#io-msg').text(hello).done()
+        }).
+        done()()
+
+
+You can use `fluorine.heal()` to remove the infection.
+
+
+### Guides & Common Mistakes
+
+#### 1. Every context chain should be enclosed:
+
+This is resulted from the limitation of our eDSL, which need to do some post-action after user defined a new chain, 
+but it's impossible to know that without the step because we don't have a compiler.
+
+So, if you `tie` an undone chain in another context, it's an error:
+
+    fluorine.infect()
+    IO().
+        get('/ajax/hello').
+        tie(function(hello)
+        {
+            return UI('#io-msg').$().text(hello)        // Undone context
+        }).
+        done()()
+    
+When this IO chain got executed, it will throw an error:
+
+    "Tying an undone context or just not a context."
+
+#### 2. Don't forget the period
+
+Just like `jQuery` and `underscore.js`, you will get strange results and errors if you forget the peroid:
+
+    
+    fluorine.infect()
+    IO().
+        get('/ajax/hello')                              // Missing the peroid
+        tie(function(hello)
+        {
+            return UI('#io-msg').$().text(hello)        // Undone context
+        }).
+        done()()
+
+When this IO chain got executed, it will throw an error:
+
+    "ReferenceError: tie is not defined
+
+Because "ReferenceError" is a general error, you will find it's hard to debug.
+So before you typing anything, it is a good practice to insert a period after the chain.
+
+Of course, you can choose period-prefix style to let the problem more significant:
+
+    
+    fluorine.infect()
+    IO()
+        get('/ajax/hello')                              // Missing the peroid; more apt to discover it 
+        .tie(function(hello)
+        {
+            return UI('#io-msg').$().text(hello)        // Undone context
+        })
+        .done()()
+
+But some DSL like Coco and CoffeeScript may not accept such style, and will give compiling errors while you want to mix this eDSL and the DSL.
+
+
+#### 3. Turn on the debug option
+
+Fluorine can output every steps it executed, to help debug your program:
+
+    fluorine.infect()
+    fluorine.debug(true)                                // Turn the debug mode on
+    IO().
+        get('/ajax/hello'). 
+        tie(function(hello)
+        {
+            return UI('#io-msg').$().text(hello)        // Undone context
+        }).
+        done()()
+    fluorine.debug(false)                               // Turn off the debug mode
+
+When you turn on the mode, Fluorine will print out every steps and errors in your console:
+
+    [DEBUG] Process executing step #0, step name(if any): Context::initialize ( call with ), [] fluorine.js:100
+    [DEBUG] Process executing step #1, step name(if any): Context::tie, next level -->  ( call with ), [undefined] fluorine.js:100
+    [ERROR] Process terminated at step #1, step name(if any): Context::tie, next level -->  Tying an undone context or just not a context. fluorine.js:100
+    [ERROR] Process terminated at step #1, step name(if any): Context::initialize Tying an undone context or just not a context. fluorine.js:100
+
+Here you can see the undone context stop the execution, just in the `tie` function.
+
+This debugging mode is still in very early stage, so it sometime seems hard to understand.
+Making it better if you can do some contributes !
+
+
+#### 4. Execute chains only when it's necessary
+
+Fluorine encourage programmers to create small funcions named generators, which return context chains rather than normal values:
+
+    // :: UI ()
+    function createMsgBox()
+    {
+        return UI('body').$().append('<div id="#io-msg"></div>').done()
+    }
+
+    // :: String -> UI ()
+    function drawMsg(msg)
+    {
+        return UI('#io-msg').$().text(msg).done()
+    }
+
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            tie( createMsgBox ).
+            get('/ajax/hello').
+            tie( drawMsg ).
+            done()
+    }
+
+    // Not execute any chains, until the last moment:
+    main()()  
+
+In fact these "chains" are just context wrapped values, so they're unsurprisedly can be stored and passed to another function as arguments.
+This feature means it's possible to create Javascript programs with a "compile time" phase, which can find errors before we run it.
+
+
+## APIs
+
+Annotated sources is here [NO, TODO].
+
+## Use with Other DSLs
+
+Although Fluorine want to provide functional features **without** compiler, it can perform more sweet syntax 
+if you can use it with other DSLs like CoffeeScript or CoCo. The largest different is the annonying function syntax:
+
+    
+Become:
+
+
+And we can get even close with curry functions:
+
+
+If in plain Javascript, it will become nightmare:
+
+
+--- 
+
+## License
+
+Fluorine: a context-based Javascript library Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
+
+This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
+
+This program is distributed in the hope that it will be useful, but WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for more details.
+
+You should have received a copy of the GNU General Public License along with this program. If not, see http://www.gnu.org/licenses/.
 
 </xmp>
 <script src="http://strapdownjs.com/v/0.2/strapdown.js"></script>
