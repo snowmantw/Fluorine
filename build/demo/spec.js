@@ -6,88 +6,88 @@ if('undefined' == typeof window){ self['it'] = context }
 
 fluorine.infect();
 fluorine.debug(true);
-describe("Process", function(){
-  describe("#next", function(){
-    self.it("should grow while each action adds their executing part into the process.", function(){
+describe("Process", !function(){
+  describe("#next", !function(){
+    return self.it("should grow while each action adds their executing part into the process.", !function(){
       var proc;
       proc = Process();
-      proc.next(function(a){
-        a + 1;
+      proc.next(!function(a){
+        return a + 1;
       });
-      proc.next(function(a, b){
-        b + 2;
+      proc.next(!function(a, b){
+        return b + 2;
       });
-      proc.next(function(a, b, c){
-        c + 3;
+      proc.next(!function(a, b, c){
+        return c + 3;
       });
-      proc.next(function(a, b, c, d){
-        d + 4;
+      proc.next(!function(a, b, c, d){
+        return d + 4;
       });
-      proc.next(function(a, b, c, d, e){
-        e + 5;
+      proc.next(!function(a, b, c, d, e){
+        return e + 5;
       });
-      expect(proc.__queue.length).toEqual(5);
+      return expect(proc.__queue.length).toEqual(5);
     });
   });
-  describe("#run", function(){
-    self.it("should execute only one function after run once.", function(){
+  return describe("#run", !function(){
+    self.it("should execute only one function after run once.", !function(){
       var proc;
       proc = Process();
-      proc.next(function(a){
-        proc.run(a + 1);
+      proc.next(!function(a){
+        return proc.run(a + 1);
       });
-      proc.next(function(b){
-        proc.run(b + 1);
+      proc.next(!function(b){
+        return proc.run(b + 1);
       });
       proc.run(0);
-      expect(proc.extract()).toEqual(2);
+      return expect(proc.extract()).toEqual(2);
     });
-    self.it("should execute exactly n times after run n times.", function(){
+    self.it("should execute exactly n times after run n times.", !function(){
       var proc;
       proc = Process();
-      proc.next(function(a){
-        proc.run(a + 1);
+      proc.next(!function(a){
+        return proc.run(a + 1);
       });
-      proc.next(function(b){
-        proc.run(b + 2);
+      proc.next(!function(b){
+        return proc.run(b + 2);
       });
-      proc.next(function(c){
-        proc.run(c + 3);
+      proc.next(!function(c){
+        return proc.run(c + 3);
       });
       proc.run(0);
-      expect(proc.extract()).toEqual(6);
+      return expect(proc.extract()).toEqual(6);
     });
-    self.it("should conquer the asynchronous callback hell.", function(){
+    return self.it("should conquer the asynchronous callback hell.", !function(){
       var proc;
       proc = Process();
-      runs(function(){
-        proc.next(function(){
-          proc.run(99);
+      runs(!function(){
+        proc.next(!function(){
+          return proc.run(99);
         });
-        proc.next(function(){
-          jQuery.get("/testAjax", function(data){
-            proc.run(data);
+        proc.next(!function(){
+          return jQuery.get("/testAjax", !function(data){
+            return proc.run(data);
           });
         });
-        proc.next(function(data){
-          proc.run(data);
+        proc.next(!function(data){
+          return proc.run(data);
         });
-        proc.run();
+        return proc.run();
       });
       waits(500);
-      runs(function(){
-        expect(Number(proc.extract())).toEqual(10);
+      return runs(!function(){
+        return expect(Number(proc.extract())).toEqual(10);
       });
     });
   });
 });
 self.Context = self.fluorine.Context;
-describe("Context", function(){
-  beforeEach(function(){
-    fluorine.Notifier.init();
+describe("Context", !function(){
+  beforeEach(!function(){
+    return fluorine.Notifier.init();
   });
-  describe("#as", function(){
-    self.it("should name results of previous computation as user needed", function(){
+  describe("#as", !function(){
+    return self.it("should name results of previous computation as user needed", !function(){
       var m, proc_m, runned_m;
       m = Context()._(function(){
         return 0;
@@ -98,11 +98,11 @@ describe("Context", function(){
       runned_m = proc_m();
       expect(runned_m.extract()).toEqual(8);
       expect(m.__environment['foo']).toEqual(0);
-      expect(m.__environment['bar']).toEqual(8);
+      return expect(m.__environment['bar']).toEqual(8);
     });
   });
-  describe("#let", function(){
-    self.it("should force next stage is as", function(){
+  describe("#let", !function(){
+    return self.it("should force next stage is as", !function(){
       var m, proc_m, runned_m;
       m = Context(10)['let'](function(x){
         return x - 10;
@@ -112,11 +112,11 @@ describe("Context", function(){
       proc_m = m.done();
       runned_m = proc_m();
       expect(m.__environment['a']).toEqual(0);
-      expect(m.__environment['b']).toEqual(true);
+      return expect(m.__environment['b']).toEqual(true);
     });
   });
-  describe("#tie", function(){
-    self.it("should be able to tie deep contexts", function(){
+  return describe("#tie", !function(){
+    return self.it("should be able to tie deep contexts", !function(){
       var m, proc_m, runned_m;
       m = Context(10)['let'](function(x){
         return x - 10;
@@ -138,17 +138,17 @@ describe("Context", function(){
       proc_m = m.done();
       runned_m = proc_m();
       expect(m.__environment['d']).toEqual(true);
-      expect(m.__environment['e']).toEqual(false);
+      return expect(m.__environment['e']).toEqual(false);
     });
   });
 });
 self.IO = self.fluorine.IO;
-describe("IO", function(){
-  beforeEach(function(){
-    fluorine.Notifier.init();
+describe("IO", !function(){
+  beforeEach(!function(){
+    return fluorine.Notifier.init();
   });
-  describe("#get", function(){
-    self.it("should get text resouce fomr server ", function(){
+  describe("#get", !function(){
+    self.it("should get text resouce fomr server ", !function(){
       var runned_m, m;
       runned_m = null;
       m = IO().get('/testAjax').as('ten')._(function(){
@@ -156,17 +156,17 @@ describe("IO", function(){
       })._(function(){
         return this.ten - 10;
       });
-      runs(function(){
+      runs(!function(){
         var proc_m;
         proc_m = m.done();
-        runned_m = proc_m();
+        return runned_m = proc_m();
       });
       waits(300);
-      runs(function(){
-        expect(runned_m.extract()).toEqual(0);
+      return runs(!function(){
+        return expect(runned_m.extract()).toEqual(0);
       });
     });
-    self.it("should be able to request binary data from server.", function(){
+    return self.it("should be able to request binary data from server.", !function(){
       var isGIF, m1;
       isGIF = false;
       m1 = IO().getBinary("/media/TestGIF.gif")._(function(data){
@@ -181,13 +181,13 @@ describe("IO", function(){
         }
       }).done()();
       waits(500);
-      runs(function(){
-        expect(isGIF).toEqual(true);
+      return runs(!function(){
+        return expect(isGIF).toEqual(true);
       });
     });
   });
-  describe("#post", function(){
-    self.it("should POST JSON to server.", function(){
+  describe("#post", !function(){
+    self.it("should POST JSON to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -198,11 +198,11 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("post ok");
+      return runs(!function(){
+        return expect(a).toEqual("post ok");
       });
     });
-    self.it("should POST ArrayBuffer to server.", function(){
+    self.it("should POST ArrayBuffer to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -211,11 +211,11 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("others");
+      return runs(!function(){
+        return expect(a).toEqual("others");
       });
     });
-    self.it("should POST Blob to server.", function(){
+    return self.it("should POST Blob to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -226,13 +226,13 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("others");
+      return runs(!function(){
+        return expect(a).toEqual("others");
       });
     });
   });
-  describe("#put", function(){
-    self.it("should PUT JSON to server.", function(){
+  describe("#put", !function(){
+    self.it("should PUT JSON to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -243,11 +243,11 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("put ok");
+      return runs(!function(){
+        return expect(a).toEqual("put ok");
       });
     });
-    self.it("should PUT ArrayBuffer to server.", function(){
+    self.it("should PUT ArrayBuffer to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -256,11 +256,11 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("others");
+      return runs(!function(){
+        return expect(a).toEqual("others");
       });
     });
-    self.it("should PUT Blob to server.", function(){
+    return self.it("should PUT Blob to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -271,13 +271,13 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("others");
+      return runs(!function(){
+        return expect(a).toEqual("others");
       });
     });
   });
-  describe("#delete", function(){
-    self.it("should DELETE to server.", function(){
+  describe("#delete", !function(){
+    return self.it("should DELETE to server.", !function(){
       var a, m;
       a = null;
       m = IO()._(function(){
@@ -288,13 +288,13 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("delete ok");
+      return runs(!function(){
+        return expect(a).toEqual("delete ok");
       });
     });
   });
-  describe("#tie", function(){
-    self.it("should tie some context and use it's result to GET from server, and tie handler of PUT.", function(){
+  return describe("#tie", !function(){
+    self.it("should tie some context and use it's result to GET from server, and tie handler of PUT.", !function(){
       var a, m;
       a = null;
       m = IO().get('/testAjax')._(function(x){
@@ -323,11 +323,11 @@ describe("IO", function(){
         return a = r;
       }).done()();
       waits(500);
-      runs(function(){
-        expect(a).toEqual("put ok");
+      return runs(!function(){
+        return expect(a).toEqual("put ok");
       });
     });
-    self.it("should make IOs as sequence, mixed with some pure computations.", function(){
+    return self.it("should make IOs as sequence, mixed with some pure computations.", !function(){
       var m;
       m = IO().get('/testAjax').as('a')._(function(x){
         return {
@@ -336,69 +336,69 @@ describe("IO", function(){
       }).put('/testAjax').as('b')['delete']('/testAjax/asd').as('c');
       m.done()();
       waits(500);
-      runs(function(){
+      return runs(!function(){
         expect(m.__environment['a']).toEqual("10");
         expect(m.__environment['b']).toEqual("put ok");
-        expect(m.__environment['c']).toEqual("delete ok");
+        return expect(m.__environment['c']).toEqual("delete ok");
       });
     });
   });
 });
 self.UI = self.fluorine.UI;
-describe("UI", function(){
-  beforeEach(function(){
-    fluorine.Notifier.init();
+describe("UI", !function(){
+  beforeEach(!function(){
+    return fluorine.Notifier.init();
   });
-  describe("#$", function(){
-    self.it("should mapping jQery methods ", function(){
+  describe("#$", !function(){
+    return self.it("should mapping jQery methods ", !function(){
       var names, m;
       names = ['animate', 'addClass', 'after', 'append', 'appendTo', 'attr', 'before', 'css', 'clone', 'detach', 'empty', 'children', 'parents', 'parent', 'fadeIn', 'fadeOut', 'hide', 'height', 'html', 'innerHeight', 'innerWidth', 'insertAfter', 'insertBefore', 'offset', 'outerHeight', 'outerWidth', 'prepend', 'prependTo', 'remove', 'removeAfter', 'removeClass', 'removeProp', 'replaceAll', 'replaceWith', 'scrollLeft', 'show', 'scrollTop', 'text', 'toggleClass', 'unwrap', 'val', 'wrap', 'wrap', 'wrapAll', 'wrapInner', 'filter', 'not', 'eq'];
       m = UI('body').$();
-      _.each(names, function(name){
-        expect(m[name]).not.toBe(undefined);
+      return _.each(names, !function(name){
+        return expect(m[name]).not.toBe(undefined);
       });
     });
   });
-  describe("#tie", function(){
-    self.it("should allow mixin with IO context", function(){
+  return describe("#tie", !function(){
+    self.it("should allow mixin with IO context", !function(){
       var m;
       m = UI().tie(function(){
         return IO().get('/testUI/body').done();
       }).$().css('background', 'cyan').attr('tested', 'true').done()();
       waits(300);
-      runs(function(){
-        expect($('body').attr('tested')).toEqual("true");
+      return runs(!function(){
+        return expect($('body').attr('tested')).toEqual("true");
       });
     });
-    self.it("should forwarding events as spec", function(){
+    self.it("should forwarding events as spec", !function(){
       var result, m;
       result = false;
-      fluorine.Notifier.on('spec_click', function(){
-        result = true;
+      fluorine.Notifier.on('spec_click', !function(){
+        return result = true;
       });
       m = UI('body').forward('click.spec', function(){
         return 'spec_click';
       }).done()();
       $('body').click();
-      expect(result).toEqual(true);
+      return expect(result).toEqual(true);
     });
-    self.it("should present how 'find' works differently from jQuery's 'find'", function(){
+    self.it("should present how 'find' works differently from jQuery's 'find'", !function(){
       var html, spans;
       html = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>";
       $(html).appendTo('body');
       spans = UI('body').$().select('div.outer').select('.inner').find('span').done()().extract();
       expect(spans.length).toEqual(2);
-      $('body div.outer').remove();
+      return $('body div.outer').remove();
     });
-    self.it("should present how 'select' works", function(){
+    self.it("should present how 'select' works", !function(){
       var html, text, spans;
       html = "<div class='outer'><span class='outer'></span><div class='inner'>TEXT<span id='innder-but-global'>TXT</span></div></div>";
       text = UI(html).$().select('.inner').select('span').text().done()().extract();
       spans = UI(html).$().select('.inner').select('span').done()().extract();
       expect(text).toEqual("TXT");
-      expect(spans.length).toEqual(1);
+      return expect(spans.length).toEqual(1);
     });
-    self.it("should mixin multiple contexts", function(){
+    return self.it("should mixin multiple contexts", !function(){
       var html, e, m;
       html = "<div id='text-div' style='border:2px red solid'>Some Text Div Here</div>";
       e = UI(html).$().appendTo('body').done();
@@ -420,20 +420,20 @@ describe("UI", function(){
         return $e.text(this.txt);
       }).done()();
       waits(300);
-      runs(function(){
+      return runs(!function(){
         expect($('body').attr('tested')).toEqual("true");
-        expect($('#text-div').text()).toEqual("some-text");
+        return expect($('#text-div').text()).toEqual("some-text");
       });
     });
   });
 });
 self.Event = self.fluorine.Event;
-describe("Event", function(){
-  beforeEach(function(){
-    fluorine.Notifier.init();
+describe("Event", !function(){
+  beforeEach(!function(){
+    return fluorine.Notifier.init();
   });
-  describe("#initialize", function(){
-    self.it("should allow tie notes handlers", function(){
+  return describe("#initialize", !function(){
+    return self.it("should allow tie notes handlers", !function(){
       var m, proc_m, runned_m;
       m = Event('SpecNote')._(function(){
         return 10;
@@ -446,29 +446,29 @@ describe("Event", function(){
       runned_m = proc_m();
       Notifier.trigger('SpecNote');
       waits(300);
-      runs(function(){
-        expect(m.__environment['c']).toEqual(true);
+      return runs(!function(){
+        return expect(m.__environment['c']).toEqual(true);
       });
     });
   });
 });
 self.Socket = self.fluorine.Socket;
-describe("Socket", function(){
-  beforeEach(function(){
-    fluorine.Notifier.init();
+describe("Socket", !function(){
+  beforeEach(!function(){
+    return fluorine.Notifier.init();
   });
-  describe("#open", function(){
-    self.it("should allow open and close", function(){
+  return describe("#open", !function(){
+    return self.it("should allow open and close", !function(){
       var a, m;
       a = false;
-      m = Socket().connect('ws://127.0.0.1:3030').forward(function(name, data, hr){
+      m = Socket().connect('ws://127.0.0.1:3030').forward(!function(name, data, hr){
         if (name == "close") {
-          a = true;
+          return a = true;
         }
       }).close().done()();
       waits(300);
-      runs(function(){
-        expect(a).toEqual(true);
+      return runs(!function(){
+        return expect(a).toEqual(true);
       });
     });
   });
