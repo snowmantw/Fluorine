@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <title>Fluorine - a context based Javascript library</title>
@@ -8,37 +7,36 @@
 
 **Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
 
-- [<a name="top"></a>Fluorine](#<a-name=top></a>fluorine)
+- [Fluorine](#fluorine)
 	- [Main Concepts](#main-concepts)
 	- [Features](#features)
 		- [Isolate Impure Parts in Javascript Applications](#isolate-impure-parts-in-javascript-applications)
 		- [Break the Glass in Emergency](#break-the-glass-in-emergency)
 		- [Flow-Control](#flow-control)
-		- [Laziness ( well, sort of )](#laziness--well-sort-of-)
+		- [Laziness ( well, sort of )](#laziness)
 	- [Installation](#installation)
 		- [Dependencies](#dependencies)
 		- [Recommends](#recommends)
 	- [How to Use It](#how-to-use-it)
 		- [Initialize](#initialize)
-		- [Guides & Common Mistakes](#guides-N-common-mistakes)
-			- [1. Every context chain should be enclosed:](#1-every-context-chain-should-be-enclosed:)
-			- [2. Don't forget the period](#2-don't-forget-the-period)
-			- [3. Turn on the debug option](#3-turn-on-the-debug-option)
-			- [4. Execute chains only when it's necessary](#4-execute-chains-only-when-it's-necessary)
+		- [Guides and Common Mistakes](#guides-N-common-mistakes)
+			- [0. Wrap all computation with side-effects](#wrap-all-computation-with-side-effects)
+			- [1. Every context chain should be enclosed](#every-context-chain-should-be-enclosed)
+			- [2. Don't forget the period](#dont-forget-the-period)
+			- [3. Turn on the debug option](#turn-on-the-debug-option)
+			- [4. Execute chains only when it's necessary](#execute-chains-only-when-its-necessary)
 	- [APIs](#apis)
 	- [Use with Other DSLs](#use-with-other-dsls)
 	- [License](#license)
 
----
-
-# <a name="top"></a>Fluorine
+# <a id="fluorine"></a>Fluorine
 
 [Fluorine](https://github.com/snowmantw/Fluorine) is a Javascript library and eDSL, want to help developers constructing their 
 application with more functional features, and build large programs from small functions.
 It currently has these features:
 
-* [Isolate impure parts in the program.](#isolatation)
-* [Allow to mix pure/impure when necessary.](#unsafe)
+* [Isolate impure parts in the program.](#isolate-impure-parts-in-javascript-applications)
+* [Allow to mix pure/impure when necessary.](#break-the-glass-in-emergency)
 * [Flow-Control](#flow-control), to avoid callback hell.
 * [Laziness](#laziness) (well, sort of) .
 
@@ -52,27 +50,27 @@ Futhurmore, this library also want to experiment the possibility of constructing
 This is a good point in this OOP-overflowed age, especailly most of libraries are all eager to provide class, inheritance and other OOP stuffs.
 
 
-## Main Concepts
+## <a id="main-concepts"></a>Main Concepts
 
 Fluorine use a structure named **context** to wrap those computations with side-effects. 
 The name "context" means it's different from other purer and stronger structures like 
 [Arrowlet](http://www.haskell.org/haskellwiki/Typeclassopedia#Arrow), 
 [Monad](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad) and 
 [MonadTransformer](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad_transformers). 
-These structures are delicate enough but this little eDSL is hard to implement them well (at least, in current stage) .
+These structures are delicate enough but also hard to implement well in this little eDSL (at least, in current stage) .
 
 Contexts in Fluorine are just predefined functions like the "jQuery" function, and the main difference is 
 that the later don't provide mechanisms to execute lazily, so we can't directly combine all jQuery chains togeter to build a large program. 
 
 Other differences between jQuery and Fluorine's contexts are that jQuery didn't care about side-effects, 
-and it's chaning functions mainly provide UI manipulations. These differences don't mean it isn't a great Javascript library, 
-but only show there are some holes need to be filled. So Fluorine can and must work with `jQuery` and `underscore.js`, which build important
-UI and other computations, then our contexts can orgranize them in proper ways.
+and it's combinators mainly provide UI manipulations. These differences don't mean it isn't a great Javascript library, 
+but only show there're some holes need to be filled. So Fluorine actually depends on `jQuery` and `underscore.js`, 
+which can easily build important UI and other computations. This library just provide some contexts to orgranize them in proper ways.
  
 
-## Features
-<a name="isolation"></a>
-### Isolate Impure Parts in Javascript Applications
+## <a id="features"></a>Features
+
+### <a id="isolate-impure-parts-in-javascript-applications"></a>Isolate Impure Parts in Javascript Applications
 
 Fluorine's contexts can help Javascript programmers isolate impure parts in their applications, 
 so that errors resulted from side-effects can be reduced as much as possible:
@@ -87,6 +85,7 @@ so that errors resulted from side-effects can be reduced as much as possible:
     // :: String -> UI ()
     drawMyName = function(name)
     {
+        // $() means apply jquery: `a -> UI $DOM`    
         return UI('#name-user').$().text(name).done()
     }
     
@@ -102,29 +101,34 @@ Programmers still can mix them in some proper ways, like in a generator function
 returing yet another larger context:
 
 
+    // Generator means this function will return another context wrapped value, rather than a pure value.
+    //
     // :: UI ()
     drawApp = function()
     {
         return UI().
-            let(giveName).as('name').
-            tie( function()
+            let(giveName).as('name').   // Allow to define some local variables in the scope of chain.
+            tie( function()             // Allow tie with other chains to build large chain.
             {
-                // Use them just like "let" in other languages.
+                // Use local variables just like "let" in other languages.
                 var slc_ex1 = '#ex1'
+
+                // Subchain's result will become next step's input.
+                // In this case, it will return `UI $DOM`
                 return UI("<div id='name-user'></div>").$().appendTo(slc_ex1).done()
             }).
-            tie( function()
+            tie( function($dom)
             {   
                 // Fetch the value pre-defined by `let` and `as`.
                 return drawMyName(this.name)
             }).
-            done()
+            done()  // Don't forget to close this chain.
     }
 
 
-### <a name="unsafe"></a>Break the Glass in Emergency
+### <a id="break-the-glass-in-emergency"></a>Break the Glass in Emergency
 
-Basically, pure functions and values can't arbitrarily mix with impure things:
+Basically, pure functions and values can't arbitrarily mix with impure values:
 
     // :: String
     pureString = function()
@@ -142,30 +146,29 @@ Basically, pure functions and values can't arbitrarily mix with impure things:
 
 But in some special cases, we still can do that if the context come with some extractor functions:
 
-    illegal_string = pureString() + impureString()().extract()  // UI String -> String
+    illegal_string = pureString() + impureString()().extract()  // extract:: UI String -> String
 
-Also, we can do some dirty things in the theoretically pure combinator, like the `let` or `_`:
+Also, we can do some dirty works in the theoretically pure combinator, like the `let` or `_`:
 
     UI('#name-user').$().
-        _(function(e)
+        _(function(e)           // Call it "lambda" if you like.
         {
-            // Should keep pure, not violent that like this:
-
+            // Should keep pure, not violenting like this:
             $(e).text("name changed !")
         }).
         done()
 
-This is useful because sometime we may want to embedded 3rd libraries in our contexts.
+This is useful because sometimes we may want to embed 3rd libraries in our contexts.
 
 Nevertheless, these tricks should be exceptions, not normalities.
 
 
-### <a name="flow-control"></a>Flow-Control
+### <a id="flow-control"></a>Flow-Control
 
 Fluorine use a hidden and stack based process to manage each step in context chains. The most classical example is the `IO` context:
 
     IO().
-        get('/ajax/hello').as('hello').
+        get('/ajax/hello').as('hello').         // Delegate to `jQuery.get` .
         get('/ajax/world').as('world').
         _(function(){ return this.hello + ' ' + this.world }).
         tie(function(msg)
@@ -214,7 +217,7 @@ not a standalone feature.
 Concurrent IOs like initialize multiple requests in the same time is not implemented yet. It will be a important feature in the near future.
 
 
-### <a name="laziness"></a>Laziness ( well, sort of ) 
+### <a id="laziness"></a>Laziness ( well, sort of ) 
 
 Context chains in Fluorine will not execute immediately, unless it's required.
 
@@ -227,6 +230,7 @@ Context chains in Fluorine will not execute immediately, unless it's required.
 So we can storage the chain to embed and apply it in anywhere we want
 
     // Can return entire chain because it will not execute in this function. 
+    // :: UI ()
     function newMessage()
     { 
         return UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done()
@@ -235,34 +239,61 @@ So we can storage the chain to embed and apply it in anywhere we want
     // When the program initialize, execute it:
     newMessage()()
 
-And because we provide `id` function, using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
+The first application of `newMessage` function is for generating the `UI ()` value:
+
+    // :: UI ()
+    newMessage()
+
+And the next is for extract (execute) pure value from it:
+
+
+    // :: UI () -> ()
+    newMessage()()
+
+Because the `UI () -> ()` will return nothing, `newMessage()()` will return nothing.
+
+The second `()` is like runner functions in Haskell. 
+For instance, the `runST:: (forall s. ST s a) -> a` can "execute" a ST Monad.
+
+If the anonymous functions annoy you, we also provide `id` function. 
+Using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
+
+    // Notice the anonymous generator function get disappeared.
 
     Event('initialize').
         tie(id( UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done() )).
         done()
 
-This is exactly why users should never expect to extract values from IOs: we can't guarrantee the IO chain will 
-execute and return the value as users wish. In fact, if someone do this:
+The "lazyness" and the way we controlling processes are exactly why users should never expect to extract values from IOs: 
+we can't guarrantee the IO chain will execute and return the value as users wish. In fact, if someone do this:
+
+    // Try to extract the result of IO context:
 
     var hello = IO().
         get('/ajax/hello').
         done()().extract()
+
+    // And directly use it in another one:
     
     UI('#io-msg').$().text(hello).done()()
 
-The `hello` shall be null because the `get` still waiting the response. If values from IO is needed, embedded another contexts in the chain is the standard way to do that:
+The `hello` shall be null because the asynchronous `get` still waiting the response. 
+If values from IO is needed by other contexts, embedding them in the chain is the standard way to satisfy the request:
 
     IO().
         get('/ajax/hello').
         tie( function( msg )
         {
+            // Instead of try to get the IO handled value outside, 
+            // it's better to embed the receiver context in.
+
             return UI('#io-msg').$().text(msg).done()
         }).
         done()()
 
 ---
 
-## Installation
+## <a id="installation"></a>Installation
 
 Clone it from Github, then locate the merged source file in `build/fluorine/fluorine.js`.
 
@@ -276,21 +307,21 @@ Lasted tagged version in GitHub:
 
 https://github.com/snowmantw/Fluorine/archive/v0.2.zip
 
-### Dependencies
+### <a id="dependencies"></a>Dependencies
 
 * [jQuery](http://jquery.com) : UI context.
 * [Underscore.js](http://underscorejs.org) : use it for your good !
 
-### Recommends
+### <a id="recommends"></a>Recommends
 
 * [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming.
 
 ---
 
-## How to Use It
+## <a id="how-to-use-it"></a>How to Use It
 
 
-### Initialize
+### <a id="initialize"></a>Initialize
 
 Normally, use `fluorine.infect()` first, to omit prefix namespace and do some initialization works:
 
@@ -310,10 +341,35 @@ This will embedded Fluorine utils functions and contexts in `window` object, so 
 
 You can use `fluorine.heal()` to remove the infection.
 
+---
 
-### Guides & Common Mistakes
+### <a id="guides-N-common-mistakes"></a>Guides and Common Mistakes
 
-#### 1. Every context chain should be enclosed:
+#### <a id="wrap-all-computation-with-side-effects"></a>0. Wrap all computation with side-effects
+
+Contexts can wrap a pure value to lift it:
+
+    a = "#msg"           // String
+    UI(a).done()         // UI String
+
+Only wrapped or locally defined values can join computations in the chain:
+
+    UI(a).$().          // Use the wrapped ID to select element: `a -> UI $DOM`
+        hide().
+        tie(function($dom)
+        {
+            // Like "let" in other languages
+            var msg = "Some Message"
+
+            // This subchain will return `UI $DOM` to next step.
+            return UI($dom).$().text(msg).done()
+        }).
+        fadeIn().
+        done() 
+
+However this is Javascript, Fluorine will keep slient if you still decide to do that dirty works.
+
+#### <a id="every-context-chain-should-be-enclosed"></a>1. Every context chain should be enclosed
 
 This is resulted from the limitation of our eDSL, which need to do some post-action after user defined a new chain, 
 but it's impossible to know that without the step because we don't have a compiler.
@@ -329,13 +385,13 @@ So, if you `tie` an undone chain in another context, it's an error:
         }).
         done()()
     
-When this IO chain got executed, it will throw an error:
+When this IO chain got executed, it will throw:
 
     "Tying an undone context or just not a context."
 
-#### 2. Don't forget the period
+#### <a id="dont-forget-the-period"></a>2. Don't forget the period
 
-Just like `jQuery` and `underscore.js`, you will get strange results and errors if you forget the peroid:
+Just like jQuery and underscore.js, you will get strange results and errors if you forget the peroid:
 
     
     fluorine.infect()
@@ -354,7 +410,7 @@ When this IO chain got executed, it will throw an error:
 Because "ReferenceError" is a general error, you will find it's hard to debug.
 So before you typing anything, it is a good practice to insert a period after the chain.
 
-Of course, you can choose period-prefix style to let the problem more significant:
+Of course, you can choose period-prefix style to make the problem more significant:
 
     
     fluorine.infect()
@@ -369,9 +425,9 @@ Of course, you can choose period-prefix style to let the problem more significan
 But some DSL like Coco and CoffeeScript may not accept such style, and will give compiling errors while you want to mix this eDSL and the DSL.
 
 
-#### 3. Turn on the debug option
+#### <a id="turn-on-the-debug-option"></a>3. Turn on the debug option
 
-Fluorine can output every steps it executed, to help debug your program:
+Fluorine can output every steps it executed, to help you debug the program:
 
     fluorine.infect()
     fluorine.debug(true)                                // Turn the debug mode on
@@ -393,11 +449,11 @@ When you turn on the mode, Fluorine will print out every steps and errors in you
 
 Here you can see the undone context stop the execution, just in the `tie` function.
 
-This debugging mode is still in very early stage, so it sometime seems hard to understand.
+This debugging mode is still in very early stage, so it's messages sometimes look like hard to understand.
 Making it better if you can do some contributes !
 
 
-#### 4. Execute chains only when it's necessary
+#### <a id="execute-chains-only-when-its-necessary"></a>4. Execute chains only when it's necessary
 
 Fluorine encourage programmers to create small funcions named generators, which return context chains rather than normal values:
 
@@ -426,12 +482,20 @@ Fluorine encourage programmers to create small funcions named generators, which 
     // Not execute any chains, until the last moment:
     main()()  
 
-In fact these "chains" are just context wrapped values, so they're unsurprisedly can be stored and passed to another function as arguments.
-This feature means it's possible to create Javascript programs with a "compile time" phase, which can find errors before we run it.
+These functions, except the last one, will not be executed in entire program. They just provide some subchains to the main context.
+
+In fact because these "chains" are just context wrapped values, they're unsurprisedly can be stored and passed to another function as arguments.
+This feature also means it's possible to create Javascript programs with a "compile time" phase, which can find errors before we run it.
+
+You may also notice that the two subchains are defined in some named functions, not in anonymous functionsan error in the IO chain.
+It's more clear and important while users want to mix 3 or more contexts in one main chain. 
+Anonymous generators are easy to write but also has over-nested problem, unless we can change the syntax with other DSLs like CoffeeScript or Coco.
 
 ---
 
-## APIs
+## <a id="apis"></a>APIs
+
+There're no individual API documents yet.
 
 Annotated sources is here:
 
@@ -458,9 +522,9 @@ These may not be fixed soon. So [reading source codes](https://github.com/snowma
 
 ---
 
-## Use with Other DSLs
+## <a id="use-with-other-dsls"></a>Use with Other DSLs
 
-Although Fluorine want to provide functional features **without** compiler, it can perform more sweet syntax 
+Although Fluorine want to provide functional features **without** any compiler, it can perform more sweet syntax 
 if you can use it with other DSLs like CoffeeScript or CoCo :
 
     // :: UI ()
@@ -507,7 +571,7 @@ The original version with plain Javascript:
     // Not execute any chains, until the last moment:
     main()()  
     
-And we can get even close to real curry functions ( not directly related to Fluorine, but it's an very important advantage ):
+And we can get even close to real curry functions ( not directly related to Fluorine, but it's a very important advantage ):
 
     add3 = a -> b -> c-> a+b+c
 
@@ -525,7 +589,7 @@ If we implement that with plain Javascript, it will become a nightmare:
 
 --- 
 
-## License
+## <a id="license"></a>License
 
 Fluorine: a context-based Javascript library Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
 
