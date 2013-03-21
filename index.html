@@ -255,7 +255,7 @@ Because the `UI () -> ()` will return nothing, `newMessage()()` will return noth
 The second `()` is like runner functions in Haskell. 
 For instance, the `runST:: (forall s. ST s a) -> a` can "execute" a ST Monad.
 
-If the anonymous functions annoy you, we also provide `id` function. 
+If the anonymous functions annoys you, we also provide `id` function. 
 Using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
 
     // Notice the anonymous generator function get disappeared.
