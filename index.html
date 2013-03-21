@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html>
 <title>Fluorine - a context based Javascript library</title>
@@ -8,30 +7,29 @@
 
 **Table of Contents**  *generated with [DocToc](http://doctoc.herokuapp.com/)*
 
-- [<a name="top"></a>Fluorine](#<a-name=top></a>fluorine)
+- [Fluorine](#fluorine)
 	- [Main Concepts](#main-concepts)
 	- [Features](#features)
 		- [Isolate Impure Parts in Javascript Applications](#isolate-impure-parts-in-javascript-applications)
 		- [Break the Glass in Emergency](#break-the-glass-in-emergency)
 		- [Flow-Control](#flow-control)
-		- [Laziness ( well, sort of )](#laziness--well-sort-of-)
+		- [Laziness ( well, sort of )](#laziness)
 	- [Installation](#installation)
 		- [Dependencies](#dependencies)
 		- [Recommends](#recommends)
 	- [How to Use It](#how-to-use-it)
 		- [Initialize](#initialize)
 		- [Guides & Common Mistakes](#guides-N-common-mistakes)
-			- [1. Every context chain should be enclosed:](#1-every-context-chain-should-be-enclosed:)
-			- [2. Don't forget the period](#2-don't-forget-the-period)
-			- [3. Turn on the debug option](#3-turn-on-the-debug-option)
-			- [4. Execute chains only when it's necessary](#4-execute-chains-only-when-it's-necessary)
+                        - [0. Wrap All Computation with Side-Effects](#wrap-all-computation-with-side-effects)
+			- [1. Every context chain should be enclosed](#every-context-chain-should-be-enclosed)
+			- [2. Don't forget the period](#dont-forget-the-period)
+			- [3. Turn on the debug option](#turn-on-the-debug-option)
+			- [4. Execute chains only when it's necessary](#execute-chains-only-when-its-necessary)
 	- [APIs](#apis)
 	- [Use with Other DSLs](#use-with-other-dsls)
 	- [License](#license)
 
----
-
-# <a name="top"></a>Fluorine
+# <a id="fluorine"></a>Fluorine
 
 [Fluorine](https://github.com/snowmantw/Fluorine) is a Javascript library and eDSL, want to help developers constructing their 
 application with more functional features, and build large programs from small functions.
@@ -52,14 +50,14 @@ Futhurmore, this library also want to experiment the possibility of constructing
 This is a good point in this OOP-overflowed age, especailly most of libraries are all eager to provide class, inheritance and other OOP stuffs.
 
 
-## Main Concepts
+## <a id="main-concepts"></a>Main Concepts
 
 Fluorine use a structure named **context** to wrap those computations with side-effects. 
 The name "context" means it's different from other purer and stronger structures like 
 [Arrowlet](http://www.haskell.org/haskellwiki/Typeclassopedia#Arrow), 
 [Monad](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad) and 
 [MonadTransformer](http://www.haskell.org/haskellwiki/Typeclassopedia#Monad_transformers). 
-These structures are delicate enough but this little eDSL is hard to implement them well (at least, in current stage) .
+These structures are delicate enough but also hard to implement well in this little eDSL (at least, in current stage) .
 
 Contexts in Fluorine are just predefined functions like the "jQuery" function, and the main difference is 
 that the later don't provide mechanisms to execute lazily, so we can't directly combine all jQuery chains togeter to build a large program. 
@@ -70,9 +68,9 @@ but only show there are some holes need to be filled. So Fluorine can and must w
 UI and other computations, then our contexts can orgranize them in proper ways.
  
 
-## Features
-<a name="isolation"></a>
-### Isolate Impure Parts in Javascript Applications
+## <a id="features"></a>Features
+
+### <a id="isolate-impure-parts-in-javascript-applications"></a>Isolate Impure Parts in Javascript Applications
 
 Fluorine's contexts can help Javascript programmers isolate impure parts in their applications, 
 so that errors resulted from side-effects can be reduced as much as possible:
@@ -122,7 +120,7 @@ returing yet another larger context:
     }
 
 
-### <a name="unsafe"></a>Break the Glass in Emergency
+### <a id="break-the-glass-in-emergency"></a>Break the Glass in Emergency
 
 Basically, pure functions and values can't arbitrarily mix with impure things:
 
@@ -160,7 +158,7 @@ This is useful because sometime we may want to embedded 3rd libraries in our con
 Nevertheless, these tricks should be exceptions, not normalities.
 
 
-### <a name="flow-control"></a>Flow-Control
+### <a id="flow-control"></a>Flow-Control
 
 Fluorine use a hidden and stack based process to manage each step in context chains. The most classical example is the `IO` context:
 
@@ -214,7 +212,7 @@ not a standalone feature.
 Concurrent IOs like initialize multiple requests in the same time is not implemented yet. It will be a important feature in the near future.
 
 
-### <a name="laziness"></a>Laziness ( well, sort of ) 
+### <a id="laziness"></a>Laziness ( well, sort of ) 
 
 Context chains in Fluorine will not execute immediately, unless it's required.
 
@@ -262,7 +260,7 @@ The `hello` shall be null because the `get` still waiting the response. If value
 
 ---
 
-## Installation
+## <a id="installation"></a>Installation
 
 Clone it from Github, then locate the merged source file in `build/fluorine/fluorine.js`.
 
@@ -276,21 +274,21 @@ Lasted tagged version in GitHub:
 
 https://github.com/snowmantw/Fluorine/archive/v0.2.zip
 
-### Dependencies
+### <a id="dependencies"></a>Dependencies
 
 * [jQuery](http://jquery.com) : UI context.
 * [Underscore.js](http://underscorejs.org) : use it for your good !
 
-### Recommends
+### <a id="recommends"></a>Recommends
 
 * [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming.
 
 ---
 
-## How to Use It
+## <a id="how-to-use-it"></a>How to Use It
 
 
-### Initialize
+### <a id="initialize"></a>Initialize
 
 Normally, use `fluorine.infect()` first, to omit prefix namespace and do some initialization works:
 
@@ -311,9 +309,14 @@ This will embedded Fluorine utils functions and contexts in `window` object, so 
 You can use `fluorine.heal()` to remove the infection.
 
 
-### Guides & Common Mistakes
+### <a id="guides-N-common-mistakes"></a>Guides & Common Mistakes
 
-#### 1. Every context chain should be enclosed:
+#### <a id="wrap-all-computation-with-side-effects"></a>0. Wrap All Computation with Side-Effects
+
+
+
+
+#### <a id="every-context-chain-should-be-enclosed"></a>1. Every context chain should be enclosed
 
 This is resulted from the limitation of our eDSL, which need to do some post-action after user defined a new chain, 
 but it's impossible to know that without the step because we don't have a compiler.
@@ -333,7 +336,7 @@ When this IO chain got executed, it will throw an error:
 
     "Tying an undone context or just not a context."
 
-#### 2. Don't forget the period
+#### <a id="dont-forget-the-period"></a>2. Don't forget the period
 
 Just like `jQuery` and `underscore.js`, you will get strange results and errors if you forget the peroid:
 
@@ -369,7 +372,7 @@ Of course, you can choose period-prefix style to let the problem more significan
 But some DSL like Coco and CoffeeScript may not accept such style, and will give compiling errors while you want to mix this eDSL and the DSL.
 
 
-#### 3. Turn on the debug option
+#### <a id="turn-on-the-debug-option"></a>3. Turn on the debug option
 
 Fluorine can output every steps it executed, to help debug your program:
 
@@ -397,7 +400,7 @@ This debugging mode is still in very early stage, so it sometime seems hard to u
 Making it better if you can do some contributes !
 
 
-#### 4. Execute chains only when it's necessary
+#### <a id="execute-chains-only-when-its-necessary"></a>4. Execute chains only when it's necessary
 
 Fluorine encourage programmers to create small funcions named generators, which return context chains rather than normal values:
 
@@ -431,7 +434,9 @@ This feature means it's possible to create Javascript programs with a "compile t
 
 ---
 
-## APIs
+## <a id="apis"></a>APIs
+
+There're no individual API documents yet.
 
 Annotated sources is here:
 
@@ -458,9 +463,9 @@ These may not be fixed soon. So [reading source codes](https://github.com/snowma
 
 ---
 
-## Use with Other DSLs
+## <a id="use-with-other-dsls"></a>Use with Other DSLs
 
-Although Fluorine want to provide functional features **without** compiler, it can perform more sweet syntax 
+Although Fluorine want to provide functional features **without** any compiler, it can perform more sweet syntax 
 if you can use it with other DSLs like CoffeeScript or CoCo :
 
     // :: UI ()
@@ -525,7 +530,7 @@ If we implement that with plain Javascript, it will become a nightmare:
 
 --- 
 
-## License
+## <a id="license"></a>License
 
 Fluorine: a context-based Javascript library Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
 
