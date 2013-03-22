@@ -593,6 +593,19 @@ The function return by default <code>done()</code> will automatically execute th
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
+              <p><strong> Runtime Stage </strong></p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-29">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-29">&#182;</a>
+              </div>
               <p>The last step of this context.</p>
 
             </div>
@@ -607,11 +620,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-29">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <p>If we want to continue the process:</p>
 
@@ -627,44 +640,26 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-30">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
-              </div>
-              <p>If continue: 
-- User can only run this process because the return function
-- User run it with continue function
-- The continue step got executed after whole steps inside this context got executed
-- Continues steps of base context got execute</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>        <span class="keyword">return</span> _.bind( <span class="keyword">function</span>(continue_fn, base_env)
-        {</pre></div></div>
-            
-        </li>
-        
-        
         <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
-              <p>Don&#39;t run context, but set continue function and return self.</p>
+              <p><strong> Definition Stage </strong></p>
+<p>After definition, return a function to let user choose evaluate this context immediately or later.</p>
+<p>User may also pass a function in as the continue function. In this case:</p>
+<ul>
+<li>User run the context with the continue function</li>
+<li>The continue step got executed after all steps inside this context got executed</li>
+</ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>           <span class="keyword">if</span>( continue_fn )
-           {
-               <span class="keyword">this</span>.__<span class="keyword">continue</span>(continue_fn, base_env)
-               <span class="keyword">return</span> _.bind(<span class="keyword">this</span>.run, <span class="keyword">this</span>)  <span class="comment">// Delegate calling to the tied function.</span>
-           }
-           <span class="keyword">return</span> <span class="keyword">this</span>.run()
-        }, <span class="keyword">this</span>)
-    }</pre></div></div>
+            <div class="content"><div class='highlight'><pre>        
+        <span class="keyword">var</span> done_fn = 
+        _.bind( <span class="keyword">function</span>(continue_fn, base_env)
+        {</pre></div></div>
             
         </li>
         
@@ -674,6 +669,63 @@ The function return by default <code>done()</code> will automatically execute th
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>Don&#39;t run context, but set continue function and return self.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>           <span class="keyword">if</span>( continue_fn )
+           {
+               <span class="keyword">this</span>.__<span class="keyword">continue</span>(continue_fn, base_env)
+               <span class="keyword">return</span> _.bind(<span class="keyword">this</span>.run, <span class="keyword">this</span>)  <span class="comment">// Delegate the call to the tied function.</span>
+           }
+           <span class="keyword">return</span> <span class="keyword">this</span>.run()
+        }, <span class="keyword">this</span>)
+
+        <span class="comment">/** Definition stage, see comments below **/</span>
+
+        done_fn.tie = _.
+        bind
+        (<span class="keyword">function</span>()
+        {
+            <span class="keyword">this</span>.__done = <span class="literal">false</span>
+            <span class="keyword">return</span> <span class="keyword">this</span>.tie.apply(<span class="keyword">this</span>, arguments)
+        }
+        , <span class="keyword">this</span>)
+        <span class="keyword">return</span> done_fn</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-33">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-33">&#182;</a>
+              </div>
+              <p>Attach a simple <code>tie</code> function to the <code>done_fn</code>
+allow user to concat other contexts. For example:</p>
+<p>Haskell: </p>
+<pre><code> s = getLine         -- ::IO String
+ g = putStrLn        -- ::String -&gt; IO ()
+ h = s &gt;&gt;= g         -- OK</code></pre>
+<p>Fluorine ( with pseudo functions ):</p>
+<pre><code> s = IO().getLine().done()
+ g = function(str){ IO(str).putStrLine().done() }
+ h = s.tie(g)                    // NOT OK if we close the context.</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-34">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>Inner implement function.
 Inject a continue function into this context&#39;s step, 

@@ -644,6 +644,8 @@ self.fluorine.Context.o.prototype =
         if( this.__done ) { return }
         this.__done = true
 
+        // ** Runtime Stage **
+        
         // The last step of this context.
         this.__process.next
         (   _.bind( function(a)
@@ -660,21 +662,55 @@ self.fluorine.Context.o.prototype =
         },  this
         ), 'Context::done' )
 
-        // If continue: 
-        // - User can only run this process because the return function
-        // - User run it with continue function
-        // - The continue step got executed after whole steps inside this context got executed
-        // - Continues steps of base context got execute
-        return _.bind( function(continue_fn, base_env)
+        // ** Definition Stage **
+
+        // After definition, return a function to let user choose evaluate this context immediately or later.
+        //
+        // User may also pass a function in as the continue function. In this case:
+        //
+        // - User run the context with the continue function
+        // - The continue step got executed after all steps inside this context got executed
+        
+        var done_fn = 
+        _.bind( function(continue_fn, base_env)
         {
            // Don't run context, but set continue function and return self.
            if( continue_fn )
            {
                this.__continue(continue_fn, base_env)
-               return _.bind(this.run, this)  // Delegate calling to the tied function.
+               return _.bind(this.run, this)  // Delegate the call to the tied function.
            }
            return this.run()
         }, this)
+
+        /** Definition stage, see comments below **/
+
+        done_fn.tie = _.
+        bind
+        (function()
+        {
+            this.__done = false
+            return this.tie.apply(this, arguments)
+        }
+        , this)
+        return done_fn
+
+        // Attach a simple `tie` function to the `done_fn`
+        // allow user to concat other contexts. For example:
+        //
+        // Haskell: 
+        //
+        //      s = getLine         -- ::IO String
+        //      g = putStrLn        -- ::String -> IO ()
+        //      h = s >>= g         -- OK
+        //
+        // Fluorine ( with pseudo functions ):
+        //
+        //      s = IO().getLine().done()
+        //      g = function(str){ IO(str).putStrLine().done() }
+        //      h = s.tie(g)                    // NOT OK if we close the context.
+        //
+        //
     }
 
    // Inner implement function.
@@ -1786,13 +1822,13 @@ self.fluorine.uuid = function()
 
 // Useful for reduce anonymous functions
 //
-// :: a -> a
-self.fluorine.id = function(a)
+// :: m a -> (a -> m a)
+self.fluorine.idGen = function(ma)
 {
-    return a
+    return function(){return ma}
 }
 
-self.fluorine.registerInfect('id', self.fluorine.id)
+self.fluorine.registerInfect('idGen', self.fluorine.idGen)
 
 // ----
 // ## Export
