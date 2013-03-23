@@ -108,18 +108,18 @@ returing yet another larger context:
     {
         return UI().
             let(giveName).as('name').   // Allow to define some local variables in the scope of chain.
-            tie( function()             // Allow tie with other chains to build large chain.
+            tie( function()             // Allow to tie with other chains to build a large chain.
             {
                 // Use local variables just like "let" in other languages.
                 var slc_ex1 = '#ex1'
 
                 // Subchain's result will become next step's input.
-                // In this case, it will return `UI $DOM`
+                // In this case, it will return `UI $DOM`, and the next `tie` will receive that.
                 return UI("<div id='name-user'></div>").$().appendTo(slc_ex1).done()
             }).
             tie( function($dom)
             {   
-                // Fetch the value pre-defined by `let` and `as`.
+                // Apply the value pre-defined by `let` and `as`.
                 return drawMyName(this.name)
             }).
             done()  // Don't forget to close this chain.
@@ -144,17 +144,25 @@ Basically, pure functions and values can't arbitrarily mix with impure values:
 
     illegal_string = pureString() + impureString()  // Error. 
 
-But in some special cases, we still can do that if the context come with some extractor functions:
+But in some special cases, we still can do that if we jump into the underlay implementation:
 
-    illegal_string = pureString() + impureString()().extract()  // extract:: UI String -> String
+    illegal_string = pureString() + impureString()().extract()  // extract:: Process String -> String
+
+    // The "Process" is a underlay component used to control contexts' flow.
+    // Every pure value in contexts are actually double-wrapped, by the context and the Process.
+    //
+    // impureString()   :: UI (Process String)
+    // impureString()() :: Process String
+    // extract :: Process String -> String
+
 
 Also, we can do some dirty works in the theoretically pure combinator, like the `let` or `_`:
 
     UI('#name-user').$().
         _(function(e)           // Call it "lambda" if you like.
         {
-            // Should keep pure, not violenting like this:
-            $(e).text("name changed !")
+            // Should keep it pure, not violenting like this:
+            $(e).text("Name on the document was changed !")
         }).
         done()
 
@@ -255,13 +263,13 @@ Because the `UI () -> ()` will return nothing, `newMessage()()` will return noth
 The second `()` is like runner functions in Haskell. 
 For instance, the `runST:: (forall s. ST s a) -> a` can "execute" a ST Monad.
 
-If the anonymous functions annoys you, we also provide `id` function. 
+If anonymous functions annoys you, we also provide `idGen` function. 
 Using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
 
-    // Notice the anonymous generator function get disappeared.
+    // No need to use anonymous functions anymore.
 
     Event('initialize').
-        tie(id( UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done() )).
+        tie(idGen( UI('#io-msg').$().hide().css('background-color', 'cyan').text("New message").fadeIn().done() )).
         done()
 
 The "lazyness" and the way we controlling processes are exactly why users should never expect to extract values from IOs: 
@@ -273,7 +281,7 @@ we can't guarrantee the IO chain will execute and return the value as users wish
         get('/ajax/hello').
         done()().extract()
 
-    // And directly use it in another one:
+    // And directly use it in another context:
     
     UI('#io-msg').$().text(hello).done()()
 
@@ -327,7 +335,7 @@ Normally, use `fluorine.infect()` first, to omit prefix namespace and do some in
 
     fluorine.infect()
 
-This will embedded Fluorine utils functions and contexts in `window` object, so you call directly use them:
+This will embedded Fluorine utils functions and contexts in `window` object, so you can call them directly:
 
     fluorine.infect()
     IO().
@@ -341,6 +349,88 @@ This will embedded Fluorine utils functions and contexts in `window` object, so 
 
 You can use `fluorine.heal()` to remove the infection.
 
+
+### <a id="build-a-runnable-program"></a>Build a Runnable Program
+
+First we should define our main function:
+
+
+    // Parse settings in JSON format.
+    //
+    // :: String -> Object
+    function parse(str)
+    {
+        return JSON.parse(str)
+    }
+    
+
+    // The entry point of this program.
+    //
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            get('/demo/introduce/todo-settings.json').
+            _(parseSettings).as('settings').
+            tie(/*TODO*/).      // Execute other contexts under the settings.
+            done()
+    }
+
+Then we need to define some movable parts of our program:
+
+    // Generate a frame of this Todo example.
+    //
+    // Returning pure DOM don't violent rules of purity.
+    //
+    // :: DOM
+    function frame_todo()
+    {
+        return $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+    }
+
+    // When a new todo created, append it.
+    //
+    // :: String -> UI ()
+    function new_todo(str_todo)
+    {
+        // Generate the new item and append to the list.
+        var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
+
+        // This is how event works: forward to global scope then handle it.
+        // Fluorine's event mechanism hasn't been comprehensively implemented,
+        // so user can use other libraries like `bacon.js` to get more close to real FRP.
+
+        return UI(item).forward('click', function()
+            {
+                return 'todo-item-remove'
+            }).
+            done()
+    }
+
+    // Remove todo under a event context.
+    //
+    // The event object, because it's directly forwarded from jQuery's event,
+    // so will bring all infomation we need.
+    // 
+    // :: EventObject -> UI ()
+    function remove_todo(e)
+    {
+        return UI(e.target).$().remove().done()
+    }
+
+
+    // Generated some pre-defined Todos from settings.
+    //
+    // ::  [String] -> UI [()] 
+    function predefine_todos(settings)
+    {
+        // :: [String] -> [UI ()]
+        var uis = _.map(settings.todos, function(str_todo)
+        {
+            return new_todo(str_todo)
+        })
+    }
+
 ---
 
 ### <a id="guides-N-common-mistakes"></a>Guides and Common Mistakes
@@ -352,23 +442,24 @@ Contexts can wrap a pure value to lift it:
     a = "#msg"           // String
     UI(a).done()         // UI String
 
-<<<<<<< HEAD
 Only wrapped or locally defined values can join computations in the chain:
 
-    UI(a).$().          // Use the wrapped ID to select element: `a -> UI $DOM`
+    UI(a).$().          // Use the wrapped ID to select elements: `a -> UI $DOM`
         hide().
         tie(function($dom)
         {
             // Like "let" in other languages
             var msg = "Some Message"
 
-            // This subchain will return `UI $DOM` to next step.
+            // This subchain will return `UI $DOM` to next step, the `fadeIn`.
             return UI($dom).$().text(msg).done()
         }).
         fadeIn().
         done() 
 
-However this is Javascript, Fluorine will keep slient if you still decide to do that dirty works.
+However this is Javascript, Fluorine will keep slient if you still decide to do some dirty works, 
+like to read/write a non-const global variable inside the context.
+
 
 #### <a id="every-context-chain-should-be-enclosed"></a>1. Every context chain should be enclosed
 
@@ -486,11 +577,12 @@ Fluorine encourage programmers to create small funcions named generators, which 
 These functions, except the last one, will not be executed in entire program. They just provide some subchains to the main context.
 
 In fact because these "chains" are just context wrapped values, they're unsurprisedly can be stored and passed to another function as arguments.
-This feature also means it's possible to create Javascript programs with a "compile time" phase, which can find errors before we run it.
+This feature also means **it's possible to create Javascript programs with a "compile time" phase**, which can find errors before we run it.
 
-You may also notice that the two subchains are defined in some named functions, not in anonymous functionsan error in the IO chain.
-It's more clear and important while users want to mix 3 or more contexts in one main chain. 
-Anonymous generators are easy to write but also has over-nested problem, unless we can change the syntax with other DSLs like CoffeeScript or Coco.
+You may also notice that the two subchains are defined in some named functions, not in anonymous functions in the last IO chain.
+It's more clear and important when users want to mix 3 or more contexts in one main context. 
+
+Please also note that anonymous generators are easy to write but also has over-nested problem, unless we can change the syntax with other DSLs like CoffeeScript or Coco.
 
 ---
 
@@ -529,13 +621,13 @@ Although Fluorine want to provide functional features **without** any compiler, 
 if you can use it with other DSLs like CoffeeScript or CoCo :
 
     // :: UI ()
-    createMsgBox = !-> UI('body').$().append('<div id="#io-msg"></div>').done()
+    createMsgBox = -> UI('body').$().append('<div id="#io-msg"></div>').done()
 
     // :: String -> UI ()
-    drawMsg = !-> return UI('#io-msg').$().text(msg).done()
+    drawMsg = -> return UI('#io-msg').$().text(msg).done()
 
     // :: IO ()
-    main = !-> IO().
+    main = -> IO().
             tie( createMsgBox ).
             get('/ajax/hello').
             tie( drawMsg ).
