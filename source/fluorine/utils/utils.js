@@ -124,10 +124,10 @@ self.fluorine.uuid = function()
 
 // Useful for reduce anonymous functions
 //
-// :: a -> a
-self.fluorine.id = function(a)
+// :: m a -> (a -> m a)
+self.fluorine.idGen = function(ma)
 {
-    return a
+    return function(){return ma}
 }
 
-self.fluorine.registerInfect('id', self.fluorine.id)
+self.fluorine.registerInfect('idGen', self.fluorine.idGen)

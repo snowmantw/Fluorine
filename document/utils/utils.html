@@ -259,16 +259,16 @@ Default one is print out everything unless debug is off.</p>
                 <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <p>Useful for reduce anonymous functions</p>
-<p>:: a -&gt; a</p>
+<p>:: m a -&gt; (a -&gt; m a)</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>self.fluorine.id = <span class="keyword">function</span>(a)
+            <div class="content"><div class='highlight'><pre>self.fluorine.idGen = <span class="keyword">function</span>(ma)
 {
-    <span class="keyword">return</span> a
+    <span class="keyword">return</span> <span class="keyword">function</span>(){<span class="keyword">return</span> ma}
 }
 
-self.fluorine.registerInfect(<span class="string">'id'</span>, self.fluorine.id)</pre></div></div>
+self.fluorine.registerInfect(<span class="string">'idGen'</span>, self.fluorine.idGen)</pre></div></div>
             
         </li>
         

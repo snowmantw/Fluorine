@@ -297,7 +297,7 @@ Then insert a &quot;return&quot; step, let the context return to the base contex
               </div>
               <p>Pass base context&#39; environment to inner context.
 Note: Even though cloning it is more proper, but cost time to do that seems unecessary.</p>
-<p>Receive inner context&#39;s result and continue executing this base monad.
+<p>Receive inner context&#39;s result and continue executing this base monad after the inner done.
 @see Context.done and <code>Context._</code></p>
 
             </div>
@@ -342,6 +342,66 @@ the pass out context legal or not.  </p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
+              <p>Concurrently execute this action chain.</p>
+<p>This function will immediately return, then execute the next step.
+The target action chain will execute asynchronously.</p>
+<p>It&#39;s almost the same with normal <code>tie</code> version.</p>
+<p>:: Context m,n =&gt; m a -&gt; ( a -&gt; n b ) -&gt; m b</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,fork: <span class="keyword">function</span>(gen)
+    {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {   
+            <span class="keyword">var</span> inner = gen.call(<span class="keyword">this</span>.__environment,val)
+            <span class="keyword">if</span>( ! _.isFunction(inner) ){ <span class="keyword">throw</span> <span class="string">"Tying an undone context or just not a context."</span>}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Execute the inner context and don&#39;t wait it.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            _.defer( <span class="keyword">function</span>(){inner()} )</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>Execute the next step immediately.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">this</span>.__process.run(val)
+
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::tie, next level --&gt; '</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
               <p>Try to implement real bind like transformer&#39;s.</p>
 <p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; m n b ) -&gt; m n b</p>
 
@@ -357,11 +417,11 @@ the pass out context legal or not.  </p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>As normal transformer described, the <code>bind</code> will receive a inner monadic function,
 and we should embedded our judgement function of base monad in it&#39;s context.</p>
@@ -379,11 +439,11 @@ This is described in the <code>done</code> function ( see what it return ).</p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <p>Ok, we can access to <code>ContextM a</code>, the <code>na</code>&#39;s result.
 We should decide how to continue with this result,
@@ -409,11 +469,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-19">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>-&gt; M n a means THIS should be a state with such sig. and <code>na</code> inner is ok enough.</p>
 
@@ -424,11 +484,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p>We must get <code>n b</code> and pass it to next step, rather than <code>m n b</code></p>
 
@@ -451,11 +511,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p>Initialize environment and others.</p>
 <p>:: Context m,n =&gt; m n a -&gt; b -&gt; m n b</p>
@@ -471,11 +531,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-22">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>If bound, there is an environment from base context.</p>
 
@@ -491,11 +551,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <p>Variant lambda, for simulate the &#39;let..in&#39; syntax feature. 
 User must chain <code>as()</code> after this function.</p>
@@ -515,11 +575,11 @@ The only difference is this lambda must chain <code>as()</code> after.</p>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <p>Run all steps in this context.
 The function return by default <code>done()</code> will automatically execute this functon.</p>
@@ -537,11 +597,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-25">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
               <p>Begin from first step of this context.</p>
 
@@ -554,11 +614,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-26">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <p>Close this context and ready to run.</p>
 <p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; b )</p>
@@ -571,11 +631,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-27">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <p>Already done.</p>
 
@@ -587,11 +647,24 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-28">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p><strong> Runtime Stage </strong></p>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <p>The last step of this context.</p>
 
@@ -607,11 +680,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-29">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>If we want to continue the process:</p>
 
@@ -627,31 +700,35 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-30">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
-              <p>If continue: 
-- User can only run this process because the return function
-- User run it with continue function
-- The continue step got executed after whole steps inside this context got executed
-- Continues steps of base context got execute</p>
+              <p><strong> Definition Stage </strong></p>
+<p>After definition, return a function to let user choose evaluate this context immediately or later.</p>
+<p>User may also pass a function in as the continue function. In this case:</p>
+<ul>
+<li>User run the context with the continue function</li>
+<li>The continue step got executed after all steps inside this context got executed</li>
+</ul>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="keyword">return</span> _.bind( <span class="keyword">function</span>(continue_fn, base_env)
+            <div class="content"><div class='highlight'><pre>        
+        <span class="keyword">var</span> done_fn = 
+        _.bind( <span class="keyword">function</span>(continue_fn, base_env)
         {</pre></div></div>
             
         </li>
         
         
-        <li id="section-31">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <p>Don&#39;t run context, but set continue function and return self.</p>
 
@@ -660,20 +737,55 @@ The function return by default <code>done()</code> will automatically execute th
             <div class="content"><div class='highlight'><pre>           <span class="keyword">if</span>( continue_fn )
            {
                <span class="keyword">this</span>.__<span class="keyword">continue</span>(continue_fn, base_env)
-               <span class="keyword">return</span> _.bind(<span class="keyword">this</span>.run, <span class="keyword">this</span>)  <span class="comment">// Delegate calling to the tied function.</span>
+               <span class="keyword">return</span> _.bind(<span class="keyword">this</span>.run, <span class="keyword">this</span>)  <span class="comment">// Delegate the call to the tied function.</span>
            }
            <span class="keyword">return</span> <span class="keyword">this</span>.run()
         }, <span class="keyword">this</span>)
-    }</pre></div></div>
+
+        <span class="comment">/** Definition stage, see comments below **/</span>
+
+        done_fn.tie = _.
+        bind
+        (<span class="keyword">function</span>()
+        {
+            <span class="keyword">this</span>.__done = <span class="literal">false</span>
+            <span class="keyword">return</span> <span class="keyword">this</span>.tie.apply(<span class="keyword">this</span>, arguments)
+        }
+        , <span class="keyword">this</span>)
+        <span class="keyword">return</span> done_fn</pre></div></div>
             
         </li>
         
         
-        <li id="section-32">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
+              </div>
+              <p>Attach a simple <code>tie</code> function to the <code>done_fn</code>
+allow user to concat other contexts. For example:</p>
+<p>Haskell: </p>
+<pre><code> s = getLine         -- ::IO String
+ g = putStrLn        -- ::String -&gt; IO ()
+ h = s &gt;&gt;= g         -- OK</code></pre>
+<p>Fluorine ( with pseudo functions ):</p>
+<pre><code> s = IO().getLine().done()
+ g = function(str){ IO(str).putStrLine().done() }
+ h = s.tie(g)                    // NOT OK if we close the context.</code></pre>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-37">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <p>Inner implement function.
 Inject a continue function into this context&#39;s step, 

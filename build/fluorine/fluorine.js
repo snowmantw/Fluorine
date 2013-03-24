@@ -506,7 +506,7 @@ self.fluorine.Context.o.prototype =
             // Note: Even though cloning it is more proper, but cost time to do that seems unecessary.
             // 
 
-            // Receive inner context's result and continue executing this base monad.
+            // Receive inner context's result and continue executing this base monad after the inner done.
             // @see Context.done and `Context._`
             inner
             (   _.bind( function(a)
@@ -526,6 +526,34 @@ self.fluorine.Context.o.prototype =
         ), 'Context::tie, next level --> ' )
         return this
     } 
+
+
+    // Concurrently execute this action chain.
+    //
+    // This function will immediately return, then execute the next step.
+    // The target action chain will execute asynchronously.
+    //
+    // It's almost the same with normal `tie` version.
+    // 
+    // :: Context m,n => m a -> ( a -> n b ) -> m b
+    ,fork: function(gen)
+    {
+        this.__process.next
+        (   _.bind( function(val)
+        {   
+            var inner = gen.call(this.__environment,val)
+            if( ! _.isFunction(inner) ){ throw "Tying an undone context or just not a context."}
+            
+            // Execute the inner context and don't wait it.
+            _.defer( function(){inner()} )
+
+            // Execute the next step immediately.
+            this.__process.run(val)
+
+        },  this
+        ), 'Context::tie, next level --> ' )
+        return this
+    }
 
     // Try to implement real bind like transformer's.
     //
@@ -644,6 +672,8 @@ self.fluorine.Context.o.prototype =
         if( this.__done ) { return }
         this.__done = true
 
+        // ** Runtime Stage **
+        
         // The last step of this context.
         this.__process.next
         (   _.bind( function(a)
@@ -660,21 +690,55 @@ self.fluorine.Context.o.prototype =
         },  this
         ), 'Context::done' )
 
-        // If continue: 
-        // - User can only run this process because the return function
-        // - User run it with continue function
-        // - The continue step got executed after whole steps inside this context got executed
-        // - Continues steps of base context got execute
-        return _.bind( function(continue_fn, base_env)
+        // ** Definition Stage **
+
+        // After definition, return a function to let user choose evaluate this context immediately or later.
+        //
+        // User may also pass a function in as the continue function. In this case:
+        //
+        // - User run the context with the continue function
+        // - The continue step got executed after all steps inside this context got executed
+        
+        var done_fn = 
+        _.bind( function(continue_fn, base_env)
         {
            // Don't run context, but set continue function and return self.
            if( continue_fn )
            {
                this.__continue(continue_fn, base_env)
-               return _.bind(this.run, this)  // Delegate calling to the tied function.
+               return _.bind(this.run, this)  // Delegate the call to the tied function.
            }
            return this.run()
         }, this)
+
+        /** Definition stage, see comments below **/
+
+        done_fn.tie = _.
+        bind
+        (function()
+        {
+            this.__done = false
+            return this.tie.apply(this, arguments)
+        }
+        , this)
+        return done_fn
+
+        // Attach a simple `tie` function to the `done_fn`
+        // allow user to concat other contexts. For example:
+        //
+        // Haskell: 
+        //
+        //      s = getLine         -- ::IO String
+        //      g = putStrLn        -- ::String -> IO ()
+        //      h = s >>= g         -- OK
+        //
+        // Fluorine ( with pseudo functions ):
+        //
+        //      s = IO().getLine().done()
+        //      g = function(str){ IO(str).putStrLine().done() }
+        //      h = s.tie(g)                    // NOT OK if we close the context.
+        //
+        //
     }
 
    // Inner implement function.
@@ -1786,13 +1850,13 @@ self.fluorine.uuid = function()
 
 // Useful for reduce anonymous functions
 //
-// :: a -> a
-self.fluorine.id = function(a)
+// :: m a -> (a -> m a)
+self.fluorine.idGen = function(ma)
 {
-    return a
+    return function(){return ma}
 }
 
-self.fluorine.registerInfect('id', self.fluorine.id)
+self.fluorine.registerInfect('idGen', self.fluorine.idGen)
 
 // ----
 // ## Export
