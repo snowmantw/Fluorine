@@ -390,7 +390,7 @@ describe "Event", !->
                     IO().get('/testAjax').done()
                  ).
              as('b').
-             _( -> 0 == @a-Number(@b) ).as('c')
+             _( -> 0 == @a-(Number(@b)) ).as('c')
 
         proc_m   = m.done()
         runned_m = proc_m()
