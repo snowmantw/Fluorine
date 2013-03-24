@@ -506,7 +506,7 @@ self.fluorine.Context.o.prototype =
             // Note: Even though cloning it is more proper, but cost time to do that seems unecessary.
             // 
 
-            // Receive inner context's result and continue executing this base monad.
+            // Receive inner context's result and continue executing this base monad after the inner done.
             // @see Context.done and `Context._`
             inner
             (   _.bind( function(a)
@@ -536,7 +536,7 @@ self.fluorine.Context.o.prototype =
     // It's almost the same with normal `tie` version.
     // 
     // :: Context m,n => m a -> ( a -> n b ) -> m b
-    ,fork: function(act)
+    ,fork: function(gen)
     {
         this.__process.next
         (   _.bind( function(val)
@@ -544,14 +544,11 @@ self.fluorine.Context.o.prototype =
             var inner = gen.call(this.__environment,val)
             if( ! _.isFunction(inner) ){ throw "Tying an undone context or just not a context."}
             
-            inner
-            (   _.bind( function(a)
-            {
-                _.defer(this.__process.run(a))
-            }
-            , this
-            )
-            , this.__environment)()
+            // Execute the inner context and don't wait it.
+            _.defer( function(){inner()} )
+
+            // Execute the next step immediately.
+            this.__process.run(val)
 
         },  this
         ), 'Context::tie, next level --> ' )
