@@ -419,16 +419,48 @@ Then we need to define some movable parts of our program:
     }
 
 
-    // Generated some pre-defined Todos from settings.
+    // Generate some pre-defined Todos from settings.
     //
-    // ::  [String] -> UI [()] 
+    // :: [Environment] -> UI ()
     function predefine_todos(settings)
     {
-        // :: [String] -> [UI ()]
-        var uis = _.map(settings.todos, function(str_todo)
-        {
-            return new_todo(str_todo)
-        })
+        var uis = _.chain(settings.todos).
+            reduce(function(mem, str_todo)
+            {
+                // Compose the new generated UI chain with a growing one.                
+
+                return mem.tie(new_todo(str_todo)).done()
+
+            }, UI().done()).
+            value()
+
+        return uis
+    }
+
+
+Events need to initialize:
+
+    
+    function event_handlers
+
+
+Finally, we can combine everything together, and complete our main function:
+    
+
+    // The entry point of this program.
+    //
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            get('/demo/introduce/todo-settings.json').
+            _(parseSettings).as('settings').
+            tie( frame_todo ).      
+            tie( function()
+            {
+                predefine_todos(this.settings)
+            }).
+            done()
     }
 
 ---

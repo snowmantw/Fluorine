@@ -527,6 +527,37 @@ self.fluorine.Context.o.prototype =
         return this
     } 
 
+
+    // Concurrently execute this action chain.
+    //
+    // This function will immediately return, then execute the next step.
+    // The target action chain will execute asynchronously.
+    //
+    // It's almost the same with normal `tie` version.
+    // 
+    // :: Context m,n => m a -> ( a -> n b ) -> m b
+    ,fork: function(act)
+    {
+        this.__process.next
+        (   _.bind( function(val)
+        {   
+            var inner = gen.call(this.__environment,val)
+            if( ! _.isFunction(inner) ){ throw "Tying an undone context or just not a context."}
+            
+            inner
+            (   _.bind( function(a)
+            {
+                _.defer(this.__process.run(a))
+            }
+            , this
+            )
+            , this.__environment)()
+
+        },  this
+        ), 'Context::tie, next level --> ' )
+        return this
+    }
+
     // Try to implement real bind like transformer's.
     //
     // :: Context m,n => m n a -> ( a -> m n b ) -> m n b
