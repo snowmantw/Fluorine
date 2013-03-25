@@ -751,6 +751,7 @@ The function return by default <code>done()</code> will automatically execute th
         (<span class="keyword">function</span>()
         {
             <span class="keyword">this</span>.__done = <span class="literal">false</span>
+            <span class="keyword">this</span>.__process.__queue.pop()
             <span class="keyword">return</span> <span class="keyword">this</span>.tie.apply(<span class="keyword">this</span>, arguments)
         }
         , <span class="keyword">this</span>)

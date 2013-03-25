@@ -5,8 +5,12 @@
     <title></title>
     <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
     <script src="http://underscorejs.org/underscore-min.js"></script>
-    <script src="https://raw.github.com/snowmantw/Fluorine/master/build/fluorine/fluorine.js"></script>
+    <script src="/build/fluorine/fluorine.js"></script>
     <script>
+
+    fluorine.infect()
+    fluorine.debug(true)
+    fluorine.Notifier.init()
 
 //First we should define our main function:
 
@@ -14,7 +18,7 @@
     // Parse settings in JSON format.
     //
     // :: String -> Object
-    function parse(str)
+    function parseSettings(str)
     {
         return JSON.parse(str)
     }
@@ -55,7 +59,8 @@
         // Generate the new item and append to the list.
         var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
 
-        return UI(item).$().forward('click', function()
+        return UI(item).$().
+            forward('click', function()
             {
                 return 'todo-item-remove'
             }).
@@ -137,8 +142,8 @@
     function main()
     {
         return IO().
-            get('todo-settings.json').
-            _(parseSettings).as('settings').
+            get('/static/todo-settings.json').
+            let(parseSettings).as('settings').
             tie( frame_todo ).      
             tie( function()
             {

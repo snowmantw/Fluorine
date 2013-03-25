@@ -346,6 +346,7 @@ self.fluorine.Context.o.prototype =
         (function()
         {
             this.__done = false
+            this.__process.__queue.pop()
             return this.tie.apply(this, arguments)
         }
         , this)
