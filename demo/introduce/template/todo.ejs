@@ -1,0 +1,161 @@
+<!DOCTYPE HTML>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="https://raw.github.com/snowmantw/Fluorine/master/build/fluorine/fluorine.js"></script>
+    <script>
+
+//First we should define our main function:
+
+
+    // Parse settings in JSON format.
+    //
+    // :: String -> Object
+    function parse(str)
+    {
+        return JSON.parse(str)
+    }
+    
+
+//Then we need to define some movable parts of our program:
+
+    // Generate a frame of this Todo example.
+    //
+    // :: UI DOM
+    function frame_todo()
+    {
+        // Returning pure DOM don't violent rules of purity.
+
+        var frame = $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+
+        // This is how event works: forward to global scope then handle it.
+        // Fluorine's event mechanism hasn't been comprehensively implemented,
+        // so user can use other libraries like `bacon.js` to get more close to real FRP.
+
+        return UI(frame).$().select('#todo-new').
+            appendTo('body').
+            forward('keypress', function(e)
+            {
+                if( 13 == e.which )
+                {
+                    return 'todo-item-new'
+                }
+            }).
+            done()
+    }
+
+    // When a new todo created, append it.
+    //
+    // :: String -> UI ()
+    function new_todo(str_todo)
+    {
+        // Generate the new item and append to the list.
+        var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
+
+        return UI(item).$().forward('click', function()
+            {
+                return 'todo-item-remove'
+            }).
+            done()
+    }
+
+    // Remove todo under a event context.
+    //
+    // The event object, because it's directly forwarded from jQuery's event,
+    // so will bring all infomation we need.
+    // 
+    // :: EventObject -> UI ()
+    function remove_todo(e)
+    {
+        return UI(e.target).$().remove().done()
+    }
+
+
+    // Generate some pre-defined Todos from settings.
+    //
+    // :: [Environment] -> UI ()
+    function predefine_todos(settings)
+    {
+        var uis = _.chain(settings.todos).
+            reduce(function(mem, str_todo)
+            {
+                // Compose the new generated UI chain with a growing one.                
+
+                return mem.tie(new_todo(str_todo)).done()
+
+            }, UI().done()).
+            value()
+
+        return uis
+    }
+
+
+//Events need to initialize:
+
+    // Register all Event chains.
+    //
+    // :: Event ()
+    function event_handlers()
+    {
+        // Because the default `tie` in Event will not execute the next step
+        // until the binding notification triggered, we need to fork these events
+        // to concurrently execute events.
+        //
+        // Ex1:
+        //
+        //    Event().tie(Event('a').done()).tie(Event('b').done()).done()
+        //
+        // The event chain of notification 'b' will NOT execute (binding on 'b') 
+        // until event 'a' triggered.
+        //
+        // Ex2:
+        //
+        //    Event().fork(Event('a').done()).fork(Event('b').done()).done()
+        //
+        // The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+
+        return Event().
+            fork(idGen(Event('todo-item-remove').tie(remove_todo).done())).
+            fork(idGen(Event('todo-item-new').
+                    let(function(e){ return $(e.target).val() }).
+                    tie(function(str_todo){ return new_todo(str_todo) }).
+                    done()
+                )).
+            done()
+    }
+
+
+//Finally, we can combine everything together, and complete our main function:
+    
+
+    // The entry point of this program.
+    //
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            get('todo-settings.json').
+            _(parseSettings).as('settings').
+            tie( frame_todo ).      
+            tie( function()
+            {
+                return predefine_todos(this.settings)
+            }).
+            tie(event_handlers).
+            done()
+    }
+
+//Run the program. Ideally, this is the only one executable entry of the program.
+
+    main()()
+    </script>
+</head>
+<body>
+    
+</body>
+</html>
+
+
