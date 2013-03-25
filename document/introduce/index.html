@@ -19,6 +19,7 @@
 		- [Recommends](#recommends)
 	- [How to Use It](#how-to-use-it)
 		- [Initialize](#initialize)
+		- [Build a Runnable Program](#build-a-runnable-program)
 		- [Guides and Common Mistakes](#guides-N-common-mistakes)
 			- [0. Wrap all computation with side-effects](#wrap-all-computation-with-side-effects)
 			- [1. Every context chain should be enclosed](#every-context-chain-should-be-enclosed)
@@ -335,7 +336,11 @@ Normally, use `fluorine.infect()` first, to omit prefix namespace and do some in
 
     fluorine.infect()
 
-This will embedded Fluorine utils functions and contexts in `window` object, so you can call them directly:
+The notifier, designed as a individual part, need initialization too.
+
+    fluorine.Notifier.init()
+
+The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them directly:
 
     fluorine.infect()
     IO().
@@ -364,28 +369,31 @@ First we should define our main function:
     }
     
 
-    // The entry point of this program.
-    //
-    // :: IO ()
-    function main()
-    {
-        return IO().
-            get('/demo/introduce/todo-settings.json').
-            _(parseSettings).as('settings').
-            tie(/*TODO*/).      // Execute other contexts under the settings.
-            done()
-    }
-
 Then we need to define some movable parts of our program:
 
     // Generate a frame of this Todo example.
     //
-    // Returning pure DOM don't violent rules of purity.
-    //
-    // :: DOM
+    // :: UI DOM
     function frame_todo()
     {
-        return $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+        // Returning pure DOM don't violent rules of purity.
+
+        var frame = $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+
+        // This is how event works: forward to global scope then handle it.
+        // Fluorine's event mechanism hasn't been comprehensively implemented,
+        // so user can use other libraries like `bacon.js` to get more close to real FRP.
+
+        return UI(frame).$().select('#todo-new').
+            appendTo('body').
+            forward('keypress', function(e)
+            {
+                if( 13 == e.which )
+                {
+                    return 'todo-item-new'
+                }
+            }).
+            done()
     }
 
     // When a new todo created, append it.
@@ -396,11 +404,7 @@ Then we need to define some movable parts of our program:
         // Generate the new item and append to the list.
         var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
 
-        // This is how event works: forward to global scope then handle it.
-        // Fluorine's event mechanism hasn't been comprehensively implemented,
-        // so user can use other libraries like `bacon.js` to get more close to real FRP.
-
-        return UI(item).forward('click', function()
+        return UI(item).$().forward('click', function()
             {
                 return 'todo-item-remove'
             }).
@@ -440,8 +444,37 @@ Then we need to define some movable parts of our program:
 
 Events need to initialize:
 
-    
-    function event_handlers
+    // Register all Event chains.
+    //
+    // :: Event ()
+    function event_handlers()
+    {
+        // Because the default `tie` in Event will not execute the next step
+        // until the binding notification triggered, we need to fork these events
+        // to concurrently execute events.
+        //
+        // Ex1:
+        //
+        //    Event().tie(Event('a').done()).tie(Event('b').done()).done()
+        //
+        // The event chain of notification 'b' will NOT execute (binding on 'b') 
+        // until event 'a' triggered.
+        //
+        // Ex2:
+        //
+        //    Event().fork(Event('a').done()).fork(Event('b').done()).done()
+        //
+        // The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+
+        return Event().
+            fork(idGen(Event('todo-item-remove').tie(remove_todo).done())).
+            fork(idGen(Event('todo-item-new').
+                    let(function(e){ return $(e.target).val() }).
+                    tie(function(str_todo){ return new_todo(str_todo) }).
+                    done()
+                )).
+            done()
+    }
 
 
 Finally, we can combine everything together, and complete our main function:
@@ -453,15 +486,20 @@ Finally, we can combine everything together, and complete our main function:
     function main()
     {
         return IO().
-            get('/demo/introduce/todo-settings.json').
+            get('todo-settings.json').
             _(parseSettings).as('settings').
             tie( frame_todo ).      
             tie( function()
             {
-                predefine_todos(this.settings)
+                return predefine_todos(this.settings)
             }).
+            tie(event_handlers).
             done()
     }
+
+Run the program. Ideally, this is the only one executable entry of the program.
+
+    main()()
 
 ---
 
@@ -737,7 +775,7 @@ Page generated by [Strapdown.js](http://strapdownjs.com/) ; static contents powe
 <script src="https://raw.github.com/snowmantw/Fluorine/master/build/fluorine/fluorine.js"></script>
 <script>
     $(document).ready(function(){
-        $('#headline').wrap('<a href="http://snowmantw.github.com/Fluorine" />');
+        $('#headline').wrap('<a href="http://snowmantw.github.com/Fluorine/document/introduce/index.html" />');
     })
 </script>
 <style type="text/css">
