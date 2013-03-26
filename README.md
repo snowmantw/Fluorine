@@ -1,4 +1,6 @@
 
+![Fluorine Logo](https://raw.github.com/snowmantw/Fluorine/master/document/introduce/Fluorine-logo.png)
+
 # Fluorine: a context based Javascript eDSL
 
 Fluorine is a library, provide a way to let programmer isolate side-effect computations in their progams.
