@@ -605,7 +605,7 @@ Just like jQuery and underscore.js, you will get strange results and errors if y
     
     fluorine.infect()
     IO().
-        get('/ajax/hello')                              // Missing the peroid
+        get('/ajax/hello')                              // Missing the period 
         tie(function(hello)
         {
             return UI('#io-msg').$().text(hello)        // Undone context
@@ -617,6 +617,7 @@ When this IO chain got executed, it will throw an error:
     "ReferenceError: tie is not defined
 
 Because "ReferenceError" is a general error, you will find it's hard to debug.
+
 So before you typing anything, it is a good practice to insert a period after the chain.
 
 Of course, you can choose period-prefix style to make the problem more significant:
@@ -658,7 +659,7 @@ When you turn on the mode, Fluorine will print out every steps and errors in you
 
 Here you can see the undone context stop the execution, just in the `tie` function.
 
-This debugging mode is still in very early stage, so it's messages sometimes look like hard to understand.
+This debugging mode is still in very early stage, so it's messages sometimes are hard to understand.
 Making it better if you can do some contributes !
 
 
