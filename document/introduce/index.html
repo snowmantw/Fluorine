@@ -357,13 +357,18 @@ You can use `fluorine.heal()` to remove the infection.
 
 ### <a id="build-a-runnable-program"></a>Build a Runnable Program
 
+
+    fluorine.infect()
+    fluorine.debug(true)
+    fluorine.Notifier.init()
+
 First we should define our main function:
 
 
     // Parse settings in JSON format.
     //
     // :: String -> Object
-    function parse(str)
+    function parseSettings(str)
     {
         return JSON.parse(str)
     }
@@ -378,21 +383,33 @@ Then we need to define some movable parts of our program:
     {
         // Returning pure DOM don't violent rules of purity.
 
-        var frame = $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+
+        var tpl = [ '<div id="todo-frame"><input id="todo-new" size="18" placeholder="New Todo..." type="text"/>'
+                  , '<ul id="todo-list"></ul>'
+                  , '<div id="todo-footer">Fluorine Todo List Demo</div></div>'].join("")
+        
+        var frame = $(tpl).get(0) 
 
         // This is how event works: forward to global scope then handle it.
         // Fluorine's event mechanism hasn't been comprehensively implemented,
         // so user can use other libraries like `bacon.js` to get more close to real FRP.
 
-        return UI(frame).$().select('#todo-new').
-            appendTo('body').
-            forward('keypress', function(e)
-            {
-                if( 13 == e.which )
-                {
-                    return 'todo-item-new'
-                }
-            }).
+        return UI().
+            tie(idGen(UI(frame).$().appendTo('body').done())).
+            tie(idGen(
+                    UI('#todo-frame').
+                    select('#todo-new').
+                    forward('keypress', function(e)
+                    {
+                        if( 13 == e.which )
+                        {
+                            return 'todo-item-new'
+                        }
+                        else
+                        {   return "_" }
+                    }).
+                    done())
+                ).
             done()
     }
 
@@ -404,7 +421,9 @@ Then we need to define some movable parts of our program:
         // Generate the new item and append to the list.
         var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
 
-        return UI(item).$().forward('click', function()
+        return UI(item).$().
+            appendTo('#todo-list').
+            forward('click', function()
             {
                 return 'todo-item-remove'
             }).
@@ -433,7 +452,8 @@ Then we need to define some movable parts of our program:
             {
                 // Compose the new generated UI chain with a growing one.                
 
-                return mem.tie(new_todo(str_todo)).done()
+                var result =  mem.tie(idGen(new_todo(str_todo))).done()
+                return result
 
             }, UI().done()).
             value()
@@ -444,35 +464,22 @@ Then we need to define some movable parts of our program:
 
 Events need to initialize:
 
-    // Register all Event chains.
+    // Register event handler of 'todo-item-remove'.
     //
     // :: Event ()
-    function event_handlers()
+    function on_todo_item_remove()
     {
-        // Because the default `tie` in Event will not execute the next step
-        // until the binding notification triggered, we need to fork these events
-        // to concurrently execute events.
-        //
-        // Ex1:
-        //
-        //    Event().tie(Event('a').done()).tie(Event('b').done()).done()
-        //
-        // The event chain of notification 'b' will NOT execute (binding on 'b') 
-        // until event 'a' triggered.
-        //
-        // Ex2:
-        //
-        //    Event().fork(Event('a').done()).fork(Event('b').done()).done()
-        //
-        // The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+        return Event('todo-item-remove').tie(remove_todo).done()
+    }
 
-        return Event().
-            fork(idGen(Event('todo-item-remove').tie(remove_todo).done())).
-            fork(idGen(Event('todo-item-new').
-                    let(function(e){ return $(e.target).val() }).
-                    tie(function(str_todo){ return new_todo(str_todo) }).
-                    done()
-                )).
+    // Register event handler of 'todo-item-new'.
+    //
+    // :: Event ()
+    function on_todo_item_new()
+    {
+        return Event('todo-item-new').
+            _(function(e){ return $(e.target).val() }).
+            tie(function(str_todo){ return new_todo(str_todo) }).
             done()
     }
 
@@ -486,18 +493,37 @@ Finally, we can combine everything together, and complete our main function:
     function main()
     {
         return IO().
-            get('todo-settings.json').
-            _(parseSettings).as('settings').
+            get('/static/todo-settings.json').
+            let(parseSettings).as('settings').
             tie( frame_todo ).      
             tie( function()
             {
                 return predefine_todos(this.settings)
             }).
-            tie(event_handlers).
+            fork(on_todo_item_remove).
+            fork(on_todo_item_new).
+            _(function(){console.log('---a')}).
             done()
     }
 
-Run the program. Ideally, this is the only one executable entry of the program.
+The `fork` used here because the default `tie` in Event will not execute the next step
+until the binding notification triggered, we need to fork these events
+to concurrently execute events.
+
+Ex1:
+
+    UI().tie(Event('a').done()).tie(Event('b').done()).done()
+
+The event chain of notification 'b' will NOT execute (binding on 'b') 
+until event 'a' triggered.
+
+Ex2:
+
+    UI().fork(Event('a').done()).fork(Event('b').done()).done()
+
+The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+
+Now we can run the program. Ideally, this is the only one executable entry of the program.
 
     main()()
 
@@ -776,6 +802,8 @@ Page generated by [Strapdown.js](http://strapdownjs.com/) ; static contents powe
 <script>
     $(document).ready(function(){
         $('#headline').wrap('<a href="http://snowmantw.github.com/Fluorine/document/introduce/index.html" />');
+
+        window.script_todo = "fluorine.infect();fluorine.debug(true);fluorine.Notifier.init();function parseSettings(a){return JSON.parse(a)}function frame_todo(){var a=['<div id="todo-frame"><input id="todo-new" size="18" placeholder="New Todo..." type="text"/>','<ul id="todo-list"></ul>','<div id="todo-footer">Fluorine Todo List Demo</div></div>'].join("");var b=$(a).get(0);return UI().tie(idGen(UI(b).$().appendTo("body").done())).tie(idGen(UI("#todo-frame").select("#todo-new").forward("keypress",function(c){if(13==c.which){return"todo-item-new"}else{return"_"}}).done())).done()}function new_todo(a){var b=$(_.template("<li><%= _todo_ %></li>")({_todo_:a}));return UI(b).$().appendTo("#todo-list").forward("click",function(){return"todo-item-remove"}).done()}function remove_todo(a){return UI(a.target).$().remove().done()}function predefine_todos(b){var a=_.chain(b.todos).reduce(function(e,d){var c=e.tie(idGen(new_todo(d))).done();return c},UI().done()).value();return a}function on_todo_item_remove(){return Event("todo-item-remove").tie(remove_todo).done()}function on_todo_item_new(){return Event("todo-item-new")._(function(a){return $(a.target).val()}).tie(function(a){return new_todo(a)}).done()}function main(){return IO().get("../demo/todo/static/todo-settings.json").let(parseSettings).as("settings").tie(frame_todo).tie(function(){return predefine_todos(this.settings)}).fork(on_todo_item_remove).fork(on_todo_item_new).done()}main()();"
     })
 </script>
 <style type="text/css">
@@ -790,5 +818,69 @@ Page generated by [Strapdown.js](http://strapdownjs.com/) ; static contents powe
         text-align:center;
         color: #333;
     }
+
+    #todo-frame
+    {
+        border-radius: 5px;
+        border-bottom: 2px white solid;
+        background-color: #F79B0C;
+        color: white;
+        font-size: 18pt;
+        margin: 0px auto;
+        min-height: 350px;
+        width: 275px;
+    }
+
+    #todo-new
+    {       
+        background-color: rgba(0,0,0,0);
+        border: 0px;
+        border-bottom: 2px white solid;
+        color: white;
+        font-size: 18pt;
+        padding: 0px 5px 0px 5px;
+        outline: 0px;
+    }
+
+    #todo-new::-webkit-input-placeholder { color:rgba(255,255,255,0.6); }
+    #todo-new::-moz-placeholder { color:rgba(255,255,255,0.6); } /* firefox 19+ */
+    #todo-new:-ms-input-placeholder { color:rgba(255,255,255,0.6); } /* ie */
+    #todo-new:-moz-placeholder { color:rgba(255,255,255,0.6); }
+
+    #todo-list
+    {
+        height: 300px;
+        margin: 5px 0 0 0;
+        overflow-y: auto;
+        padding: 0 5px 0 5px;
+    }
+
+    #todo-list li 
+    {
+        cursor: pointer;
+        font-family: sans-serif, monospace;
+        list-style: none;
+    }
+
+    #todo-list li:hover
+    {
+        background: rgba(255,255,255,0.3);
+    }
+
+    #todo-list li:before
+    {
+        content:"☐";
+        font-family: sans-serif;
+    }
+
+    #todo-footer
+    {
+        border-top: 2px white solid;
+        color: rgba(0,0,0,0.5);
+        font-family: sans-serif, monospace;
+        font-size: 12pt;
+        text-align: center;
+    }
+
 </style>
 </html>
