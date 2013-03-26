@@ -3,7 +3,7 @@
 
 # Fluorine: a context based Javascript eDSL
 
-Fluorine is a library, provide a way to let programmer isolate side-effect computations in their progams.
+Fluorine is an eDLS and library, providing a way to let programmer isolate side-effect computations in their progams.
 It also provides a very basic notifying mechanism, to help programmers develop programs based on application layer notifications.
 
 ## Why Bothers ?
