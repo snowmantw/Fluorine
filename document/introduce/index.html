@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html>
+<meta charset="UTF-8">
 <title>Fluorine - a context based Javascript library</title>
 
 <xmp theme="united" style="display:none;">
@@ -61,7 +62,7 @@ The name "context" means it's different from other purer and stronger structures
 These structures are delicate enough but also hard to implement well in this little eDSL (at least, in current stage) .
 
 Contexts in Fluorine are just predefined functions like the "jQuery" function, and the main difference is 
-that the later don't provide mechanisms to execute lazily, so we can't directly combine all jQuery chains togeter to build a large program. 
+that the later don't provide mechanisms to execute lazily, so we can't combine all jQuery chains togeter to build a large program. 
 
 Other differences between jQuery and Fluorine's contexts are that jQuery didn't care about side-effects, 
 and it's combinators mainly provide UI manipulations. These differences don't mean it isn't a great Javascript library, 
@@ -80,7 +81,7 @@ so that errors resulted from side-effects can be reduced as much as possible:
     // You can restore this by call `fluorine.heal()`.
     fluorine.infect()
     
-    // Impure function: directly manipulate DOMs in the document.
+    // Impure function: manipulate DOMs in the document.
     // All impure computing should be wrapped with contexts.
     //
     // :: String -> UI ()
@@ -265,7 +266,7 @@ The second `()` is like runner functions in Haskell.
 For instance, the `runST:: (forall s. ST s a) -> a` can "execute" a ST Monad.
 
 If anonymous functions annoys you, we also provide `idGen` function. 
-Using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
+Using it to put a chain in another chain directly can avoid the annoying anonymous function syntax:
 
     // No need to use anonymous functions anymore.
 
@@ -282,7 +283,7 @@ we can't guarrantee the IO chain will execute and return the value as users wish
         get('/ajax/hello').
         done()().extract()
 
-    // And directly use it in another context:
+    // And use it in another context:
     
     UI('#io-msg').$().text(hello).done()()
 
@@ -340,7 +341,7 @@ The notifier, designed as a individual part, need initialization too.
 
     fluorine.Notifier.init()
 
-The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them directly:
+The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them without prefixes:
 
     fluorine.infect()
     IO().
@@ -357,15 +358,39 @@ You can use `fluorine.heal()` to remove the infection.
 
 ### <a id="build-a-runnable-program"></a>Build a Runnable Program
 
-First we should define our main function:
+It will generate a Todo list on the screen. This example is runnable on this page (see below).
+
+In the repo, the example is also in `/demo/todo` (server codes) and `/source/demo/todo` (client codes).
+Run `npm install` in the server directory, and `node ./server.js` to run it.
+
+First we need to prepare our library:
+
+    fluorine.infect()
+    fluorine.debug(true)
+    fluorine.Notifier.init()
+
+
+We should define our main function, even it's not complete yet:
 
 
     // Parse settings in JSON format.
     //
     // :: String -> Object
-    function parse(str)
+    function parseSettings(str)
     {
         return JSON.parse(str)
+    }
+
+    // Standard main function.
+    //
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            get('/static/todo-settings.json').
+            let(parseSettings).as('settings').
+            tie(/*TODO*/).      // Do other actions under the settings.
+            done()
     }
     
 
@@ -373,38 +398,51 @@ Then we need to define some movable parts of our program:
 
     // Generate a frame of this Todo example.
     //
-    // :: UI DOM
+    // :: UI $DOM
     function frame_todo()
     {
-        // Returning pure DOM don't violent rules of purity.
+        // Define pure DOM don't violent rules of purity.
 
-        var frame = $('<div id="todo-frame"><ul id="todo-list"></ul><input id="todo-new" type="text"/></div>').get(0) 
+        var tpl = [ '<div id="todo-frame"><input id="todo-new" size="18" placeholder="New Todo..." type="text"/>'
+                  , '<ul id="todo-list"></ul>'
+                  , '<div id="todo-footer">Fluorine Todo List Demo</div></div>'].join("")
+        
+        var frame = $(tpl).get(0) 
 
         // This is how event works: forward to global scope then handle it.
         // Fluorine's event mechanism hasn't been comprehensively implemented,
         // so user can use other libraries like `bacon.js` to get more close to real FRP.
 
-        return UI(frame).$().select('#todo-new').
-            appendTo('body').
-            forward('keypress', function(e)
-            {
-                if( 13 == e.which )
-                {
-                    return 'todo-item-new'
-                }
-            }).
+        return UI().
+            tie(idGen(UI(frame).$().appendTo('body').done())).
+            tie(idGen(
+                    UI('#todo-frame').
+                    select('#todo-new').
+                    forward('keypress', function(e)
+                    {
+                        if( 13 == e.which )
+                        {
+                            return 'todo-item-new'
+                        }
+                        else
+                        {   return "_" }
+                    }).
+                    done())
+                ).
             done()
     }
 
     // When a new todo created, append it.
     //
-    // :: String -> UI ()
+    // :: String -> UI $DOM
     function new_todo(str_todo)
     {
         // Generate the new item and append to the list.
         var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
 
-        return UI(item).$().forward('click', function()
+        return UI(item).$().
+            appendTo('#todo-list').
+            forward('click', function()
             {
                 return 'todo-item-remove'
             }).
@@ -413,10 +451,10 @@ Then we need to define some movable parts of our program:
 
     // Remove todo under a event context.
     //
-    // The event object, because it's directly forwarded from jQuery's event,
+    // The event object, because it's forwarded from jQuery's event,
     // so will bring all infomation we need.
     // 
-    // :: EventObject -> UI ()
+    // :: EventObject -> UI $DOM
     function remove_todo(e)
     {
         return UI(e.target).$().remove().done()
@@ -425,7 +463,7 @@ Then we need to define some movable parts of our program:
 
     // Generate some pre-defined Todos from settings.
     //
-    // :: [Environment] -> UI ()
+    // :: [Environment] -> UI $DOM
     function predefine_todos(settings)
     {
         var uis = _.chain(settings.todos).
@@ -433,7 +471,8 @@ Then we need to define some movable parts of our program:
             {
                 // Compose the new generated UI chain with a growing one.                
 
-                return mem.tie(new_todo(str_todo)).done()
+                var result =  mem.tie(idGen(new_todo(str_todo))).done()
+                return result
 
             }, UI().done()).
             value()
@@ -444,35 +483,22 @@ Then we need to define some movable parts of our program:
 
 Events need to initialize:
 
-    // Register all Event chains.
+    // Register event handler of 'todo-item-remove'.
     //
     // :: Event ()
-    function event_handlers()
+    function on_todo_item_remove()
     {
-        // Because the default `tie` in Event will not execute the next step
-        // until the binding notification triggered, we need to fork these events
-        // to concurrently execute events.
-        //
-        // Ex1:
-        //
-        //    Event().tie(Event('a').done()).tie(Event('b').done()).done()
-        //
-        // The event chain of notification 'b' will NOT execute (binding on 'b') 
-        // until event 'a' triggered.
-        //
-        // Ex2:
-        //
-        //    Event().fork(Event('a').done()).fork(Event('b').done()).done()
-        //
-        // The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+        return Event('todo-item-remove').tie(remove_todo).done()
+    }
 
-        return Event().
-            fork(idGen(Event('todo-item-remove').tie(remove_todo).done())).
-            fork(idGen(Event('todo-item-new').
-                    let(function(e){ return $(e.target).val() }).
-                    tie(function(str_todo){ return new_todo(str_todo) }).
-                    done()
-                )).
+    // Register event handler of 'todo-item-new'.
+    //
+    // :: Event ()
+    function on_todo_item_new()
+    {
+        return Event('todo-item-new').
+            _(function(e){ return $(e.target).val() }).
+            tie(function(str_todo){ return new_todo(str_todo) }).
             done()
     }
 
@@ -486,20 +512,41 @@ Finally, we can combine everything together, and complete our main function:
     function main()
     {
         return IO().
-            get('todo-settings.json').
-            _(parseSettings).as('settings').
+            get('/static/todo-settings.json').
+            let(parseSettings).as('settings').
             tie( frame_todo ).      
             tie( function()
             {
                 return predefine_todos(this.settings)
             }).
-            tie(event_handlers).
+            fork(on_todo_item_remove).
+            fork(on_todo_item_new).
             done()
     }
 
-Run the program. Ideally, this is the only one executable entry of the program.
+Using `fork` here because the default `tie` in Event will not execute the next step
+until the binding notification triggered, we need to fork these contexts
+to concurrently bind and handle events
+
+Ex1:
+
+    UI().tie(Event('a').done()).tie(Event('b').done()).done()
+
+The event chain of notification 'b' will NOT execute (binding on 'b') 
+until event 'a' triggered.
+
+Ex2:
+
+    UI().fork(Event('a').done()).fork(Event('b').done()).done()
+
+The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+
+Now we can run the program. Ideally, this is the only one executable entry of the program.
 
     main()()
+
+<a href="#todo-wrapper" onclick="eval(window.script_todo)">Run it !</a>
+<div id="todo-wrapper"></div>
 
 ---
 
@@ -558,7 +605,7 @@ Just like jQuery and underscore.js, you will get strange results and errors if y
     
     fluorine.infect()
     IO().
-        get('/ajax/hello')                              // Missing the peroid
+        get('/ajax/hello')                              // Missing the period 
         tie(function(hello)
         {
             return UI('#io-msg').$().text(hello)        // Undone context
@@ -570,6 +617,7 @@ When this IO chain got executed, it will throw an error:
     "ReferenceError: tie is not defined
 
 Because "ReferenceError" is a general error, you will find it's hard to debug.
+
 So before you typing anything, it is a good practice to insert a period after the chain.
 
 Of course, you can choose period-prefix style to make the problem more significant:
@@ -611,7 +659,7 @@ When you turn on the mode, Fluorine will print out every steps and errors in you
 
 Here you can see the undone context stop the execution, just in the `tie` function.
 
-This debugging mode is still in very early stage, so it's messages sometimes look like hard to understand.
+This debugging mode is still in very early stage, so it's messages sometimes are hard to understand.
 Making it better if you can do some contributes !
 
 
@@ -776,6 +824,9 @@ Page generated by [Strapdown.js](http://strapdownjs.com/) ; static contents powe
 <script>
     $(document).ready(function(){
         $('#headline').wrap('<a href="http://snowmantw.github.com/Fluorine/document/introduce/index.html" />');
+
+        window.url_todo_data = "http://snowmantw.github.com/Fluorine/demo/todo/static/todo-settings.json"
+        window.script_todo = "fluorine.infect();fluorine.debug(true);fluorine.Notifier.init();function parseSettings(a){return JSON.parse(a)}function frame_todo(){var a=['<div id=\"todo-frame\"><input id=\"todo-new\" size=\"18\" placeholder=\"New Todo...\" type=\"text\"/>','<ul id=\"todo-list\"></ul>','<div id=\"todo-footer\">Fluorine Todo List Demo</div></div>'].join(\"\");var b=$(a).get(0);return UI().tie(idGen(UI(b).$().appendTo(\"#todo-wrapper\").done())).tie(idGen(UI(\"#todo-frame\").select(\"#todo-new\").forward(\"keypress\",function(c){if(13==c.which){return\"todo-item-new\"}else{return\"_\"}}).done())).done()}function new_todo(a){var b=$(_.template(\"<li><%= _todo_ %></li>\")({_todo_:a}));return UI(b).$().appendTo(\"#todo-list\").forward(\"click\",function(){return\"todo-item-remove\"}).done()}function remove_todo(a){return UI(a.target).$().remove().done()}function predefine_todos(b){var a=_.chain(b.todos).reduce(function(e,d){var c=e.tie(idGen(new_todo(d))).done();return c},UI().done()).value();return a}function on_todo_item_remove(){return Event(\"todo-item-remove\").tie(remove_todo).done()}function on_todo_item_new(){return Event(\"todo-item-new\")._(function(a){return $(a.target).val()}).tie(function(a){return new_todo(a)}).done()}function main(){return IO().get(\""+url_todo_data+"\").let(parseSettings).as(\"settings\").tie(frame_todo).tie(function(){return predefine_todos(this.settings)}).fork(on_todo_item_remove).fork(on_todo_item_new).done()}main()();"
     })
 </script>
 <style type="text/css">
@@ -790,5 +841,73 @@ Page generated by [Strapdown.js](http://strapdownjs.com/) ; static contents powe
         text-align:center;
         color: #333;
     }
+
+    #todo-frame
+    {
+        border-radius: 5px;
+        border-bottom: 2px white solid;
+        background-color: #F79B0C;
+        color: white;
+        font-size: 18pt;
+        margin: 0px auto;
+        min-height: 350px;
+        width: 275px;
+    }
+
+    #todo-new
+    {       
+        background-color: rgba(0,0,0,0);
+        border: 0px;
+        border-bottom: 2px white solid;
+        color: white;
+        font-size: 18pt;
+        padding: 0px 5px 0px 5px;
+        outline: none;
+        width: 100%;
+        height: 22pt;
+    }
+
+    #todo-new::-webkit-input-placeholder { color:rgba(255,255,255,0.6); }
+    #todo-new::-moz-placeholder { color:rgba(255,255,255,0.6); } /* firefox 19+ */
+    #todo-new:-ms-input-placeholder { color:rgba(255,255,255,0.6); } /* ie */
+    #todo-new:-moz-placeholder { color:rgba(255,255,255,0.6); }
+
+    #todo-list
+    {
+        height: 300px;
+        margin: 5px 0 0 0;
+        overflow-y: auto;
+        padding: 0 5px 0 5px;
+    }
+
+    #todo-list li 
+    {
+        cursor: pointer;
+        font-family: sans-serif, monospace;
+        list-style: none;
+    }
+
+    #todo-list li:hover
+    {
+        background: rgba(255,255,255,0.3);
+    }
+
+    #todo-list li:before
+    {
+        content:"☐";
+        font-family: sans-serif;
+    }
+
+    #todo-footer
+    {
+        border-top: 2px white solid;
+        color: rgba(0,0,0,0.5);
+        font-family: sans-serif, monospace;
+        font-size: 12pt;
+        text-align: center;
+    }
+
+    *:focus {outline: none;}
+
 </style>
 </html>
