@@ -382,7 +382,9 @@ The target action chain will execute asynchronously.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
-              <p>Execute the next step immediately.</p>
+              <p>TODO: Maybe we can Use immdiately returning worker to get more close to real fork.
+But still can&#39;t put the subchain in the worker because limitation of WebWorker.</p>
+<p>Execute the next step immediately.</p>
 
             </div>
             
@@ -749,6 +751,7 @@ The function return by default <code>done()</code> will automatically execute th
         (<span class="keyword">function</span>()
         {
             <span class="keyword">this</span>.__done = <span class="literal">false</span>
+            <span class="keyword">this</span>.__process.__queue.pop()
             <span class="keyword">return</span> <span class="keyword">this</span>.tie.apply(<span class="keyword">this</span>, arguments)
         }
         , <span class="keyword">this</span>)

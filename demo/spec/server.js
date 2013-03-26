@@ -3,7 +3,8 @@ var express = require('express')
 var app = express()
 var http = require('http')
 var server = http.createServer(app)
-var ws = new (require('websocket').server)({httpServer: server, port: 3030})
+var ws = require('ws')
+ws = new ws.Server({port: 3030})
 
 var allowCrossDomain = function(req, res, next) {
     res.header('Access-Control-Allow-Origin', '*');

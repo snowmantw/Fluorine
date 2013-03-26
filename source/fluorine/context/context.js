@@ -172,6 +172,9 @@ self.fluorine.Context.o.prototype =
             // Execute the inner context and don't wait it.
             _.defer( function(){inner()} )
 
+            // TODO: Maybe we can Use immdiately returning worker to get more close to real fork.
+            // But still can't put the subchain in the worker because limitation of WebWorker.
+
             // Execute the next step immediately.
             this.__process.run(val)
 
@@ -343,6 +346,7 @@ self.fluorine.Context.o.prototype =
         (function()
         {
             this.__done = false
+            this.__process.__queue.pop()
             return this.tie.apply(this, arguments)
         }
         , this)

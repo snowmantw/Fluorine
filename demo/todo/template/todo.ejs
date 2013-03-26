@@ -1,37 +1,251 @@
-
-<!DOCTYPE html>
+<!DOCTYPE HTML>
 <html lang="en">
-    <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <meta http-equiv="Content-Language" content="zh-tw" />
-    <title>Fluorine Demo - Todo</title>
-    <link rel="stylesheet/less" href="/style/main.less"/>
-    <link rel="stylesheet" href="/library/twitter-bootstrap/css/bootstrap.min.css"/>
+<head>
+    <meta charset="UTF-8">
+    <title></title>
+    <style type="text/css">
+        #todo-frame
+        {
+            border-radius: 5px;
+            border-bottom: 2px white solid;
+            background-color: #F79B0C;
+            color: white;
+            font-size: 18pt;
+            margin: 0px auto;
+            min-height: 350px;
+            width: 275px;
+        }
 
-    <script src="/library/jquery/jquery-min.js"></script>
-    <script src="/library/twitter-bootstrap/js/bootstrap.min.js"></script>
-    <script src="/library/underscore/underscore-min.js"></script>
-    <script src="/library/less/less.min.js"></script>
+        #todo-new
+        {       
+            background-color: rgba(0,0,0,0);
+            border: 0px;
+            border-bottom: 2px white solid;
+            color: white;
+            font-size: 18pt;
+            padding: 0px 5px 0px 5px;
+            outline: 0px;
+        }
 
-    <script type="application/javascript" src="/library/jquery/jquery-min.js"></script>
-    <script type="application/javascript" src="/library/underscore/underscore-min.js"></script>
-    <script type="application/javascript" src="/build/fluorine/utils.js"></script>
-    <script type="application/javascript" src="/build/fluorine/notifier.js"></script>
-    <script type="application/javascript" src="/build/fluorine/process.js"></script>
-    <script type="application/javascript" src="/build/fluorine/context.js"></script>
+        #todo-new::-webkit-input-placeholder { color:rgba(255,255,255,0.6); }
+        #todo-new::-moz-placeholder { color:rgba(255,255,255,0.6); } /* firefox 19+ */
+        #todo-new:-ms-input-placeholder { color:rgba(255,255,255,0.6); } /* ie */
+        #todo-new:-moz-placeholder { color:rgba(255,255,255,0.6); }
 
-    <script src="/build/demo/todo.js"></script>
+        #todo-list
+        {
+            height: 300px;
+            margin: 5px 0 0 0;
+            overflow-y: auto;
+            padding: 0 5px 0 5px;
+        }
+
+        #todo-list li 
+        {
+            cursor: pointer;
+            font-family: sans-serif, monospace;
+            list-style: none;
+        }
+
+        #todo-list li:hover
+        {
+            background: rgba(255,255,255,0.3);
+        }
+
+        #todo-list li:before
+        {
+            content:"☐";
+            font-family: sans-serif;
+        }
+
+        #todo-footer
+        {
+            border-top: 2px white solid;
+            color: rgba(0,0,0,0.5);
+            font-family: sans-serif, monospace;
+            font-size: 12pt;
+            text-align: center;
+        }
+
+    </style>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://underscorejs.org/underscore-min.js"></script>
+    <script src="/build/fluorine/fluorine.js"></script>
+    <script>
+
+    fluorine.infect()
+    fluorine.debug(true)
+    fluorine.Notifier.init()
+
+//First we should define our main function:
+
+
+    // Parse settings in JSON format.
+    //
+    // :: String -> Object
+    function parseSettings(str)
+    {
+        return JSON.parse(str)
+    }
+    
+
+//Then we need to define some movable parts of our program:
+
+    // Generate a frame of this Todo example.
+    //
+    // :: UI DOM
+    function frame_todo()
+    {
+        // Returning pure DOM don't violent rules of purity.
+
+
+        var tpl = [ '<div id="todo-frame"><input id="todo-new" size="18" placeholder="New Todo..." type="text"/>'
+                  , '<ul id="todo-list"></ul>'
+                  , '<div id="todo-footer">Fluorine Todo List Demo</div></div>'].join("")
+        
+        var frame = $(tpl).get(0) 
+
+        // This is how event works: forward to global scope then handle it.
+        // Fluorine's event mechanism hasn't been comprehensively implemented,
+        // so user can use other libraries like `bacon.js` to get more close to real FRP.
+
+        return UI().
+            tie(idGen(UI(frame).$().appendTo('body').done())).
+            tie(idGen(
+                    UI('#todo-frame').
+                    select('#todo-new').
+                    forward('keypress', function(e)
+                    {
+                        if( 13 == e.which )
+                        {
+                            return 'todo-item-new'
+                        }
+                        else
+                        {   return "_" }
+                    }).
+                    done())
+                ).
+            done()
+    }
+
+    // When a new todo created, append it.
+    //
+    // :: String -> UI ()
+    function new_todo(str_todo)
+    {
+        // Generate the new item and append to the list.
+        var item = $(_.template("<li><%= _todo_ %></li>")({_todo_: str_todo}))
+
+        return UI(item).$().
+            appendTo('#todo-list').
+            forward('click', function()
+            {
+                return 'todo-item-remove'
+            }).
+            done()
+    }
+
+    // Remove todo under a event context.
+    //
+    // The event object, because it's directly forwarded from jQuery's event,
+    // so will bring all infomation we need.
+    // 
+    // :: EventObject -> UI ()
+    function remove_todo(e)
+    {
+        return UI(e.target).$().remove().done()
+    }
+
+
+    // Generate some pre-defined Todos from settings.
+    //
+    // :: [Environment] -> UI ()
+    function predefine_todos(settings)
+    {
+        var uis = _.chain(settings.todos).
+            reduce(function(mem, str_todo)
+            {
+                // Compose the new generated UI chain with a growing one.                
+
+                var result =  mem.tie(idGen(new_todo(str_todo))).done()
+                return result
+
+            }, UI().done()).
+            value()
+
+        return uis
+    }
+
+
+//Events need to initialize:
+
+    // Register event handler of 'todo-item-remove'.
+    //
+    // :: Event ()
+    function on_todo_item_remove()
+    {
+        return Event('todo-item-remove').tie(remove_todo).done()
+    }
+
+    // Register event handler of 'todo-item-new'.
+    //
+    // :: Event ()
+    function on_todo_item_new()
+    {
+        return Event('todo-item-new').
+            _(function(e){ return $(e.target).val() }).
+            tie(function(str_todo){ return new_todo(str_todo) }).
+            done()
+    }
+
+
+//Finally, we can combine everything together, and complete our main function:
+    
+
+    // The entry point of this program.
+    //
+    // :: IO ()
+    function main()
+    {
+        return IO().
+            get('/static/todo-settings.json').
+            let(parseSettings).as('settings').
+            tie( frame_todo ).      
+            tie( function()
+            {
+                return predefine_todos(this.settings)
+            }).
+            fork(on_todo_item_remove).
+            fork(on_todo_item_new).
+            _(function(){console.log('---a')}).
+            done()
+    }
+
+// The `fork` used here because the default `tie` in Event will not execute the next step
+// until the binding notification triggered, we need to fork these events
+// to concurrently execute events.
+//
+// Ex1:
+//
+//    Event().tie(Event('a').done()).tie(Event('b').done()).done()
+//
+// The event chain of notification 'b' will NOT execute (binding on 'b') 
+// until event 'a' triggered.
+//
+// Ex2:
+//
+//    Event().fork(Event('a').done()).fork(Event('b').done()).done()
+//
+// The event chain of notification 'a' and 'b' will simutaneously bind to the notifications.
+
+//Run the program. Ideally, this is the only one executable entry of the program.
+
+    main()()
+    </script>
 </head>
-  <body>
-      <div class="subpage" id="main">
-        <div id="queue-wrapper">
-              <div id="queue-prev" class="queue">
-              </div>
-              <div id="queue-now" class="queue">
-              </div>
-              <div id="queue-next" class="queue">
-              </div>
-        </div>
-      </div>
-  </body>
+<body>
+    
+</body>
 </html>
+
+

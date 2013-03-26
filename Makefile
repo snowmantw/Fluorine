@@ -33,7 +33,11 @@ export:
 	docco -o ${DOCS}/export -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/export.js 
 
 merge:
-	@find ${BUILD_FLUORINE} ! -name "${MERGED}.js" -type f -exec cat {} >> ${BUILD_FLUORINE}/${MERGED}.js \;
+	cat ${BUILD_FLUORINE}/utils.js > ${BUILD_FLUORINE}/${MERGED}.js  && \
+	cat ${BUILD_FLUORINE}/process.js >> ${BUILD_FLUORINE}/${MERGED}.js   && \
+	cat ${BUILD_FLUORINE}/notifier.js >> ${BUILD_FLUORINE}/${MERGED}.js && \
+	cat ${BUILD_FLUORINE}/context.js >> ${BUILD_FLUORINE}/${MERGED}.js
+
 
 # Contexts: merge order important.
 context: clean
