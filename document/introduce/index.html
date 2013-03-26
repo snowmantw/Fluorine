@@ -398,11 +398,10 @@ Then we need to define some movable parts of our program:
 
     // Generate a frame of this Todo example.
     //
-    // :: UI DOM
+    // :: UI $DOM
     function frame_todo()
     {
-        // Returning pure DOM don't violent rules of purity.
-
+        // Define pure DOM don't violent rules of purity.
 
         var tpl = [ '<div id="todo-frame"><input id="todo-new" size="18" placeholder="New Todo..." type="text"/>'
                   , '<ul id="todo-list"></ul>'
@@ -435,7 +434,7 @@ Then we need to define some movable parts of our program:
 
     // When a new todo created, append it.
     //
-    // :: String -> UI ()
+    // :: String -> UI $DOM
     function new_todo(str_todo)
     {
         // Generate the new item and append to the list.
@@ -455,7 +454,7 @@ Then we need to define some movable parts of our program:
     // The event object, because it's forwarded from jQuery's event,
     // so will bring all infomation we need.
     // 
-    // :: EventObject -> UI ()
+    // :: EventObject -> UI $DOM
     function remove_todo(e)
     {
         return UI(e.target).$().remove().done()
@@ -464,7 +463,7 @@ Then we need to define some movable parts of our program:
 
     // Generate some pre-defined Todos from settings.
     //
-    // :: [Environment] -> UI ()
+    // :: [Environment] -> UI $DOM
     function predefine_todos(settings)
     {
         var uis = _.chain(settings.todos).
@@ -522,7 +521,6 @@ Finally, we can combine everything together, and complete our main function:
             }).
             fork(on_todo_item_remove).
             fork(on_todo_item_new).
-            _(function(){console.log('---a')}).
             done()
     }
 
