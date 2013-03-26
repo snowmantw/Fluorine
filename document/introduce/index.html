@@ -524,9 +524,9 @@ Finally, we can combine everything together, and complete our main function:
             done()
     }
 
-The `fork` used here because the default `tie` in Event will not execute the next step
-until the binding notification triggered, we need to fork these events
-to concurrently execute events.
+Using `fork` here because the default `tie` in Event will not execute the next step
+until the binding notification triggered, we need to fork these contexts
+to concurrently bind and handle events
 
 Ex1:
 
