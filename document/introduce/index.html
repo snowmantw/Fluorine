@@ -73,9 +73,11 @@ _Fig.1: Wrapped values differ from pure values._
 
 String "Foo" comes from some DOM in the document, and the "Bar" is a Javascript string variable spawed from some literal.
 
-The ways to generate them shows the difference between pure and impure value in Fluorine. 
+The ways to generate them shows the difference between pure and impure value in Fluorine: 
+
 **Impure value** means it come from IO, UI and other computations may be failed,
 like extract string from a removed DOM, or fetch data from a no longer existing URL. 
+
 **Pure value**, on the other hand, should be never failed in it's scope.
 
 The most important concept of Fluorine is that these two kinds of values and computations **should never be mixed arbitrarily**.
@@ -112,7 +114,17 @@ and it's combinators mainly provide UI manipulations. These differences don't me
 but only show there're some holes need to be filled. So Fluorine actually depends on `jQuery` and `underscore.js`, 
 which can easily build important UI and other computations. This library just provide some contexts to orgranize them in proper ways.
 
+Currently, Fluorine has these important contexts:
 
+* **Context**: the basic context, others are inherited from it; extend more new context is possible
+* **IO**: fetching data from server, or from local storage (not implement yet)
+* **UI**: wrapped jQuery, to seduce it become lazy and greedy (never leaks any impure value) 
+* **Event**: providing a basically usable event mechanism
+* **Socket**: wrapped WebSocket, experimental
+
+See the [APIs](#apis) section to get more information.
+
+---
 
 ## <a id="features"></a>Features
 
