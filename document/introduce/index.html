@@ -62,7 +62,7 @@ The name "context" means it's different from other purer and stronger structures
 These structures are delicate enough but also hard to implement well in this little eDSL (at least, in current stage) .
 
 Contexts in Fluorine are just predefined functions like the "jQuery" function, and the main difference is 
-that the later don't provide mechanisms to execute lazily, so we can't directly combine all jQuery chains togeter to build a large program. 
+that the later don't provide mechanisms to execute lazily, so we can't combine all jQuery chains togeter to build a large program. 
 
 Other differences between jQuery and Fluorine's contexts are that jQuery didn't care about side-effects, 
 and it's combinators mainly provide UI manipulations. These differences don't mean it isn't a great Javascript library, 
@@ -81,7 +81,7 @@ so that errors resulted from side-effects can be reduced as much as possible:
     // You can restore this by call `fluorine.heal()`.
     fluorine.infect()
     
-    // Impure function: directly manipulate DOMs in the document.
+    // Impure function: manipulate DOMs in the document.
     // All impure computing should be wrapped with contexts.
     //
     // :: String -> UI ()
@@ -266,7 +266,7 @@ The second `()` is like runner functions in Haskell.
 For instance, the `runST:: (forall s. ST s a) -> a` can "execute" a ST Monad.
 
 If anonymous functions annoys you, we also provide `idGen` function. 
-Using it to directly put a chain in another chain can avoid the annoying anonymous function syntax:
+Using it to put a chain in another chain directly can avoid the annoying anonymous function syntax:
 
     // No need to use anonymous functions anymore.
 
@@ -283,7 +283,7 @@ we can't guarrantee the IO chain will execute and return the value as users wish
         get('/ajax/hello').
         done()().extract()
 
-    // And directly use it in another context:
+    // And use it in another context:
     
     UI('#io-msg').$().text(hello).done()()
 
@@ -341,7 +341,7 @@ The notifier, designed as a individual part, need initialization too.
 
     fluorine.Notifier.init()
 
-The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them directly:
+The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them without prefixes:
 
     fluorine.infect()
     IO().
@@ -358,16 +358,19 @@ You can use `fluorine.heal()` to remove the infection.
 
 ### <a id="build-a-runnable-program"></a>Build a Runnable Program
 
-This example is also in `/demo/todo` (server codes) and `/source/demo/todo` (client codes).
+It will generate a Todo list on the screen. This example is runnable on this page (see below).
+
+In the repo, the example is also in `/demo/todo` (server codes) and `/source/demo/todo` (client codes).
 Run `npm install` in the server directory, and `node ./server.js` to run it.
 
+First we need to prepare our library:
 
     fluorine.infect()
     fluorine.debug(true)
     fluorine.Notifier.init()
 
 
-We should define our main function, even it's not complete:
+We should define our main function, even it's not complete yet:
 
 
     // Parse settings in JSON format.
@@ -449,7 +452,7 @@ Then we need to define some movable parts of our program:
 
     // Remove todo under a event context.
     //
-    // The event object, because it's directly forwarded from jQuery's event,
+    // The event object, because it's forwarded from jQuery's event,
     // so will bring all infomation we need.
     // 
     // :: EventObject -> UI ()
@@ -544,6 +547,7 @@ Now we can run the program. Ideally, this is the only one executable entry of th
 
     main()()
 
+<a href="#" onclick="eval(window.script_todo)">Run it !</a>
 <div id="todo-wrapper"></div>
 
 ---
