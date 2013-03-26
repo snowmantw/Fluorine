@@ -1,8 +1,9 @@
 
+![Fluorine Logo](https://raw.github.com/snowmantw/Fluorine/master/document/introduce/Fluorine-logo.png)
 
-# Fluorine: a context based Javascript library
+# Fluorine: a context based Javascript eDSL
 
-Fluorine is a library, provide a way to let programmer isolate side-effect computations in their progams.
+Fluorine is an eDLS and library, providing a way to let programmer isolate side-effect computations in their progams.
 It also provides a very basic notifying mechanism, to help programmers develop programs based on application layer notifications.
 
 ## Why Bothers ?
@@ -128,7 +129,7 @@ And I think there're chances to refactor this library and eDSL to make it more f
 
 ## License 
 
-Fluorine: a context-based Javascript library Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
+Fluorine: a context-based Javascript eDSL Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
 
 This program is free software: you can redistribute it and/or modify it under the terms of the GNU General Public License as published by the Free Software Foundation, either version 3 of the License, or (at your option) any later version.
 
