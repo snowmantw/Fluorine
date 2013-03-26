@@ -73,9 +73,11 @@ _Fig.1: Wrapped values differ from pure values._
 
 String "Foo" comes from some DOM in the document, and the "Bar" is a Javascript string variable spawed from some literal.
 
-The ways to generate them shows the difference between pure and impure value in Fluorine. 
+The ways to generate them shows the difference between pure and impure value in Fluorine: 
+
 **Impure value** means it come from IO, UI and other computations may be failed,
 like extract string from a removed DOM, or fetch data from a no longer existing URL. 
+
 **Pure value**, on the other hand, should be never failed in it's scope.
 
 The most important concept of Fluorine is that these two kinds of values and computations **should never be mixed arbitrarily**.
