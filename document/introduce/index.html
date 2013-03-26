@@ -449,8 +449,7 @@ Then we need to define some movable parts of our program:
 
         return UI().
             tie(idGen(UI(frame).$().appendTo('body').done())).
-            tie(idGen(
-                    UI('#todo-frame').
+            tie(idGen(UI('#todo-frame').
                     select('#todo-new').
                     forward('keypress', function(e)
                     {
@@ -579,7 +578,7 @@ Now we can run the program. Ideally, this is the only one executable entry of th
 
     main()()
 
-<a href="#todo-wrapper" onclick="eval(window.script_todo)">Run it !</a>
+<a id="run-todo" href="#todo-wrapper" onclick="eval(window.script_todo); $('#run-todo').remove()">Run it !</a>
 <div id="todo-wrapper"></div>
 
 ---
