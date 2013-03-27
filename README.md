@@ -127,6 +127,10 @@ And I think there're chances to refactor this library and eDSL to make it more f
         .done()()
     .extract()    // UI context has extract.
 
+## Installation and Guides
+
+@see [The Introduce Page](http://snowmantw.github.com/Fluorine/document/introduce/index.html)
+
 ## License 
 
 Fluorine: a context-based Javascript eDSL Copyright (C) 2012 Greg Weng, snowmantw@gmail.com
