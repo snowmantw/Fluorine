@@ -127,9 +127,64 @@ And I think there're chances to refactor this library and eDSL to make it more f
         .done()()
     .extract()    // UI context has extract.
 
-## Installation and Guides
+## Installation  
 
-@see [The Introduce Page](http://snowmantw.github.com/Fluorine/document/introduce/index.html)
+Clone it from Github, then locate the merged source file in `build/fluorine/fluorine.js`.
+
+    git clone https://github.com/snowmantw/Fluorine.git
+
+Or, you can install it via [bower](https://github.com/twitter/bower) :
+
+    bower install Fluorine
+
+Lasted tagged version in GitHub:
+
+https://github.com/snowmantw/Fluorine/archive/v0.2.2.zip
+
+### Dependencies
+
+* [jQuery](http://jquery.com) : UI context.
+* [Underscore.js](http://underscorejs.org) : use it for your good !
+
+### <a id="recommends"></a>Recommends
+
+* [bacon.js](https://github.com/raimohanska/bacon.js) : FRP programming.
+
+---
+
+## How to Use It
+
+First include the source in your web page:
+
+    <script src="Fluorine/build/fluorine/fluorine.js" ></script>
+
+Then we can use `fluorine.infect()` , to omit prefix namespace and do some initialization works:
+
+    fluorine.infect()
+
+The notifier, designed as a individual part, need initialization too.
+
+    fluorine.Notifier.init()
+
+The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them without prefixes:
+
+    fluorine.infect()
+    IO().
+        get('/ajax/hello').
+        tie(function(hello)
+        {
+            return UI('#io-msg').text(hello).done()
+        }).
+        done()()
+
+
+You can use `fluorine.heal()` to remove the infection.
+
+More information and movable examples [at the introduce page](http://snowmantw.github.com/Fluorine/document/introduce/index.html).
+
+There's also a local version of the document in `/document/introduce/index.html`
+
+---
 
 ## License 
 
