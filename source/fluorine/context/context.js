@@ -291,6 +291,28 @@ self.fluorine.Context.o.prototype =
         return this.__process
     }
 
+    // Wrap done context chain to avoid redundant generator function.
+    //
+    // Use this as:
+    //
+    //  UI().tie( UI('body').$().text('a').idgen() ).done() 
+    //
+    // Instead of:
+    //
+    //  UI().tie( idGen( UI('body').$().text('a') ) ).done() 
+    //
+    // Because remenbering to close parenthesis is a annoying thing.
+    //
+    // :: ( Context m, Context n, Process b )  => m n a -> ( () -> ( () -> b) )
+    ,idgen: function()
+    {
+        return _.bind( function()
+        {
+            return this.done()
+
+        }, this)
+    }
+
     // Close this context and ready to run.
     //
     // :: ( Context m, Context n, Process b )  => m n a -> ( () -> b )
