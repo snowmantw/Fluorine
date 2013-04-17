@@ -622,6 +622,34 @@ The function return by default <code>done()</code> will automatically execute th
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
+              <p>Wrap done context chain to avoid redundant generator function.</p>
+<p>Use this as:</p>
+<p> UI().tie( UI(&#39;body&#39;).$().text(&#39;a&#39;).idgen() ).done() </p>
+<p>Instead of:</p>
+<p> UI().tie( idGen( UI(&#39;body&#39;).$().text(&#39;a&#39;) ) ).done() </p>
+<p>Because remenbering to close parenthesis is a annoying thing.</p>
+<p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; ( () -&gt; b) )</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,idgen: <span class="keyword">function</span>()
+    {
+        <span class="keyword">return</span> _.bind( <span class="keyword">function</span>()
+        {
+            <span class="keyword">return</span> <span class="keyword">this</span>.done()
+
+        }, <span class="keyword">this</span>)
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-30">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-30">&#182;</a>
+              </div>
               <p>Close this context and ready to run.</p>
 <p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; b )</p>
 
@@ -633,11 +661,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-30">
+        <li id="section-31">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-31">&#182;</a>
               </div>
               <p>Already done.</p>
 
@@ -649,11 +677,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-31">
+        <li id="section-32">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-32">&#182;</a>
               </div>
               <p><strong> Runtime Stage </strong></p>
 
@@ -662,11 +690,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-32">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>The last step of this context.</p>
 
@@ -682,11 +710,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-33">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>If we want to continue the process:</p>
 
@@ -702,11 +730,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-34">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <p><strong> Definition Stage </strong></p>
 <p>After definition, return a function to let user choose evaluate this context immediately or later.</p>
@@ -726,11 +754,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-35">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <p>Don&#39;t run context, but set continue function and return self.</p>
 
@@ -760,11 +788,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-36">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <p>Attach a simple <code>tie</code> function to the <code>done_fn</code>
 allow user to concat other contexts. For example:</p>
@@ -784,11 +812,11 @@ allow user to concat other contexts. For example:</p>
         </li>
         
         
-        <li id="section-37">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p>Inner implement function.
 Inject a continue function into this context&#39;s step, 

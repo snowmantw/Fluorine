@@ -352,7 +352,7 @@ describe("UI", function(){
   describe("#$", function(){
     self.it("should mapping jQery methods ", function(){
       var names, m;
-      names = ['animate', 'addClass', 'after', 'append', 'appendTo', 'attr', 'before', 'css', 'clone', 'detach', 'empty', 'children', 'parents', 'parent', 'fadeIn', 'fadeOut', 'hide', 'height', 'html', 'innerHeight', 'innerWidth', 'insertAfter', 'insertBefore', 'offset', 'outerHeight', 'outerWidth', 'prepend', 'prependTo', 'remove', 'removeAfter', 'removeClass', 'removeProp', 'replaceAll', 'replaceWith', 'scrollLeft', 'show', 'scrollTop', 'text', 'toggleClass', 'unwrap', 'val', 'wrap', 'wrap', 'wrapAll', 'wrapInner', 'filter', 'not', 'eq', 'has'];
+      names = ['animate', 'addClass', 'after', 'append', 'appendTo', 'attr', 'before', 'css', 'clone', 'detach', 'empty', 'children', 'parents', 'parent', 'fadeIn', 'fadeOut', 'hide', 'height', 'html', 'innerHeight', 'innerWidth', 'insertAfter', 'insertBefore', 'offset', 'outerHeight', 'outerWidth', 'prepend', 'prependTo', 'remove', 'removeAfter', 'removeClass', 'removeProp', 'replaceAll', 'replaceWith', 'scrollLeft', 'show', 'scrollTop', 'text', 'toggleClass', 'unwrap', 'val', 'wrap', 'wrap', 'wrapAll', 'wrapInner', 'filter', 'not', 'eq'];
       m = UI('body').$();
       _.each(names, function(name){
         expect(m[name]).not.toBe(undefined);
