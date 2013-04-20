@@ -1,4 +1,3 @@
-
 ![Fluorine Logo](https://raw.github.com/snowmantw/Fluorine/master/document/introduce/Fluorine-logo.png)
 
 # Fluorine: a context based Javascript eDSL
@@ -44,8 +43,10 @@ rather than
 This means users of this library, can access the value ( DOM ) only after the process got executed.
 And a extracting action is need:
 
-    // Run the process and extract the value.
-    UI('.button').$().css('background-color', 'red').done()().extract() 
+```javascript
+// Run the process and extract the value.
+UI('.button').$().css('background-color', 'red').done()().extract() 
+```
 
 In this way, we can manage asynchronous execution within our contexts.
 
@@ -92,40 +93,42 @@ And I think there're chances to refactor this library and eDSL to make it more f
 
 ## Example
 
-    // Get a file and process its content with pure functions.
-    // Note these "getBinary" functions are asynchronous, and IO has no "extract" function,
-    // so users can't get values of IO outside the context.
-    //
-    IO().getBinary('foo.bin').as('first_content')
-        .getBinary('bar.bin').as('second_cotnent')
-        ._( function()
-            {   // Concat file contents with a pure function.
-                return append( this.first_content, this.second_content )
-            }
-          )
-        .done()()   // `done` will generate a context, and we can directly run it.
+```javascript
+// Get a file and process its content with pure functions.
+// Note these "getBinary" functions are asynchronous, and IO has no "extract" function,
+// so users can't get values of IO outside the context.
+//
+IO().getBinary('foo.bin').as('first_content')
+    .getBinary('bar.bin').as('second_cotnent')
+    ._( function()
+        {   // Concat file contents with a pure function.
+            return append( this.first_content, this.second_content )
+        }
+      )
+    .done()()   // `done` will generate a context, and we can directly run it.
 
-    // ----
+// ----
 
-    // Demo base context mixing with inner context.
-    //
-    UI('.data-form').$()
-        .eq(0)
-        .tie
-         (  function(ui_form)
-         {   return IO()
-                 .get('/data-form.json')
-                 ._( function(content)
-                   { 
-                     // We can directly access the value inside the context .
-                     $(ui_form).find('input["name"]').val(content.name)
-                   }
-                   )
-                .done()
-         }
-         )
-        .done()()
-    .extract()    // UI context has extract.
+// Demo base context mixing with inner context.
+//
+UI('.data-form').$()
+    .eq(0)
+    .tie
+     (  function(ui_form)
+     {   return IO()
+             .get('/data-form.json')
+             ._( function(content)
+               { 
+                 // We can directly access the value inside the context .
+                 $(ui_form).find('input["name"]').val(content.name)
+               }
+               )
+            .done()
+     }
+     )
+    .done()()
+.extract()    // UI context has extract.
+```
 
 ## Installation  
 
@@ -156,26 +159,34 @@ https://github.com/snowmantw/Fluorine/archive/v0.2.2.zip
 
 First include the source in your web page:
 
-    <script src="Fluorine/build/fluorine/fluorine.js" ></script>
+```html
+<script src="Fluorine/build/fluorine/fluorine.js" ></script>
+```
 
 Then we can use `fluorine.infect()` , to omit prefix namespace and do some initialization works:
 
-    fluorine.infect()
+```javascript
+fluorine.infect()
+```
 
 The notifier, designed as a individual part, need initialization too.
 
-    fluorine.Notifier.init()
+```javascript
+fluorine.Notifier.init()
+```
 
 The `infect()` will embed Fluorine utils functions and contexts in `window` object, so you can call them without prefixes:
 
-    fluorine.infect()
-    IO().
-        get('/ajax/hello').
-        tie(function(hello)
-        {
-            return UI('#io-msg').text(hello).done()
-        }).
-        done()()
+```javascript
+fluorine.infect()
+IO().
+    get('/ajax/hello').
+    tie(function(hello)
+    {
+        return UI('#io-msg').text(hello).done()
+    }).
+    done()()
+```
 
 
 You can use `fluorine.heal()` to remove the infection.
