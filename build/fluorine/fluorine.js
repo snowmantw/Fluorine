@@ -377,7 +377,7 @@ self.fluorine.Notifier.on = function(str_names, cb, context)
 self.fluorine.Notifier.trigger = function(note)
 {
     // note is a single string.
-    if( "string" == typeof note.name )
+    if( "string" == typeof note )
     {
         note = {'name': note}; 
     }
