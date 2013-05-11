@@ -377,7 +377,7 @@ self.fluorine.Notifier.on = function(str_names, cb, context)
 self.fluorine.Notifier.trigger = function(note)
 {
     // note is a single string.
-    if( ! note.name )
+    if( "string" == typeof note.name )
     {
         note = {'name': note}; 
     }
@@ -803,22 +803,34 @@ self.fluorine.Context.o.prototype =
     //
     // Use this as:
     //
-    //  UI().tie( UI('body').$().text('a').idgen() ).done() 
+    //      UI().tie( UI('body').$().text('a').idgen() ).done() 
     //
     // Instead of:
     //
-    //  UI().tie( idGen( UI('body').$().text('a') ) ).done() 
+    //      UI().tie( idGen( UI('body').$().text('a') ) ).done() 
+    //
+    // And the concat trick is still workable:
+    //
+    //      var uis = _.reduce(data, function(datum)
+    //      {
+    //          return mem.bind( UI(datum)._(function(){ /* Do actions. */ }).done() ).done()
+    //
+    //      }, UI().done())
+    //
+    //      return uis.idgen()
     //
     // Because remenbering to close parenthesis is a annoying thing.
     //
     // :: ( Context m, Context n, Process b )  => m n a -> ( () -> ( () -> b) )
     ,idgen: function()
     {
-        return _.bind( function()
+        var r = _.bind( function()
         {
             return this.done()
 
         }, this)
+
+        return r
     }
 
     // Close this context and ready to run.

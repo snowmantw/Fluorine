@@ -624,9 +624,17 @@ The function return by default <code>done()</code> will automatically execute th
               </div>
               <p>Wrap done context chain to avoid redundant generator function.</p>
 <p>Use this as:</p>
-<p> UI().tie( UI(&#39;body&#39;).$().text(&#39;a&#39;).idgen() ).done() </p>
+<pre><code> UI().tie( UI(&#39;body&#39;).$().text(&#39;a&#39;).idgen() ).done() </code></pre>
 <p>Instead of:</p>
-<p> UI().tie( idGen( UI(&#39;body&#39;).$().text(&#39;a&#39;) ) ).done() </p>
+<pre><code> UI().tie( idGen( UI(&#39;body&#39;).$().text(&#39;a&#39;) ) ).done() </code></pre>
+<p>And the concat trick is still workable:</p>
+<pre><code> var uis = _.reduce(data, function(datum)
+ {
+     return mem.bind( UI(datum)._(function(){ /* Do actions. */ }).done() ).done()
+
+ }, UI().done())
+
+ return uis.idgen()</code></pre>
 <p>Because remenbering to close parenthesis is a annoying thing.</p>
 <p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; ( () -&gt; b) )</p>
 
@@ -634,11 +642,13 @@ The function return by default <code>done()</code> will automatically execute th
             
             <div class="content"><div class='highlight'><pre>    ,idgen: <span class="keyword">function</span>()
     {
-        <span class="keyword">return</span> _.bind( <span class="keyword">function</span>()
+        <span class="keyword">var</span> r = _.bind( <span class="keyword">function</span>()
         {
             <span class="keyword">return</span> <span class="keyword">this</span>.done()
 
         }, <span class="keyword">this</span>)
+
+        <span class="keyword">return</span> r
     }</pre></div></div>
             
         </li>
