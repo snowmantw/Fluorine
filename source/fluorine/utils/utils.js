@@ -2,11 +2,23 @@
 // For Node.js environment.
 // These lines will be the header of merged 'fluorine.js'.
 //
-if( 'undefined' != typeof require )
+if( 'undefined' != typeof require && 'undefined' == window._ )
 {
     _ = require('underscore')
 }
-self = ( 'undefined' == typeof self ) ?  {} : self 
+
+
+// Node-webkit make things more complex...
+//
+// In browser.
+if( 'undefined' != typeof window && 'undefined' == typeof global){ self = window }
+
+// In Node-webkit.
+else if('undefined' != typeof window && 'undefined' != typeof global){ self = window }
+
+// In Node.
+else if('undefined' == typeof window){ self = global }
+
 self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 
 // ----
@@ -22,17 +34,16 @@ self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 //
 self.fluorine.infect = function()
 {
-    if( 'undefined' != typeof window){ global = self }
     self.fluorine.infect.__original = {}
     _.each
     (   self.fluorine.infect.__registry
     ,   function(context, name)
     {
-        self.fluorine.infect.__original[name] = global[name]
-        global[name] = context
+        self.fluorine.infect.__original[name] = self[name]
+        self[name] = context
     }
     )
-    global['fluorine'] = self.fluorine
+    self['fluorine'] = self.fluorine
 }
 
 // Heal the infection.
