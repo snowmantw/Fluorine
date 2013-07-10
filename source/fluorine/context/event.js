@@ -88,7 +88,7 @@ self.fluorine.Event.o.prototype = _.extend
         // If the note is `undefined`, means directly run.
         if('undefined' == typeof this.__name)
         {
-            return this.__process
+            return this.__process.run()
         }
 
         // Append a UUID to the note name, so we will not override the original name.
