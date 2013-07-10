@@ -26,6 +26,11 @@ self.fluorine.Event = function(name)
 // Override the basic context's version for saving the note name,
 // which will be used in the last definition step ( `run` ).
 //
+// Note: if the name is `undefined`, means this constructor just want to build a chain,
+// not hook on events.
+//
+// Example: Event().tie(Event('foo')...)...done()
+//
 self.fluorine.Event.o = function(name)
 {
     this.__run_times = 0    // Counter can only initialize once.
@@ -34,7 +39,6 @@ self.fluorine.Event.o = function(name)
     // For binding.
     this.__continue_fn = null
 
-    // Will be used in `done`.
     this.__name = name
 
     // Initialize step only pass the value to the next step.
@@ -81,6 +85,11 @@ self.fluorine.Event.o.prototype = _.extend
         {
             throw new Error("ERROR: The context is not done.");
         }
+        // If the note is `undefined`, means directly run.
+        if('undefined' == typeof this.__name)
+        {
+            return this.__process
+        }
 
         // Append a UUID to the note name, so we will not override the original name.
         var id = this.__name+'.'+fluorine.uuid()
@@ -88,7 +97,7 @@ self.fluorine.Event.o.prototype = _.extend
         // NOTE: If this event bind other contexts,
         // simpley re-execute it will rebind all contexts.
         // This will cause duplicated inner contexts problem.
-        
+
         // Begin from first step of this context.
         fluorine.Notifier.on(id, _.bind( function(note){
             this.trigger(note)
