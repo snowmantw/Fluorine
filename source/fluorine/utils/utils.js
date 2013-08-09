@@ -26,7 +26,7 @@ self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 // TODO: Since we have to build the fluorine itself, these default settings
 // may be generated while making it.
 self.fluorine.__debugger = function(){ debugger }
-self.fluorine.__logger   = { log: function(m, v, e){ console.log(m, v, e) } }
+self.fluorine.__tracer   = { trace: function(m, v, e){ console.log(m, v, e) } }
 
 // ----
 // ## Utils 
@@ -97,19 +97,19 @@ self.fluorine.debug = function(mode)
     return self.fluorine.debug.__debug
 }
 
-// Logger should come with "log" function which 
-// can be called as: logger.log(message, val, env)
+// Tracer should come with "trace" function which 
+// can be called as: logger.trace(message, val, env)
 //
 // Environment will output all named variables inside the context at the stage.
 //
-// :: Logger | None -> Logger
-self.fluorine.logger = function(logger)
+// :: Tracer | None -> Tracer
+self.fluorine.tracer = function(tracer)
 {
-    if( ! _.isUndefined(logger) )
+    if( ! _.isUndefined(tracer) )
     {
-        self.fluorine.logger.__logger = logger 
+        self.fluorine.__tracer = tracer 
     }
-    return self.fluorine.logger.__logger
+    return self.fluorine.__tracer
 }
 
 // Logger functions for whole fluorine.

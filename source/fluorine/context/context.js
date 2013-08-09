@@ -404,22 +404,22 @@ self.fluorine.Context.o.prototype =
         //
     }
 
-   // Log received result and any message to the logger.
-   // Logger can be specificed with `fluorine.logger`.
+   // Trace received result and any message to the logger.
+   // Tracer can be specificed with `fluorine.logger`.
    // 
    // Message is an optional (Maybe) parameter.
    //
    // :: ( Context m, Context n, Process a) => 
    // Maybe Message -> m n a -> m n a
-   ,log: function(msg)
+   ,trace: function(msg)
    {
         this.__process.next
         (   _.bind( function(val)
         {
-            fluorine.log(msn, val, this.__environment)
+            fluorine.__tracer.trace(msg, val, this.__environment)
             this.__process.run(val)
         },  this
-        ), 'Context::log' )
+        ), 'Context::trace' )
         return this
    }
 
