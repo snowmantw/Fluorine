@@ -22,10 +22,18 @@ else if('undefined' == typeof window){ self = global }
 self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 
 // ----
+// Setup some basic, default settings.
+// TODO: Since we have to build the fluorine itself, these default settings
+// may be generated while making it.
+self.fluorine.__debugger = function(){ debugger }
+self.fluorine.__logger   = { log: function(m, v, e){ console.log(m, v, e) } }
+
+// ----
 // ## Utils 
 //
 // Some `fluorine` module functions.
 //
+
 
 // Put fluorine contexts to window/self scope.
 // After infecting, user can directly call `Context()...` without prefix `fluorine.`
@@ -87,6 +95,21 @@ self.fluorine.debug = function(mode)
         self.fluorine.debug.__debug = mode 
     }
     return self.fluorine.debug.__debug
+}
+
+// Logger should come with "log" function which 
+// can be called as: logger.log(message, val, env)
+//
+// Environment will output all named variables inside the context at the stage.
+//
+// :: Logger | None -> Logger
+self.fluorine.logger = function(logger)
+{
+    if( ! _.isUndefined(logger) )
+    {
+        self.fluorine.logger.__logger = logger 
+    }
+    return self.fluorine.logger.__logger
 }
 
 // Logger functions for whole fluorine.
