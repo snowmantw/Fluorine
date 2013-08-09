@@ -142,6 +142,22 @@ self.fluorine.Process.o.prototype.refresh = function()
     this.__recycle_queue = []
 }
 
+// Break the process for debugging.
+self.fluorine.Process.o.prototype.break = function(message, args)
+{   
+    var msg = _.isUndefined(message) ? "" : message
+
+    // Fetch the last, executed step except the break itself.
+    var idx_prevstep = this.__recycle_queue.length - 1 - 1
+    var __fn = this.__recycle_queue[idx_prevstep]
+    fluorine.logger()('[DEBUG] Process stop at step #'+(idx_prevstep)
+                        +', step name(if any): '+__fn.__name
+                        +', message: '+msg
+                        +'; ( call with ):', args
+                     )
+    debugger 
+} 
+
 // Extract the last result of called functions.
 //
 // extract:: Process ( a->b ) -> b

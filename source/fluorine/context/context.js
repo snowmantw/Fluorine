@@ -423,6 +423,22 @@ self.fluorine.Context.o.prototype =
         return this
    }
 
+   // Break the current running chain with runtime's debugger.
+   //
+   // :: ( Context m, Context n, Process a) => 
+   // Maybe Message -> m n a -> m n a
+   ,break: function(msg)
+   {
+        this.__process.next
+        (   _.bind( function(val)
+        {
+            this.__process.break(msg, val)
+            this.__process.run(val)
+        },  this
+        ), 'Context::break' )
+        return this
+   } 
+
    // Inner implement function.
    // Inject a continue function into this context's step, 
    // and avoid directly running after this context got `done`.

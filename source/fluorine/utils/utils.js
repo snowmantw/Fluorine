@@ -25,7 +25,7 @@ self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 // Setup some basic, default settings.
 // TODO: Since we have to build the fluorine itself, these default settings
 // may be generated while making it.
-self.fluorine.__debugger = function(){ debugger }
+
 self.fluorine.__tracer   = { trace: function(m, v, e){ console.log(m, v, e) } }
 
 // ----
