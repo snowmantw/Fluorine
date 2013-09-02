@@ -101,10 +101,16 @@ self.fluorine.Process.o.prototype.run = function(result)
 
     try{
         // TODO: Should use logger and debugging level...
-        fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)
-                            +', step name(if any): '+__fn.__name
-                            +' ( call with ),', arguments
-                         )
+        //fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)
+        //                    +', step name(if any): '+__fn.__name
+        //                    +' ( call with ),', arguments
+        //                 )
+
+        fluorine.logger()( (__fn.__name == '' || 'undefined' == typeof __fn.name ?
+                            '<unamed>' :
+                            __fn.__name 
+                           )
+                         , arguments)
 
         __fn.apply({}, arguments)
     } catch(e)
@@ -112,7 +118,13 @@ self.fluorine.Process.o.prototype.run = function(result)
         // Print multiple times when this step is deep in stack.
         if( _.isUndefined(e.__printed) )
         {
-            fluorine.logger()('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
+            fluorine.logger()( '[X]' +
+                               (__fn.__name == '' || 'undefined' == typeof __fn.name ?
+                                '<unamed>' :
+                                __fn.__name 
+                               )
+                             , e
+                             )
             e.__printed = true
         }
         //debugger
