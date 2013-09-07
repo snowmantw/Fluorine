@@ -132,6 +132,21 @@ while contexted functions can has type constrains.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
               </div>
+              <p>For <code>idgen</code>, see it for more information.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.__idgen_done_fn = <span class="literal">null</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
               <p>Initialize step only pass the value to the next step.</p>
 
             </div>
@@ -147,11 +162,11 @@ self.fluorine.Context.o.prototype =
         </li>
         
         
-        <li id="section-7">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
               <p>It should only bind pure functions. </p>
 <p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; b ) -&gt; m n b</p>
@@ -172,11 +187,11 @@ self.fluorine.Context.o.prototype =
         </li>
         
         
-        <li id="section-8">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
               <p>Help function to name a value in this context&#39;s inner environment.</p>
 <p>:: m n a -&gt; String -&gt; m n a</p>
@@ -198,11 +213,11 @@ self.fluorine.Context.o.prototype =
         </li>
         
         
-        <li id="section-9">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <p>@2013-01-17 22:44:10+08:00</p>
 <p>NOTE: This is NOT a real MonadTransformer bind.
@@ -218,11 +233,11 @@ so we keep it in here for convience.</p>
         </li>
         
         
-        <li id="section-10">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <p>Bind another context as inner context.
 Bound function ( context generator ) can access the inner environment.
@@ -240,11 +255,11 @@ The generated context should be done.</p>
         </li>
         
         
-        <li id="section-11">
+        <li id="section-12">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
               <p>Pattern:  ----          ----     ...    base  context
              |----||----|  |---- ...    inner context</p>
@@ -256,11 +271,11 @@ The generated context should be done.</p>
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p>Common mistake check.</p>
 
@@ -271,11 +286,11 @@ The generated context should be done.</p>
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
               <p>Can&#39;t just execute the inner and get value. 
 because IO context haven&#39;t <code>extract()</code>, 
@@ -289,11 +304,11 @@ Then insert a &quot;return&quot; step, let the context return to the base contex
         </li>
         
         
-        <li id="section-14">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <p>Pass base context&#39; environment to inner context.
 Note: Even though cloning it is more proper, but cost time to do that seems unecessary.</p>
@@ -309,11 +324,11 @@ Note: Even though cloning it is more proper, but cost time to do that seems unec
         </li>
         
         
-        <li id="section-15">
+        <li id="section-16">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
               <p>The last step of inner monad should already transform it as base monad,
 just like type signature require: ( a -&gt; m n b ).</p>
@@ -336,11 +351,11 @@ the pass out context legal or not.  </p>
         </li>
         
         
-        <li id="section-16">
+        <li id="section-17">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Concurrently execute this action chain.</p>
 <p>This function will immediately return, then execute the next step.
@@ -361,11 +376,11 @@ The target action chain will execute asynchronously.</p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <p>Execute the inner context and don&#39;t wait it.</p>
 
@@ -376,11 +391,11 @@ The target action chain will execute asynchronously.</p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
               <p>TODO: Maybe we can Use immdiately returning worker to get more close to real fork.
 But still can&#39;t put the subchain in the worker because limitation of WebWorker.</p>
@@ -398,11 +413,11 @@ But still can&#39;t put the subchain in the worker because limitation of WebWork
         </li>
         
         
-        <li id="section-19">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>Try to implement real bind like transformer&#39;s.</p>
 <p>:: Context m,n =&gt; m n a -&gt; ( a -&gt; m n b ) -&gt; m n b</p>
@@ -419,11 +434,11 @@ But still can&#39;t put the subchain in the worker because limitation of WebWork
         </li>
         
         
-        <li id="section-20">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <p>As normal transformer described, the <code>bind</code> will receive a inner monadic function,
 and we should embedded our judgement function of base monad in it&#39;s context.</p>
@@ -441,11 +456,11 @@ This is described in the <code>done</code> function ( see what it return ).</p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>Ok, we can access to <code>ContextM a</code>, the <code>na</code>&#39;s result.
 We should decide how to continue with this result,
@@ -471,11 +486,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-22">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p>-&gt; M n a means THIS should be a state with such sig. and <code>na</code> inner is ok enough.</p>
 
@@ -486,11 +501,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p>We must get <code>n b</code> and pass it to next step, rather than <code>m n b</code></p>
 
@@ -513,11 +528,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-24">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>Initialize environment and others.</p>
 <p>:: Context m,n =&gt; m n a -&gt; b -&gt; m n b</p>
@@ -533,11 +548,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-25">
+        <li id="section-26">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-25">&#182;</a>
+                <a class="pilcrow" href="#section-26">&#182;</a>
               </div>
               <p>If bound, there is an environment from base context.</p>
 
@@ -553,11 +568,11 @@ But in our contexts, asynchonous contexts are still the problem</p>
         </li>
         
         
-        <li id="section-26">
+        <li id="section-27">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-26">&#182;</a>
+                <a class="pilcrow" href="#section-27">&#182;</a>
               </div>
               <p>Variant lambda, for simulate the &#39;let..in&#39; syntax feature. 
 User must chain <code>as()</code> after this function.</p>
@@ -577,11 +592,11 @@ The only difference is this lambda must chain <code>as()</code> after.</p>
         </li>
         
         
-        <li id="section-27">
+        <li id="section-28">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-27">&#182;</a>
+                <a class="pilcrow" href="#section-28">&#182;</a>
               </div>
               <p>Run all steps in this context.
 The function return by default <code>done()</code> will automatically execute this functon.</p>
@@ -599,11 +614,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-28">
+        <li id="section-29">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-28">&#182;</a>
+                <a class="pilcrow" href="#section-29">&#182;</a>
               </div>
               <p>Begin from first step of this context.</p>
 
@@ -616,11 +631,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-29">
+        <li id="section-30">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-29">&#182;</a>
+                <a class="pilcrow" href="#section-30">&#182;</a>
               </div>
               <p>Wrap done context chain to avoid redundant generator function.</p>
 <p>Use this as:</p>
@@ -635,7 +650,7 @@ The function return by default <code>done()</code> will automatically execute th
  }, UI().done())
 
  return uis.idgen()</code></pre>
-<p>Because remenbering to close parenthesis is a annoying thing.</p>
+<p>Because remembering to close parenthesis is a annoying thing.</p>
 <p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; ( () -&gt; b) )</p>
 
             </div>
@@ -643,8 +658,46 @@ The function return by default <code>done()</code> will automatically execute th
             <div class="content"><div class='highlight'><pre>    ,idgen: <span class="keyword">function</span>()
     {
         <span class="keyword">var</span> r = _.bind( <span class="keyword">function</span>()
-        {
-            <span class="keyword">return</span> <span class="keyword">this</span>.done()
+        {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-31">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-31">&#182;</a>
+              </div>
+              <p>If the chain had been defined, omit to define it again.
+This is where the <code>idgen</code> different from the anonymous generator:
+the later can define a new chain every time it gets called,
+but we&#39;re hard to define a chain itself in its own member functions.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">if</span> (<span class="keyword">this</span>.__done) { <span class="keyword">return</span> <span class="keyword">this</span>.__idgen_done_fn }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-32">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-32">&#182;</a>
+              </div>
+              <p>To keep the generated &#39;done_fn&#39; function.
+The function can be used to execute the chain again.
+In fact when every time the anonymous generator gets executed, 
+the <code>done_fn</code> will be the final result caller received.
+So we must make this behavior avaliable in this function, too.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> done_fn = <span class="keyword">this</span>.done()
+            <span class="keyword">this</span>.__idgen_done_fn = done_fn
+            <span class="keyword">return</span> done_fn
 
         }, <span class="keyword">this</span>)
 
@@ -654,11 +707,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-30">
+        <li id="section-33">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-30">&#182;</a>
+                <a class="pilcrow" href="#section-33">&#182;</a>
               </div>
               <p>Close this context and ready to run.</p>
 <p>:: ( Context m, Context n, Process b )  =&gt; m n a -&gt; ( () -&gt; b )</p>
@@ -671,11 +724,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-31">
+        <li id="section-34">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-31">&#182;</a>
+                <a class="pilcrow" href="#section-34">&#182;</a>
               </div>
               <p>Already done.</p>
 
@@ -687,11 +740,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-32">
+        <li id="section-35">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-32">&#182;</a>
+                <a class="pilcrow" href="#section-35">&#182;</a>
               </div>
               <p><strong> Runtime Stage </strong></p>
 
@@ -700,11 +753,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-33">
+        <li id="section-36">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-33">&#182;</a>
+                <a class="pilcrow" href="#section-36">&#182;</a>
               </div>
               <p>The last step of this context.</p>
 
@@ -720,11 +773,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-34">
+        <li id="section-37">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-34">&#182;</a>
+                <a class="pilcrow" href="#section-37">&#182;</a>
               </div>
               <p>If we want to continue the process:</p>
 
@@ -740,11 +793,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-35">
+        <li id="section-38">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-35">&#182;</a>
+                <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
               <p><strong> Definition Stage </strong></p>
 <p>After definition, return a function to let user choose evaluate this context immediately or later.</p>
@@ -764,11 +817,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-36">
+        <li id="section-39">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-36">&#182;</a>
+                <a class="pilcrow" href="#section-39">&#182;</a>
               </div>
               <p>Don&#39;t run context, but set continue function and return self.</p>
 
@@ -798,11 +851,11 @@ The function return by default <code>done()</code> will automatically execute th
         </li>
         
         
-        <li id="section-37">
+        <li id="section-40">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-37">&#182;</a>
+                <a class="pilcrow" href="#section-40">&#182;</a>
               </div>
               <p>Attach a simple <code>tie</code> function to the <code>done_fn</code>
 allow user to concat other contexts. For example:</p>
@@ -822,11 +875,67 @@ allow user to concat other contexts. For example:</p>
         </li>
         
         
-        <li id="section-38">
+        <li id="section-41">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-38">&#182;</a>
+                <a class="pilcrow" href="#section-41">&#182;</a>
+              </div>
+              <p>Trace received result and any message to the logger.
+Tracer can be specificed with <code>fluorine.logger</code>.</p>
+<p>Message is an optional (Maybe) parameter.</p>
+<p>:: ( Context m, Context n, Process a) =&gt; 
+Maybe Message -&gt; m n a -&gt; m n a</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,trace: <span class="keyword">function</span>(msg)
+   {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            fluorine.__tracer.trace(msg, val, <span class="keyword">this</span>.__environment)
+            <span class="keyword">this</span>.__process.run(val)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::trace'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+   }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-42">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-42">&#182;</a>
+              </div>
+              <p>Break the current running chain with runtime&#39;s debugger.</p>
+<p>:: ( Context m, Context n, Process a) =&gt; 
+Maybe Message -&gt; m n a -&gt; m n a</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,<span class="keyword">break</span>: <span class="keyword">function</span>(msg)
+   {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            <span class="keyword">this</span>.__process.<span class="keyword">break</span>(msg, val)
+            <span class="keyword">this</span>.__process.run(val)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::break'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+   }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-43">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-43">&#182;</a>
               </div>
               <p>Inner implement function.
 Inject a continue function into this context&#39;s step, 

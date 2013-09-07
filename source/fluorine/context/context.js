@@ -50,6 +50,9 @@ self.fluorine.Context.o = function(a)
     // For tieing.
     this.__continue_fn = null
 
+    // For `idgen`, see it for more information.
+    this.__idgen_done_fn = null
+
     // Initialize step only pass the value to the next step.
     this.initialize(a)
 
@@ -311,14 +314,27 @@ self.fluorine.Context.o.prototype =
     //
     //      return uis.idgen()
     //
-    // Because remenbering to close parenthesis is a annoying thing.
+    // Because remembering to close parenthesis is a annoying thing.
     //
     // :: ( Context m, Context n, Process b )  => m n a -> ( () -> ( () -> b) )
     ,idgen: function()
     {
         var r = _.bind( function()
         {
-            return this.done()
+            // If the chain had been defined, omit to define it again.
+            // This is where the `idgen` different from the anonymous generator:
+            // the later can define a new chain every time it gets called,
+            // but we're hard to define a chain itself in its own member functions.
+            if (this.__done) { return this.__idgen_done_fn }
+
+            // To keep the generated 'done_fn' function.
+            // The function can be used to execute the chain again.
+            // In fact when every time the anonymous generator gets executed, 
+            // the `done_fn` will be the final result caller received.
+            // So we must make this behavior avaliable in this function, too.
+            var done_fn = this.done()
+            this.__idgen_done_fn = done_fn
+            return done_fn
 
         }, this)
 

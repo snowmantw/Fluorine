@@ -240,14 +240,19 @@ if it&#39;s not the end of the process.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
-              <p>TODO: Should use logger and debugging level...</p>
+              <p>TODO: Should use logger and debugging level...
+fluorine.logger()(&#39;[DEBUG] Process executing step #&#39;+(this.<strong>recycle_queue.length - 1)
+                   +&#39;, step name(if any): &#39;+</strong>fn.__name
+                   +&#39; ( call with ),&#39;, arguments
+                )</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        fluorine.logger()(<span class="string">'[DEBUG] Process executing step #'</span>+(<span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span>)
-                            +<span class="string">', step name(if any): '</span>+__fn.__name
-                            +<span class="string">' ( call with ),'</span>, arguments
-                         )
+            <div class="content"><div class='highlight'><pre>        fluorine.logger()( (__fn.__name == <span class="string">''</span> || <span class="string">'undefined'</span> == <span class="keyword">typeof</span> __fn.name ?
+                            <span class="string">'&lt;unamed&gt;'</span> :
+                            __fn.__name 
+                           )
+                         , arguments)
 
         __fn.apply({}, arguments)
     } <span class="keyword">catch</span>(e)
@@ -268,7 +273,13 @@ if it&#39;s not the end of the process.</p>
             
             <div class="content"><div class='highlight'><pre>        <span class="keyword">if</span>( _.isUndefined(e.__printed) )
         {
-            fluorine.logger()(<span class="string">'[ERROR] Process terminated at step #'</span>+(<span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span>)+<span class="string">', step name(if any): '</span>+__fn.__name, e)
+            fluorine.logger()( <span class="string">'[X]'</span> +
+                               (__fn.__name == <span class="string">''</span> || <span class="string">'undefined'</span> == <span class="keyword">typeof</span> __fn.name ?
+                                <span class="string">'&lt;unamed&gt;'</span> :
+                                __fn.__name 
+                               )
+                             , e
+                             )
             e.__printed = <span class="literal">true</span>
         }</pre></div></div>
             
@@ -342,6 +353,46 @@ The contextes need not it.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Break the process for debugging.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.<span class="keyword">break</span> = <span class="keyword">function</span>(message, args)
+{   
+    <span class="keyword">var</span> msg = _.isUndefined(message) ? <span class="string">""</span> : message</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Fetch the last, executed step except the break itself.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">var</span> idx_prevstep = <span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span> - <span class="number">1</span>
+    <span class="keyword">var</span> __fn = <span class="keyword">this</span>.__recycle_queue[idx_prevstep]
+    fluorine.logger()(<span class="string">'[DEBUG] Process stop at step #'</span>+(idx_prevstep)
+                        +<span class="string">', step name(if any): '</span>+__fn.__name
+                        +<span class="string">', message: '</span>+msg
+                        +<span class="string">'; ( call with ):'</span>, args
+                     )
+    debugger 
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <p>Extract the last result of called functions.</p>
 <p>extract:: Process ( a-&gt;b ) -&gt; b</p>

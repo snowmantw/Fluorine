@@ -85,6 +85,9 @@ Should pass in a name of handling event.</p>
               <p>Inner implement of this context. 
 Override the basic context&#39;s version for saving the note name,
 which will be used in the last definition step ( <code>run</code> ).</p>
+<p>Note: if the name is <code>undefined</code>, means this constructor just want to build a chain,
+not hook on events.</p>
+<p>Example: Event().tie(Event(&#39;foo&#39;)...)...done()</p>
 
             </div>
             
@@ -106,7 +109,9 @@ which will be used in the last definition step ( <code>run</code> ).</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.__continue_fn = <span class="literal">null</span></pre></div></div>
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.__continue_fn = <span class="literal">null</span>
+
+    <span class="keyword">this</span>.__name = name</pre></div></div>
             
         </li>
         
@@ -116,21 +121,6 @@ which will be used in the last definition step ( <code>run</code> ).</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
-              </div>
-              <p>Will be used in <code>done</code>.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>    <span class="keyword">this</span>.__name = name</pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-7">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
               <p>Initialize step only pass the value to the next step.</p>
 
@@ -144,11 +134,11 @@ which will be used in the last definition step ( <code>run</code> ).</p>
         </li>
         
         
-        <li id="section-8">
+        <li id="section-7">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
+                <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
               <p>Extends basic the context.</p>
 
@@ -159,11 +149,11 @@ which will be used in the last definition step ( <code>run</code> ).</p>
         </li>
         
         
-        <li id="section-9">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-9">&#182;</a>
+                <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
               <p>Extends our new functions.</p>
 
@@ -177,11 +167,11 @@ which will be used in the last definition step ( <code>run</code> ).</p>
         </li>
         
         
-        <li id="section-10">
+        <li id="section-9">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-10">&#182;</a>
+                <a class="pilcrow" href="#section-9">&#182;</a>
               </div>
               <p>Override exist one to provide more 
 debug message while the event got triggered.</p>
@@ -199,11 +189,11 @@ debug message while the event got triggered.</p>
         </li>
         
         
-        <li id="section-11">
+        <li id="section-10">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-11">&#182;</a>
+                <a class="pilcrow" href="#section-10">&#182;</a>
               </div>
               <p>If bound, there is an environment from base context.</p>
 
@@ -219,11 +209,11 @@ debug message while the event got triggered.</p>
         </li>
         
         
-        <li id="section-12">
+        <li id="section-11">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-11">&#182;</a>
               </div>
               <p>Override existing version to run this chain only when event triggered.
 The function return by default <code>done()</code> will automatically execute this functon.</p>
@@ -236,6 +226,24 @@ The function return by default <code>done()</code> will automatically execute th
         <span class="keyword">if</span>( ! <span class="keyword">this</span>.__done )
         {
             <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">"ERROR: The context is not done."</span>);
+        }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>If the note is <code>undefined</code>, means directly run.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">if</span>(<span class="string">'undefined'</span> == <span class="keyword">typeof</span> <span class="keyword">this</span>.__name)
+        {
+            <span class="keyword">return</span> <span class="keyword">this</span>.__process.run()
         }</pre></div></div>
             
         </li>
@@ -265,19 +273,7 @@ The function return by default <code>done()</code> will automatically execute th
               <p>NOTE: If this event bind other contexts,
 simpley re-execute it will rebind all contexts.
 This will cause duplicated inner contexts problem.</p>
-
-            </div>
-            
-        </li>
-        
-        
-        <li id="section-15">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
-              </div>
-              <p>Begin from first step of this context.</p>
+<p>Begin from first step of this context.</p>
 
             </div>
             
@@ -290,11 +286,11 @@ This will cause duplicated inner contexts problem.</p>
         </li>
         
         
-        <li id="section-16">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <p>Solution for strange behavior while bind Event in other context:</p>
 <p>Because Event has two entrypoint: </p>
@@ -317,11 +313,11 @@ will not be null, and it will continue with the rest part of base context.</p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-16">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
               <p>Don&#39;t continue with base context&#39;s remain steps.</p>
 

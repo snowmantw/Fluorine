@@ -2,18 +2,38 @@
 // For Node.js environment.
 // These lines will be the header of merged 'fluorine.js'.
 //
-if( 'undefined' != typeof require )
+if( 'undefined' != typeof require && 'undefined' == window._ )
 {
     _ = require('underscore')
 }
-self = ( 'undefined' == typeof self ) ?  {} : self 
+
+
+// Node-webkit make things more complex...
+//
+// In browser.
+if( 'undefined' != typeof window && 'undefined' == typeof global){ self = window }
+
+// In Node-webkit.
+else if('undefined' != typeof window && 'undefined' != typeof global){ self = window }
+
+// In Node.
+else if('undefined' == typeof window){ self = global }
+
 self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
+
+// ----
+// Setup some basic, default settings.
+// TODO: Since we have to build the fluorine itself, these default settings
+// may be generated while making it.
+
+self.fluorine.__tracer   = { trace: function(m, v, e){ console.log(m, v, e) } }
 
 // ----
 // ## Utils 
 //
 // Some `fluorine` module functions.
 //
+
 
 // Put fluorine contexts to window/self scope.
 // After infecting, user can directly call `Context()...` without prefix `fluorine.`
@@ -22,17 +42,16 @@ self.fluorine = ( _.isUndefined(self.fluorine) ) ?  {} : self.fluorine
 //
 self.fluorine.infect = function()
 {
-    if( 'undefined' != typeof window){ global = self }
     self.fluorine.infect.__original = {}
     _.each
     (   self.fluorine.infect.__registry
     ,   function(context, name)
     {
-        self.fluorine.infect.__original[name] = global[name]
-        global[name] = context
+        self.fluorine.infect.__original[name] = self[name]
+        self[name] = context
     }
     )
-    global['fluorine'] = self.fluorine
+    self['fluorine'] = self.fluorine
 }
 
 // Heal the infection.
@@ -76,6 +95,21 @@ self.fluorine.debug = function(mode)
         self.fluorine.debug.__debug = mode 
     }
     return self.fluorine.debug.__debug
+}
+
+// Tracer should come with "trace" function which 
+// can be called as: logger.trace(message, val, env)
+//
+// Environment will output all named variables inside the context at the stage.
+//
+// :: Tracer | None -> Tracer
+self.fluorine.tracer = function(tracer)
+{
+    if( ! _.isUndefined(tracer) )
+    {
+        self.fluorine.__tracer = tracer 
+    }
+    return self.fluorine.__tracer
 }
 
 // Logger functions for whole fluorine.
@@ -234,10 +268,16 @@ self.fluorine.Process.o.prototype.run = function(result)
 
     try{
         // TODO: Should use logger and debugging level...
-        fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)
-                            +', step name(if any): '+__fn.__name
-                            +' ( call with ),', arguments
-                         )
+        //fluorine.logger()('[DEBUG] Process executing step #'+(this.__recycle_queue.length - 1)
+        //                    +', step name(if any): '+__fn.__name
+        //                    +' ( call with ),', arguments
+        //                 )
+
+        fluorine.logger()( (__fn.__name == '' || 'undefined' == typeof __fn.name ?
+                            '<unamed>' :
+                            __fn.__name 
+                           )
+                         , arguments)
 
         __fn.apply({}, arguments)
     } catch(e)
@@ -245,7 +285,13 @@ self.fluorine.Process.o.prototype.run = function(result)
         // Print multiple times when this step is deep in stack.
         if( _.isUndefined(e.__printed) )
         {
-            fluorine.logger()('[ERROR] Process terminated at step #'+(this.__recycle_queue.length - 1)+', step name(if any): '+__fn.__name, e)
+            fluorine.logger()( '[X]' +
+                               (__fn.__name == '' || 'undefined' == typeof __fn.name ?
+                                '<unamed>' :
+                                __fn.__name 
+                               )
+                             , e
+                             )
             e.__printed = true
         }
         //debugger
@@ -274,6 +320,22 @@ self.fluorine.Process.o.prototype.refresh = function()
     this.__queue = this.__recycle_queue
     this.__recycle_queue = []
 }
+
+// Break the process for debugging.
+self.fluorine.Process.o.prototype.break = function(message, args)
+{   
+    var msg = _.isUndefined(message) ? "" : message
+
+    // Fetch the last, executed step except the break itself.
+    var idx_prevstep = this.__recycle_queue.length - 1 - 1
+    var __fn = this.__recycle_queue[idx_prevstep]
+    fluorine.logger()('[DEBUG] Process stop at step #'+(idx_prevstep)
+                        +', step name(if any): '+__fn.__name
+                        +', message: '+msg
+                        +'; ( call with ):', args
+                     )
+    debugger 
+} 
 
 // Extract the last result of called functions.
 //
@@ -558,6 +620,9 @@ self.fluorine.Context.o = function(a)
     // For tieing.
     this.__continue_fn = null
 
+    // For `idgen`, see it for more information.
+    this.__idgen_done_fn = null
+
     // Initialize step only pass the value to the next step.
     this.initialize(a)
 
@@ -819,14 +884,27 @@ self.fluorine.Context.o.prototype =
     //
     //      return uis.idgen()
     //
-    // Because remenbering to close parenthesis is a annoying thing.
+    // Because remembering to close parenthesis is a annoying thing.
     //
     // :: ( Context m, Context n, Process b )  => m n a -> ( () -> ( () -> b) )
     ,idgen: function()
     {
         var r = _.bind( function()
         {
-            return this.done()
+            // If the chain had been defined, omit to define it again.
+            // This is where the `idgen` different from the anonymous generator:
+            // the later can define a new chain every time it gets called,
+            // but we're hard to define a chain itself in its own member functions.
+            if (this.__done) { return this.__idgen_done_fn }
+
+            // To keep the generated 'done_fn' function.
+            // The function can be used to execute the chain again.
+            // In fact when every time the anonymous generator gets executed, 
+            // the `done_fn` will be the final result caller received.
+            // So we must make this behavior avaliable in this function, too.
+            var done_fn = this.done()
+            this.__idgen_done_fn = done_fn
+            return done_fn
 
         }, this)
 
@@ -911,6 +989,41 @@ self.fluorine.Context.o.prototype =
         //
         //
     }
+
+   // Trace received result and any message to the logger.
+   // Tracer can be specificed with `fluorine.logger`.
+   // 
+   // Message is an optional (Maybe) parameter.
+   //
+   // :: ( Context m, Context n, Process a) => 
+   // Maybe Message -> m n a -> m n a
+   ,trace: function(msg)
+   {
+        this.__process.next
+        (   _.bind( function(val)
+        {
+            fluorine.__tracer.trace(msg, val, this.__environment)
+            this.__process.run(val)
+        },  this
+        ), 'Context::trace' )
+        return this
+   }
+
+   // Break the current running chain with runtime's debugger.
+   //
+   // :: ( Context m, Context n, Process a) => 
+   // Maybe Message -> m n a -> m n a
+   ,break: function(msg)
+   {
+        this.__process.next
+        (   _.bind( function(val)
+        {
+            this.__process.break(msg, val)
+            this.__process.run(val)
+        },  this
+        ), 'Context::break' )
+        return this
+   } 
 
    // Inner implement function.
    // Inject a continue function into this context's step, 
@@ -1633,6 +1746,11 @@ self.fluorine.Event = function(name)
 // Override the basic context's version for saving the note name,
 // which will be used in the last definition step ( `run` ).
 //
+// Note: if the name is `undefined`, means this constructor just want to build a chain,
+// not hook on events.
+//
+// Example: Event().tie(Event('foo')...)...done()
+//
 self.fluorine.Event.o = function(name)
 {
     this.__run_times = 0    // Counter can only initialize once.
@@ -1641,7 +1759,6 @@ self.fluorine.Event.o = function(name)
     // For binding.
     this.__continue_fn = null
 
-    // Will be used in `done`.
     this.__name = name
 
     // Initialize step only pass the value to the next step.
@@ -1688,6 +1805,11 @@ self.fluorine.Event.o.prototype = _.extend
         {
             throw new Error("ERROR: The context is not done.");
         }
+        // If the note is `undefined`, means directly run.
+        if('undefined' == typeof this.__name)
+        {
+            return this.__process.run()
+        }
 
         // Append a UUID to the note name, so we will not override the original name.
         var id = this.__name+'.'+fluorine.uuid()
@@ -1695,7 +1817,7 @@ self.fluorine.Event.o.prototype = _.extend
         // NOTE: If this event bind other contexts,
         // simpley re-execute it will rebind all contexts.
         // This will cause duplicated inner contexts problem.
-        
+
         // Begin from first step of this context.
         fluorine.Notifier.on(id, _.bind( function(note){
             this.trigger(note)
