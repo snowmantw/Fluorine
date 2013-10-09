@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+  <title>rtc.js</title>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <meta name="viewport" content="width=device-width, target-densitydpi=160dpi, initial-scale=1.0; maximum-scale=1.0; user-scalable=0;">
+  <link rel="stylesheet" media="all" href="docco.css" />
+</head>
+<body>
+  <div id="container">
+    <div id="background"></div>
+    
+    <ul class="sections">
+        
+          <li id="title">
+              <div class="annotation">
+                  <h1>rtc.js</h1>
+              </div>
+          </li>
+        
+        
+        
+        <li id="section-1">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-1">&#182;</a>
+              </div>
+              
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>
+<span class="keyword">if</span>( _.isUndefined(self.fluorine) )
+{
+    <span class="keyword">throw</span> <span class="keyword">new</span> Error(<span class="string">'[ERROR] Should include fluorine.utils first.'</span>)
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-2">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-2">&#182;</a>
+              </div>
+              <hr>
+
+            </div>
+            
+        </li>
+        
+        
+        <li id="section-3">
+            <div class="annotation">
+              
+              <div class="pilwrap for-h2">
+                <a class="pilcrow" href="#section-3">&#182;</a>
+              </div>
+              <h2>RTC</h2>
+<p>WebRTC context <em>builder</em>. It provides a fluent flow to establish the connection.
+User must provide other context functions to help the signal channel got established,
+which include:</p>
+<ul>
+<li>Get signal channel ID (a)</li>
+<li>Fetch all available channels&#39; ID (b)</li>
+<li>Update ICE &amp; SDP information construct the channel on the remote (c)</li>
+<li>Get Answer info and establish the connection (d)</li>
+</ul>
+<p>After RTC connection established, user should forward native events to handle them by
+the Event context as usual.</p>
+<p>Note that we will have a single-offerer, multi-answerers inside the context.
+Every offerer can register itself on the remote, then the answerers can the retrieve them.</p>
+<p>Usage:</p>
+<p>   RTC()
+     .id()           // (a): RTC {ice: ICE, sdp: SDP} -&gt; (() -&gt; m ID) -&gt; RTC ChannelID
+     .channels()     // (b): RTC ChannelID -&gt; (ChannelID -&gt; m OfferInfos)-&gt; RTC OfferInfos
+     .filter()       // (b): RTC OfferInfos -&gt; (OfferInfo -&gt; Boolean) -&gt; RTC OfferInfos
+     .signal()       // (c): RTC OfferInfos -&gt; (OfferInfos -&gt; m ()) -&gt; RTC ()
+     .establish()    // (d): RTC () -&gt; (() -&gt; m AnswerInfo) -&gt; RTC ()
+     .forward()      // After <em>all</em> channels got connected or failed, we can start to forward native events.
+     .forward()      // The RTC events would be prefixed with &#39;rtc.<channelID>&#39;
+     ...
+     .video()        // TODO: Attach the video stream
+     .audio()        // TODO: Attach the audio stream
+     .done()</p>
+<p>Type:
+   OfferInfo    :: {id: ChannelId, ice: ICE, sdp: SDP}
+   AnswerInfo   :: {id: ChannelId, ice: ICE, sdp: SDP}
+   OfferInfos   :: {id: OfferInfo}
+   AnswerInfos  :: {id: AnswerInfo}</p>
+<p>Model Diagram:</p>
+<h2>   [Remote]            --               [Local]</h2>
+<p>   (auto-gen) Answerer -- Offerer  (created)
+   (created)  Offerer  -- Answerer (auto-gen)
+   (created)  Offerer  -- Answerer (auto-gen)
+   (created)  Offerer  -- Answerer (auto-gen)</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.RTC = <span class="function"><span class="keyword">function</span> <span class="title">RTC</span><span class="params">(a)</span>
+{</span>
+  <span class="keyword">return</span> <span class="keyword">new</span> self.fluorine.RTC.o(a)
+}
+self.fluorine.RTC.o = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o</span><span class="params">(a)</span>
+{</span>
+  self.fluorine.Context.o.call(<span class="keyword">this</span>, a)
+  <span class="keyword">this</span>.offerer = <span class="literal">null</span>
+  <span class="keyword">this</span>.answerers = {}
+}
+_.extend( self.fluorine.RTC.o,
+{
+    __getPeerConnection: <span class="keyword">function</span>()
+    {
+        <span class="keyword">return</span> <span class="string">'undefined'</span> !== <span class="keyword">typeof</span>(mozRTCPeerConnection) ? mozRTCPeerConnection : webkitRTCPeerConnection
+    }
+})</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-4">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-4">&#182;</a>
+              </div>
+              <p>Extends the basic context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>_.extend( self.fluorine.RTC.o.prototype, self.fluorine.Context.o.prototype )</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-5">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-5">&#182;</a>
+              </div>
+              <p>Define it&#39;s uniq method beyond the basic context.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.RTC.o.prototype = _.extend
+( self.fluorine.RTC.o.prototype
+,
+{
+     __answerer_onChannelMessage: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__answerer_onChannelMessage</span><span class="params">()</span>
+    {</span>
+
+    }
+
+    ,__answerer_onChannelOpened: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__answerer_onChannelOpened</span><span class="params">()</span>
+    {</span>
+
+    }
+
+    ,__offerer_onChannelMessage: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelMessage</span><span class="params">()</span>
+    {</span>
+
+    }
+
+    ,__offerer_onChannelOpened: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelOpened</span><span class="params">()</span>
+    {</span>
+
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-6">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Register this peer&#39;s offerer SDP and ICE to remote and get the channel ID.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,id: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id</span><span class="params">(idgetter)</span>
+    {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
+              </div>
+              <p>Should get IDs after the getter got executed.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_step</span><span class="params">(ids)</span>
+        {</span>
+            <span class="keyword">var</span> _<span class="keyword">this</span> = <span class="keyword">this</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-8">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-8">&#182;</a>
+              </div>
+              <p>Must generate the SDP and ICE information, then send it to the remote.
+This peer connection is the <em>offerer</em>.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> RTCPeerConnection = RTC.o.__getPeerConnection()</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-9">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-9">&#182;</a>
+              </div>
+              <p>Bind two asynchronous data (ICE &amp; SDP) to one step
+without &#39;yield&#39;.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> mkInfo = {result: {}}
+            mkInfo.next = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_mkInfo</span><span class="params">(type, info)</span>
+            {</span>
+                mkInfo.result[type] = info</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-10">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-10">&#182;</a>
+              </div>
+              <p>&#39;Waiting&#39; the next result and then execute the chain
+to update them on remote.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                mkInfo.next = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_mkInfo_final</span><span class="params">(t2, i2)</span>
+                {</span>
+                    mkInfo.result[t2] = i2
+                    _<span class="keyword">this</span>.__process.run(mkInfo.result)
+                }
+            }
+
+            <span class="keyword">this</span>.offerer = <span class="keyword">new</span> RTCPeerConnection
+            ({
+                 onICE: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_onICE</span><span class="params">(candidate)</span>
+                {</span>
+                    mkInfo.next(<span class="string">'ice'</span>, candidate)
+                }
+                ,onOfferSDP: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_onSDP</span><span class="params">(sdp)</span>
+                {</span>
+                    mkInfo.next(<span class="string">'sdp'</span>, sdp)
+                }
+                ,onChannelMessage: <span class="keyword">this</span>.__offerer_onChannelMessage
+                ,onChannelOpened: <span class="keyword">this</span>.__offerer_onChannelOpened
+            })</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-11">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Put the <code>process.run</code> in the <code>mkInfo</code></p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        }
+        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::id'</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
+              </div>
+              <p>Tie it after run our handler, which should be able to send
+the info out.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">this</span>.tie(idgetter)
+
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-13">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-13">&#182;</a>
+              </div>
+              <p>Get SDP, ICE and other information from offerers.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,channels: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_channels</span><span class="params">(chgetter)</span>
+    {</span>
+        <span class="keyword">this</span>.tie(chgetter)
+        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_channels_step</span><span class="params">(channels)</span>
+        {</span>
+            <span class="keyword">this</span>.__process.run(channels)
+        }
+        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::channels'</span>)
+
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-14">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-14">&#182;</a>
+              </div>
+              <p>Pick up which channels this peer will need.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,filter: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_filter</span><span class="params">(pred)</span>
+    {</span>
+        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_filter_step</span><span class="params">(infos)</span>
+        {</span>
+            <span class="keyword">var</span> results = {}
+            <span class="keyword">for</span>(<span class="keyword">var</span> id <span class="keyword">in</span> infos)
+            {
+                <span class="keyword">var</span> info = infos[id]
+                <span class="keyword">if</span>(pred(info))
+                {
+                    results[info.id] = info
+                }
+            }
+            <span class="keyword">this</span>.__process.run(results)
+        }
+        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::filter'</span>)
+
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-15">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-15">&#182;</a>
+              </div>
+              <p>Need to let the offerer handles ICEs and SDPs form remote to answer the answerer&#39;s info.
+Except the Offerer offered by this peer itself, it must create as much as the channels
+selected at the filter stage.</p>
+<p>The other thing this stage should process is the created answerers should send their
+ICE and SDP back to the offerers. This will be done with the action provided to this function.</p>
+<p>sending_method:: [OfferInfo] -&gt; m ()</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,signal: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_signal</span><span class="params">(sending_method)</span>
+    {</span>
+        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_signal_step</span><span class="params">(infos)</span>
+        {</span>
+            <span class="keyword">var</span> _<span class="keyword">this</span> = <span class="keyword">this</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-16">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-16">&#182;</a>
+              </div>
+              <p>Bind two asynchronous data (ICE &amp; SDP) to one step
+without &#39;yield&#39;.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> mkInfo = {}
+            mkInfo.next = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_mkInfo</span><span class="params">(type, info, id, acc)</span>
+            {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>&#39;Waiting&#39; the next result and then execute the chain
+to update them on remote.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                mkInfo.next = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_mkInfo_final</span><span class="params">(t2, i2, id,acc)</span>
+                {</span>
+                    acc[id][type] = info
+                    acc[id][t2] = i2</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
+              <p>Must detect whether this is the last info and then send them all at once.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                    <span class="keyword">if</span>(infos.length == acc.length)
+                    {
+                        _<span class="keyword">this</span>.__process.run(acc)
+                    }
+                }
+            }
+
+            <span class="keyword">var</span> acc = {}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-19">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-19">&#182;</a>
+              </div>
+              <p>Create answerers for each information.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">for</span>( <span class="keyword">var</span> id <span class="keyword">in</span> infos)
+            {
+                <span class="keyword">var</span> info = infos[id]
+                <span class="keyword">var</span> RTCPeerConnection = RTC.o.__getPeerConnection()
+                <span class="keyword">var</span> answerer = <span class="keyword">new</span> RTCPeerConnection(
+                {  offerSDP: info.sdp
+                ,  onAnswerSDP: <span class="keyword">function</span>(sdp)
+                  {</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-20">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-20">&#182;</a>
+              </div>
+              <p>Send the answerer&#39;s SDP to the offerer.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                      mkInfo.next(<span class="string">'sdp'</span>, sdp, id, acc)
+                  }
+                ,  onICE: <span class="function"><span class="keyword">function</span> <span class="params">(candidate)</span>
+                  {</span></pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-21">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-21">&#182;</a>
+              </div>
+              <p>Send the answerer&#39;s ICE to the offerer.
+TODO: offerer must provide a way to hook the transferring the SDP and ICE to.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>                      mkInfo.next(<span class="string">'ice'</span>, candidate, id, acc)
+                  }
+                , onChannelMessage: <span class="keyword">this</span>.__answerer_onChannelMessage
+                , onChannelOpened: <span class="keyword">this</span>.__answerer_onChannelOpened
+                });
+
+                <span class="keyword">this</span>.answerers[info.id] = answerer
+            }
+        }
+        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::signal'</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-22">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-22">&#182;</a>
+              </div>
+              <p>Tie it after run our handler, which should be able to send
+the info out.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">this</span>.tie(sending_method)
+
+        <span class="keyword">return</span> <span class="keyword">this</span>
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-23">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-23">&#182;</a>
+              </div>
+              <p>Help the offerer inside this context to handle the answerer&#39;s information,
+then establish the connection.</p>
+<p>Remember that our architecture is single-offerer and multi-answerers.
+The offerer only needs to handle one answerer&#39;s information from the remote.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    ,establish: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_establish</span><span class="params">(waiting)</span>
+    {</span>
+        <span class="keyword">this</span>.tie(waiting)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-24">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-24">&#182;</a>
+              </div>
+              <p>After waiting, get the information and handle them to establish the connections.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_establish_step</span><span class="params">(info)</span>
+        {</span>
+            <span class="keyword">this</span>.offerer.addAnswerSDP( answer_sdp );
+            <span class="keyword">this</span>.offerer.addICE(
+            { sdpMLineIndex : info.ice.sdpMLineIndex
+            , candidate     : info.ice.candidate
+            });
+
+            <span class="keyword">this</span>.__process.run()
+        }
+        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::establish'</span>)
+        <span class="keyword">return</span> <span class="keyword">this</span>
+   }
+})
+
+self.fluorine.registerInfect(<span class="string">'RTC'</span>, self.fluorine.RTC)</pre></div></div>
+            
+        </li>
+        
+    </ul>
+  </div>
+</body>
+</html>

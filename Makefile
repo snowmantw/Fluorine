@@ -6,7 +6,7 @@ COFFEE = /usr/local/bin/coco -bcp
 DEMO = demo
 NODE = nodejs
 OBJS = notifier.js process.js utils.js
-OBJ_DEMOS = spec.js todo.js # context.js need addtional operations.
+OBJ_DEMOS = spec.js todo.js rtc.js # context.js need addtional operations.
 SOURCE = source
 SOURCE_FLUORINE = source/fluorine
 SOURCE_DEMO = source/demo
@@ -16,7 +16,7 @@ MERGED = fluorine
 PACKAGE_CONFIG = config
 DOCS=document
 
-all: clean utils notifier process context merge export package spec todo 
+all: clean utils notifier process context merge export package spec todo rtc 
 
 package:
 	@cp ${PACKAGE_CONFIG}/package.json ${BUILD_FLUORINE}/
@@ -49,11 +49,13 @@ context: clean
         cat ${SOURCE_FLUORINE}/$@/ui.js >> ${BUILD_FLUORINE}/context.js ;\
         cat ${SOURCE_FLUORINE}/$@/event.js >> ${BUILD_FLUORINE}/context.js ;\
         cat ${SOURCE_FLUORINE}/$@/socket.js >> ${BUILD_FLUORINE}/context.js ;\
+        cat ${SOURCE_FLUORINE}/$@/rtc.js >> ${BUILD_FLUORINE}/context.js ;\
 	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/context.js ;\
 	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/io.js ;\
 	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/ui.js ;\
 	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/event.js ;\
 	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/socket.js
+	docco -o ${DOCS}/context -c ${DOCS}/docco.css ${SOURCE_FLUORINE}/$@/rtc.js
 
 ${TARGETS}: clean
 	@if [ ! -e ${BUILD_FLUORINE} ]; then 	\
@@ -66,6 +68,7 @@ ${TARGET_DEMOS}: clean
 	@if [ ! -e ${BUILD_DEMO} ]; then 		\
 		mkdir -p ${BUILD_DEMO}  		  ; \
 	fi									  ;	\
-	find ${SOURCE_DEMO}/$@ -name "*.co" -exec ${COFFEE} -p -c {} > ${BUILD_DEMO}/$@.js \;
+	find ${SOURCE_DEMO}/$@ -name "*.co" -exec ${COFFEE} -p -c {} > ${BUILD_DEMO}/$@.js \; ; \
+	find ${SOURCE_DEMO}/$@ -name "*.js" -exec cat {} > ${BUILD_DEMO}/$@.js \;
 
 .PHONY: context merge export clean package
