@@ -159,15 +159,14 @@ _.extend( self.fluorine.RTC.o,
 
     }
 
-    ,__offerer_onChannelMessage: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelMessage</span><span class="params">()</span>
+    ,__offerer_onChannelMessage: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelMessage</span><span class="params">(evt)</span>
     {</span>
-
+        console.log(<span class="string">'offerer - channelMessage'</span>, evt.data)
     }
 
-    ,__offerer_onChannelOpened: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelOpened</span><span class="params">()</span>
+    ,__offerer_onChannelOpened: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o__offerer_onChannelOpened</span><span class="params">(evt)</span>
     {</span>
-
-    }</pre></div></div>
+        <span class="keyword">var</span> channel = evt.channel</pre></div></div>
             
         </li>
         
@@ -177,6 +176,24 @@ _.extend( self.fluorine.RTC.o,
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-6">&#182;</a>
+              </div>
+              <p>Can set binary format here.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>        
+        console.log(<span class="string">'offerer - channelOpened'</span>)
+        channel.onmessage = <span class="keyword">this</span>.__offerer_onChannelMessage.bind(<span class="keyword">this</span>)
+    }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-7">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-7">&#182;</a>
               </div>
               <p>Register this peer&#39;s offerer SDP and ICE to remote and get the channel ID.</p>
 
@@ -188,11 +205,11 @@ _.extend( self.fluorine.RTC.o,
         </li>
         
         
-        <li id="section-7">
+        <li id="section-8">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-7">&#182;</a>
+                <a class="pilcrow" href="#section-8">&#182;</a>
               </div>
               <p>Should get IDs after the getter got executed.</p>
 
@@ -201,22 +218,6 @@ _.extend( self.fluorine.RTC.o,
             <div class="content"><div class='highlight'><pre>        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_step</span><span class="params">(ids)</span>
         {</span>
             <span class="keyword">var</span> _<span class="keyword">this</span> = <span class="keyword">this</span></pre></div></div>
-            
-        </li>
-        
-        
-        <li id="section-8">
-            <div class="annotation">
-              
-              <div class="pilwrap ">
-                <a class="pilcrow" href="#section-8">&#182;</a>
-              </div>
-              <p>Must generate the SDP and ICE information, then send it to the remote.
-This peer connection is the <em>offerer</em>.</p>
-
-            </div>
-            
-            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> RTCPeerConnection = RTC.o.__getPeerConnection()</pre></div></div>
             
         </li>
         
@@ -256,21 +257,7 @@ to update them on remote.</p>
                     mkInfo.result[t2] = i2
                     _<span class="keyword">this</span>.__process.run(mkInfo.result)
                 }
-            }
-
-            <span class="keyword">this</span>.offerer = <span class="keyword">new</span> RTCPeerConnection
-            ({
-                 onICE: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_onICE</span><span class="params">(candidate)</span>
-                {</span>
-                    mkInfo.next(<span class="string">'ice'</span>, candidate)
-                }
-                ,onOfferSDP: <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_onSDP</span><span class="params">(sdp)</span>
-                {</span>
-                    mkInfo.next(<span class="string">'sdp'</span>, sdp)
-                }
-                ,onChannelMessage: <span class="keyword">this</span>.__offerer_onChannelMessage
-                ,onChannelOpened: <span class="keyword">this</span>.__offerer_onChannelOpened
-            })</pre></div></div>
+            }</pre></div></div>
             
         </li>
         
@@ -280,6 +267,32 @@ to update them on remote.</p>
               
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-11">&#182;</a>
+              </div>
+              <p>Current we have only data channel.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>            <span class="keyword">var</span> offerer = <span class="keyword">new</span> RTC.o.__getPeerConnection(servers
+                            ,{optional: [RtpDataChannels: <span class="literal">true</span>]})
+            offerer.onicecandidate = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_idstep_ICE</span><span class="params">(evt)</span>
+            {</span>
+                mkInfo.next(<span class="string">'ice'</span>, candidate)
+            }
+            offerer.createOffer(<span class="function"><span class="keyword">function</span> <span class="title">RTC_o_idstep_SDP</span><span class="params">(evt)</span>
+            {</span>
+                offerer.setLocalDescription(evt.desc.sdp)
+                mkInfo.next(<span class="string">'sdp'</span>, evt.desc.sdp)
+            })
+            offerer.ondatachannel = <span class="keyword">this</span>.__offerer_onChannelOpened.bind(<span class="keyword">this</span>)</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-12">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-12">&#182;</a>
               </div>
               <p>Put the <code>process.run</code> in the <code>mkInfo</code></p>
 
@@ -291,11 +304,11 @@ to update them on remote.</p>
         </li>
         
         
-        <li id="section-12">
+        <li id="section-13">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-12">&#182;</a>
+                <a class="pilcrow" href="#section-13">&#182;</a>
               </div>
               <p>Tie it after run our handler, which should be able to send
 the info out.</p>
@@ -303,18 +316,23 @@ the info out.</p>
             </div>
             
             <div class="content"><div class='highlight'><pre>        <span class="keyword">this</span>.tie(idgetter)
+            .tie(<span class="function"><span class="keyword">function</span> <span class="title">RTC_o_id_datachannel</span><span class="params">(id)</span>
+            {</span>
+                offerer.createDataChannel(id, { reliable: <span class="literal">false</span> })
+            })
 
         <span class="keyword">return</span> <span class="keyword">this</span>
-    }</pre></div></div>
+    }
+<span class="comment">/*</pre></div></div>
             
         </li>
         
         
-        <li id="section-13">
+        <li id="section-14">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-13">&#182;</a>
+                <a class="pilcrow" href="#section-14">&#182;</a>
               </div>
               <p>Get SDP, ICE and other information from offerers.</p>
 
@@ -335,11 +353,11 @@ the info out.</p>
         </li>
         
         
-        <li id="section-14">
+        <li id="section-15">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-14">&#182;</a>
+                <a class="pilcrow" href="#section-15">&#182;</a>
               </div>
               <p>Pick up which channels this peer will need.</p>
 
@@ -368,11 +386,11 @@ the info out.</p>
         </li>
         
         
-        <li id="section-15">
+        <li id="section-16">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-15">&#182;</a>
+                <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
               <p>Need to let the offerer handles ICEs and SDPs form remote to answer the answerer&#39;s info.
 Except the Offerer offered by this peer itself, it must create as much as the channels
@@ -392,11 +410,11 @@ ICE and SDP back to the offerers. This will be done with the action provided to 
         </li>
         
         
-        <li id="section-16">
+        <li id="section-17">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-16">&#182;</a>
+                <a class="pilcrow" href="#section-17">&#182;</a>
               </div>
               <p>Bind two asynchronous data (ICE &amp; SDP) to one step
 without &#39;yield&#39;.</p>
@@ -410,11 +428,11 @@ without &#39;yield&#39;.</p>
         </li>
         
         
-        <li id="section-17">
+        <li id="section-18">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-17">&#182;</a>
+                <a class="pilcrow" href="#section-18">&#182;</a>
               </div>
               <p>&#39;Waiting&#39; the next result and then execute the chain
 to update them on remote.</p>
@@ -429,11 +447,11 @@ to update them on remote.</p>
         </li>
         
         
-        <li id="section-18">
+        <li id="section-19">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-18">&#182;</a>
+                <a class="pilcrow" href="#section-19">&#182;</a>
               </div>
               <p>Must detect whether this is the last info and then send them all at once.</p>
 
@@ -451,11 +469,11 @@ to update them on remote.</p>
         </li>
         
         
-        <li id="section-19">
+        <li id="section-20">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-19">&#182;</a>
+                <a class="pilcrow" href="#section-20">&#182;</a>
               </div>
               <p>Create answerers for each information.</p>
 
@@ -473,11 +491,11 @@ to update them on remote.</p>
         </li>
         
         
-        <li id="section-20">
+        <li id="section-21">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-20">&#182;</a>
+                <a class="pilcrow" href="#section-21">&#182;</a>
               </div>
               <p>Send the answerer&#39;s SDP to the offerer.</p>
 
@@ -491,11 +509,11 @@ to update them on remote.</p>
         </li>
         
         
-        <li id="section-21">
+        <li id="section-22">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-21">&#182;</a>
+                <a class="pilcrow" href="#section-22">&#182;</a>
               </div>
               <p>Send the answerer&#39;s ICE to the offerer.
 TODO: offerer must provide a way to hook the transferring the SDP and ICE to.</p>
@@ -516,11 +534,11 @@ TODO: offerer must provide a way to hook the transferring the SDP and ICE to.</p
         </li>
         
         
-        <li id="section-22">
+        <li id="section-23">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-22">&#182;</a>
+                <a class="pilcrow" href="#section-23">&#182;</a>
               </div>
               <p>Tie it after run our handler, which should be able to send
 the info out.</p>
@@ -535,11 +553,11 @@ the info out.</p>
         </li>
         
         
-        <li id="section-23">
+        <li id="section-24">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-23">&#182;</a>
+                <a class="pilcrow" href="#section-24">&#182;</a>
               </div>
               <p>Help the offerer inside this context to handle the answerer&#39;s information,
 then establish the connection.</p>
@@ -555,32 +573,33 @@ The offerer only needs to handle one answerer&#39;s information from the remote.
         </li>
         
         
-        <li id="section-24">
+        <li id="section-25">
             <div class="annotation">
               
               <div class="pilwrap ">
-                <a class="pilcrow" href="#section-24">&#182;</a>
+                <a class="pilcrow" href="#section-25">&#182;</a>
               </div>
               <p>After waiting, get the information and handle them to establish the connections.</p>
 
             </div>
             
-            <div class="content"><div class='highlight'><pre>        <span class="keyword">var</span> step = <span class="function"><span class="keyword">function</span> <span class="title">RTC_o_establish_step</span><span class="params">(info)</span>
-        {</span>
-            <span class="keyword">this</span>.offerer.addAnswerSDP( answer_sdp );
-            <span class="keyword">this</span>.offerer.addICE(
+            <div class="content"><div class='highlight'><pre>        var step = function RTC_o_establish_step(info)
+        {
+            this.offerer.addAnswerSDP( answer_sdp );
+            this.offerer.addICE(
             { sdpMLineIndex : info.ice.sdpMLineIndex
             , candidate     : info.ice.candidate
             });
 
-            <span class="keyword">this</span>.__process.run()
+            this.__process.run()
         }
-        <span class="keyword">this</span>.__process.next(step.bind(<span class="keyword">this</span>), <span class="string">'RTC::establish'</span>)
-        <span class="keyword">return</span> <span class="keyword">this</span>
+        this.__process.next(step.bind(this), 'RTC::establish')
+        return this
    }
+*/
 })
 
-self.fluorine.registerInfect(<span class="string">'RTC'</span>, self.fluorine.RTC)</pre></div></div>
+self.fluorine.registerInfect('RTC', self.fluorine.RTC)</pre></div></div>
             
         </li>
         

@@ -828,6 +828,62 @@ allow user to concat other contexts. For example:</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-38">&#182;</a>
               </div>
+              <p>Trace received result and any message to the logger.
+Tracer can be specificed with <code>fluorine.logger</code>.</p>
+<p>Message is an optional (Maybe) parameter.</p>
+<p>:: ( Context m, Context n, Process a) =&gt; 
+Maybe Message -&gt; m n a -&gt; m n a</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,trace: <span class="keyword">function</span>(msg)
+   {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            fluorine.__tracer.trace(msg, val, <span class="keyword">this</span>.__environment)
+            <span class="keyword">this</span>.__process.run(val)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::trace'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+   }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-39">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-39">&#182;</a>
+              </div>
+              <p>Break the current running chain with runtime&#39;s debugger.</p>
+<p>:: ( Context m, Context n, Process a) =&gt; 
+Maybe Message -&gt; m n a -&gt; m n a</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>   ,<span class="keyword">break</span>: <span class="keyword">function</span>(msg)
+   {
+        <span class="keyword">this</span>.__process.next
+        (   _.bind( <span class="keyword">function</span>(val)
+        {
+            <span class="keyword">this</span>.__process.<span class="keyword">break</span>(msg, val)
+            <span class="keyword">this</span>.__process.run(val)
+        },  <span class="keyword">this</span>
+        ), <span class="string">'Context::break'</span> )
+        <span class="keyword">return</span> <span class="keyword">this</span>
+   }</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-40">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-40">&#182;</a>
+              </div>
               <p>Inner implement function.
 Inject a continue function into this context&#39;s step, 
 and avoid directly running after this context got <code>done</code>.</p>

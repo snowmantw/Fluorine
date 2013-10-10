@@ -90,14 +90,18 @@ self.fluorine.RTC.o.prototype = _.extend
 
     }
 
-    ,__offerer_onChannelMessage: function RTC_o__offerer_onChannelMessage()
+    ,__offerer_onChannelMessage: function RTC_o__offerer_onChannelMessage(evt)
     {
-
+        console.log('offerer - channelMessage', evt.data)
     }
 
-    ,__offerer_onChannelOpened: function RTC_o__offerer_onChannelOpened()
+    ,__offerer_onChannelOpened: function RTC_o__offerer_onChannelOpened(evt)
     {
-
+        var channel = evt.channel
+        // Can set binary format here.
+        
+        console.log('offerer - channelOpened')
+        channel.onmessage = this.__offerer_onChannelMessage.bind(this)
     }
 
     // Register this peer's offerer SDP and ICE to remote and get the channel ID.
@@ -107,10 +111,6 @@ self.fluorine.RTC.o.prototype = _.extend
         var step = function RTC_o_id_step(ids)
         {
             var _this = this
-
-            // Must generate the SDP and ICE information, then send it to the remote.
-            // This peer connection is the *offerer*.
-            var RTCPeerConnection = RTC.o.__getPeerConnection()
 
             // Bind two asynchronous data (ICE & SDP) to one step
             // without 'yield'.
@@ -128,19 +128,19 @@ self.fluorine.RTC.o.prototype = _.extend
                 }
             }
 
-            this.offerer = new RTCPeerConnection
-            ({
-                 onICE: function RTC_o_id_onICE(candidate)
-                {
-                    mkInfo.next('ice', candidate)
-                }
-                ,onOfferSDP: function RTC_o_id_onSDP(sdp)
-                {
-                    mkInfo.next('sdp', sdp)
-                }
-                ,onChannelMessage: this.__offerer_onChannelMessage
-                ,onChannelOpened: this.__offerer_onChannelOpened
+            // Current we have only data channel.
+            var offerer = new RTC.o.__getPeerConnection(servers
+                            ,{optional: [RtpDataChannels: true]})
+            offerer.onicecandidate = function RTC_o_idstep_ICE(evt)
+            {
+                mkInfo.next('ice', candidate)
+            }
+            offerer.createOffer(function RTC_o_idstep_SDP(evt)
+            {
+                offerer.setLocalDescription(evt.desc.sdp)
+                mkInfo.next('sdp', evt.desc.sdp)
             })
+            offerer.ondatachannel = this.__offerer_onChannelOpened.bind(this)
 
             // Put the `process.run` in the `mkInfo`
         }
@@ -149,9 +149,14 @@ self.fluorine.RTC.o.prototype = _.extend
         // Tie it after run our handler, which should be able to send
         // the info out.
         this.tie(idgetter)
+            .tie(function RTC_o_id_datachannel(id)
+            {
+                offerer.createDataChannel(id, { reliable: false })
+            })
 
         return this
     }
+/*
 
     // Get SDP, ICE and other information from offerers.
     ,channels: function RTC_o_channels(chgetter)
@@ -280,6 +285,7 @@ self.fluorine.RTC.o.prototype = _.extend
         this.__process.next(step.bind(this), 'RTC::establish')
         return this
    }
+*/
 })
 
 self.fluorine.registerInfect('RTC', self.fluorine.RTC)

@@ -2,7 +2,7 @@
 BUILD = build
 BUILD_FLUORINE = build/fluorine
 BUILD_DEMO = build/demo
-COFFEE = /usr/local/bin/coco -bcp
+COFFEE = `which coco` -bcp
 DEMO = demo
 NODE = nodejs
 OBJS = notifier.js process.js utils.js

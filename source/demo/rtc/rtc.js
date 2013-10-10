@@ -95,9 +95,11 @@ fluorine.Notifier.init()
 
 RTC()
   .id(getId)
+/*
   .channels(getChannels)
   .filter(vanillaFilter)
   .signal(sendAnswerers)
   .establish(establishWaiting)
+*/
   .done()
 

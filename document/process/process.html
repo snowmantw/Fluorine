@@ -343,6 +343,46 @@ The contextes need not it.</p>
               <div class="pilwrap ">
                 <a class="pilcrow" href="#section-16">&#182;</a>
               </div>
+              <p>Break the process for debugging.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>self.fluorine.Process.o.prototype.<span class="keyword">break</span> = <span class="keyword">function</span>(message, args)
+{   
+    <span class="keyword">var</span> msg = _.isUndefined(message) ? <span class="string">""</span> : message</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-17">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-17">&#182;</a>
+              </div>
+              <p>Fetch the last, executed step except the break itself.</p>
+
+            </div>
+            
+            <div class="content"><div class='highlight'><pre>    <span class="keyword">var</span> idx_prevstep = <span class="keyword">this</span>.__recycle_queue.length - <span class="number">1</span> - <span class="number">1</span>
+    <span class="keyword">var</span> __fn = <span class="keyword">this</span>.__recycle_queue[idx_prevstep]
+    fluorine.logger()(<span class="string">'[DEBUG] Process stop at step #'</span>+(idx_prevstep)
+                        +<span class="string">', step name(if any): '</span>+__fn.__name
+                        +<span class="string">', message: '</span>+msg
+                        +<span class="string">'; ( call with ):'</span>, args
+                     )
+    debugger 
+}</pre></div></div>
+            
+        </li>
+        
+        
+        <li id="section-18">
+            <div class="annotation">
+              
+              <div class="pilwrap ">
+                <a class="pilcrow" href="#section-18">&#182;</a>
+              </div>
               <p>Extract the last result of called functions.</p>
 <p>extract:: Process ( a-&gt;b ) -&gt; b</p>
 
