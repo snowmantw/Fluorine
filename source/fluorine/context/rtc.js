@@ -114,33 +114,36 @@ self.fluorine.RTC.o.prototype = _.extend
 
             // Bind two asynchronous data (ICE & SDP) to one step
             // without 'yield'.
-            var mkInfo = {result: {}}
-            mkInfo.next = function RTC_o_id_mkInfo(type, info)
-            {
-                mkInfo.result[type] = info
-
-                // 'Waiting' the next result and then execute the chain
-                // to update them on remote.
-                mkInfo.next = function RTC_o_id_mkInfo_final(t2, i2)
-                {
-                    mkInfo.result[t2] = i2
-                    _this.__process.run(mkInfo.result)
-                }
-            }
+            var result = { sdp: null, candidates: []} 
 
             // Current we have only data channel.
-            var offerer = new RTC.o.__getPeerConnection(servers
-                            ,{optional: [RtpDataChannels: true]})
+            var servers = null
+            var PeerConnection = RTC.o.__getPeerConnection()
+            var offerer = new PeerConnection(servers
+                            ,{optional: [ {RtpDataChannels: true} ]})
             offerer.onicecandidate = function RTC_o_idstep_ICE(evt)
             {
-                mkInfo.next('ice', candidate)
+                // Candidates are the event itself.
+                // And only bubbles up after SDP collected.
+                result.candidates.push(evt)
+
+                // Watch that the final one would be null
+                if (null === evt.candidate)
+                {
+                    console.log('end candidate')
+                    _this.__process.run(result)
+                }
             }
             offerer.createOffer(function RTC_o_idstep_SDP(evt)
             {
-                offerer.setLocalDescription(evt.desc.sdp)
-                mkInfo.next('sdp', evt.desc.sdp)
+                // {sdp: '...', type: 'offerer'}
+                offerer.setLocalDescription(evt)
+                result.sdp = evt
+                //mkInfo.next('sdp', evt)
+                console.log('sdp offering')
             })
             offerer.ondatachannel = this.__offerer_onChannelOpened.bind(this)
+            this.__environment.offerer = offerer
 
             // Put the `process.run` in the `mkInfo`
         }
@@ -149,9 +152,9 @@ self.fluorine.RTC.o.prototype = _.extend
         // Tie it after run our handler, which should be able to send
         // the info out.
         this.tie(idgetter)
-            .tie(function RTC_o_id_datachannel(id)
+            ._(function RTC_o_id_datachannel(id)
             {
-                offerer.createDataChannel(id, { reliable: false })
+                this.offerer.createDataChannel(id, { reliable: false })
             })
 
         return this

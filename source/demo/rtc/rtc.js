@@ -12,7 +12,7 @@
 //      .audio()        // TODO: Attach the audio stream
 //      .done()
 
-const TESTAPIS
+const TESTAPIS = 'signal'
 var getId = function(info)
 {
     // POST: register a new offerer on the remote.
@@ -57,7 +57,7 @@ var vanillaFilter = function(chinfo)
 var sendAnswerers = function(ansinfos)
 {
     // JSON doesn't allow anonymous element (the array).
-    return IO(JSON.stringify({data :ansinfos, type: 'answers-info'})).post(TESTAPIS+'/signal').done()
+    return IO(JSON.stringify({data :ansinfos, type: 'answers-info'})).post(TESTAPIS+'/answers-info').done()
 }
 
 // Must give the {Type: Function(SignalInfo)} as handlers
@@ -65,7 +65,7 @@ var signalPolling = function(id)
 {
     var pollingid = setInterval(function RTCTest_signal_polling()
     {
-        IO().get(TESTAPIS+'/signal-polling/'+id)
+        IO().get(TESTAPIS+'/polling/'+id)
           ._(function RTCTest_handle_signal_polling(enc_result)
           {
               var result = JSON.parse(enc_result)
@@ -76,7 +76,7 @@ var signalPolling = function(id)
               }
           })
           .done()()
-    }, 400)
+    }, 4000)
 }
 
 var establishWaiting = function()

@@ -6,6 +6,7 @@ var server = http.createServer(app)
 var ws = require('ws')
 ws = new ws.Server({port: 3030})
 
+var ID = 1
 var STORAGE = { offerers: {} }
 
 // {id: {type: ...}}
@@ -46,21 +47,22 @@ app.get('/', function(req,res){
     res.render('spec.ejs')
 });
 
-app.post('/id', function(req, res){
-    // TODO: Parse enc_info from POST body
-    var offerer_info = JSON.parse(enc_info)
-    var id = null // TODO: UUID generation.
+app.post('/signal/id', function(req, res){
+    var offerer_info = req.body
+    ID += 1
+    var id = ID // TODO: UUID generation.
     STORAGE.offerers[id] = offerer_info
-    POLLING[id] = {}
-    res.send(id)
+    console.log('++id', id)
+    POLLING[id] = {type: 'none'}
+    res.end(String(id))
 });
 
-app.post('/channels', function(req, res){
+app.post('/signal/channels', function(req, res){
     var offerer_info = JSON.parse(enc_info)
-    res.send(JSON.stringify(STORAGE.offerers))
+    res.end(JSON.stringify(STORAGE.offerers))
 });
 
-app.post('/signal/:toid', function(req, res){
+app.post('/signal/answers-info/:toid', function(req, res){
     // TODO: Parse enc_info from POST body
     var info = JSON.parse(enc_info)
 
@@ -74,13 +76,16 @@ app.post('/signal/:toid', function(req, res){
     }
 
     POLLING[toid] = info
-    res.send('true')
+    res.end('true')
 });
 
-app.get('/signal-polling/:fromid', function(req, res){
+app.get('/signal/polling/:fromid', function(req, res){
+    var fromid = req.params.fromid
     var data = POLLING[fromid]
-    res.send(JSON.stringify(data))
-    delete POLLING[fromid]
+    res.end(JSON.stringify(data))
+
+    // In fact delete.
+    POLLING[fromid] = {type: 'none'}
 });
 
 /*
