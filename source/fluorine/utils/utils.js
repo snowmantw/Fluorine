@@ -72,6 +72,28 @@ self.fluorine.heal = function()
     )
 }
 
+// Binding events from static DOMs.
+self.fluorine.bindEvents = function()
+{
+  var doms = document.querySelectorAll('[data-fluorine-events]');
+  _.each(doms, function(dom)
+  {
+    var es = dom.dataset.fluorineEvents
+    var parsed = es.split(':')
+    var eid = parsed[0]
+    var enames = parsed[1].split(',')
+    _.each(enames, function(ename)
+    {
+      dom.addEventListener(ename, function(e)
+      {
+        var name = eid + '-' + ename
+        e.name = name
+        fluorine.Notifier.trigger(e)
+      })
+    })
+  })
+}
+
 // Register all contexts for infecting/healing
 //
 // :: Name -> Context -> ()

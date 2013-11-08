@@ -152,6 +152,42 @@ self.fluorine.UI.o.prototype = _.extend
         return this
     }
 
+    // Will automatically parse the element and bind its native events.
+    // The DOM should come with a specific data attribute like '[data-fluorine-events="eid:click,onmouseover"]'
+    // In this way, when the native events 'click' and 'onmouseover' been triggered,
+    // it will be forwarded as the 'eid-click' and 'eid-onmouseover' automatically.
+    //
+    // autobind:: UI DOM -> UI DOM
+    ,autobind: function()
+    {
+      this.__process.next
+      ( _.bind(function($dom)
+      {
+          // If this DOM has been wrapped with $().
+          var dom = ('undefined' !== typeof $dom.get) ? $dom.get(0) : $dom;
+          var es = dom.dataset.fluorineEvents
+          if ('undefined' === es || '' === es)
+            return this.__process.run(dom)
+          var parsed = es.split(':')
+          var eid = parsed[0]
+          var enames = parsed[1].split(',')
+          _.each(enames, function(ename)
+          {
+            dom.addEventListener(ename, function(e)
+            {
+              var name = eid + '-' + ename
+              e.name = name
+              fluorine.Notifier.trigger(e)
+            })
+          })
+        // Return the original one.
+        this.__process.run($dom)
+      }, this)
+      , 'UI::autobind')
+
+      return this
+    }
+
     // Will choose elements from previous step's result set.
     // This actually use jQuery's `find` to do selection, so select things beyond the set is possible,
     // but use it is unwise.
